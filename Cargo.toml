@@ -13,6 +13,7 @@ publish = false
 adoc-adapters = { path = "crates/adapters" }
 adoc-application = { path = "crates/application" }
 adoc-collaboration = { path = "crates/collaboration" }
+adoc-configuration = { path = "crates/configuration" }
 adoc-contracts = { path = "crates/contracts" }
 adoc-document = { path = "crates/document" }
 adoc-governance = { path = "crates/governance" }

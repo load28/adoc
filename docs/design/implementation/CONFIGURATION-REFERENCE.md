@@ -48,6 +48,16 @@ plain environment 직접 값은 시작 실패다. `_FILE`은 Docker secret file 
 key rotation은 `current`와 `previous` key ID 두 개를 읽고 새 token은 current로만 발급한다.
 secret file 권한이 group/world-readable이면 production 시작을 거부한다.
 
+회전 가능한 HMAC·pepper secret file은 UTF-8 JSON object다. `current`는 필수이고 `previous`는
+선택이며 각 entry는 `id`와 `value`를 가진다. key ID는 서로 달라야 하고 빈 값은 거부한다.
+
+```json
+{"current":{"id":"key-2026-08","value":"..."},"previous":{"id":"key-2026-07","value":"..."}}
+```
+
+파일은 원자적으로 교체한다. 새 서명은 `current`만 사용하고 검증은 두 key를 모두 허용한다.
+preflight와 log에는 path·value를 출력하지 않고 source kind와 key ID만 출력한다.
+
 ## File·AI
 
 | Key | 기본값·제약 | secret |

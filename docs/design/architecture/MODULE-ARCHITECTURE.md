@@ -10,7 +10,7 @@ apps/web
 apps/api
 apps/worker
 crates/{kernel,identity,governance,document,collaboration,knowledge,ai,operations}
-crates/{application,ports,adapters,telemetry,test-support}
+crates/{application,ports,adapters,configuration,telemetry,test-support}
 packages/{contracts,editor-schema,ui-domain,i18n}
 infra/{docker,migrations,opensearch}
 ```
@@ -18,6 +18,11 @@ infra/{docker,migrations,opensearch}
 `crates/contracts`는 OpenAPI·AsyncAPI·JSON Schema에서 생성한 Rust transport type과 validator를
 소유한다. domain crate는 이를 import하지 않고 API transport와 application mapping 경계에서만
 사용한다. `tools/contract_codegen`이 Rust·TypeScript 생성물을 함께 만든다.
+
+`crates/configuration`은 환경·secret file 입력을 typed runtime config로 변환하고 시작 전 전체를
+검증한다. `crates/telemetry`는 검증된 service metadata와 observability config만 받아 tracing·
+metric·redaction을 구성한다. 두 crate는 domain 정책을 소유하거나 domain crate에서 import하지
+않는다.
 
 `packages/ui-domain`은 design system이 아니라 Atlaskit을 조합한 domain UI다.
 
