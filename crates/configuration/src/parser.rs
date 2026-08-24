@@ -158,6 +158,38 @@ pub struct DependencyConfig {
 }
 
 #[derive(Debug)]
+pub struct DatabaseBootstrapConfig {
+    pub environment: Environment,
+    pub release_sha: String,
+    pub database_url: LoadedSecret,
+    pub max_connections: u32,
+}
+
+impl DatabaseBootstrapConfig {
+    pub fn parse(source: &ConfigSource) -> Result<Self, ConfigError> {
+        validate_keys(source)?;
+        let environment = parse_environment(required(source, "ADOC_ENV")?)?;
+        Ok(Self {
+            environment,
+            release_sha: nonempty(required(source, "ADOC_RELEASE_SHA")?, "ADOC_RELEASE_SHA")?
+                .to_owned(),
+            database_url: secret_url(
+                source,
+                "ADOC_DATABASE_URL_FILE",
+                environment,
+                &["postgres", "postgresql"],
+            )?,
+            max_connections: integer_range(
+                source.get("ADOC_DB_MAX_CONNECTIONS").unwrap_or("5"),
+                "ADOC_DB_MAX_CONNECTIONS",
+                1,
+                200,
+            )?,
+        })
+    }
+}
+
+#[derive(Debug)]
 pub struct AuthConfig {
     pub google_client_id: Option<LoadedSecret>,
     pub google_client_secret: Option<LoadedSecret>,

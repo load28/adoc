@@ -1,0 +1,233 @@
+name: adoc
+
+x-app-environment: &app-environment
+  ADOC_ENV: development
+  ADOC_RELEASE_SHA: ${ADOC_RELEASE_SHA:-local}
+  ADOC_DATABASE_URL_FILE: /run/secrets/database_url
+  ADOC_RETENTION_DATABASE_URL_FILE: /run/secrets/database_url
+  ADOC_DB_MAX_CONNECTIONS: "10"
+  ADOC_REDIS_URL_FILE: /run/secrets/redis_url
+  ADOC_QUEUE_NAMESPACE: adoc-local
+  ADOC_OPENSEARCH_URL: http://opensearch:9200
+  ADOC_SEARCH_INDEX_PREFIX: adoc-local
+  ADOC_EMBEDDING_DIMENSION: "1536"
+  ADOC_GOOGLE_CLIENT_ID_FILE: /run/secrets/google_client_id
+  ADOC_GOOGLE_CLIENT_SECRET_FILE: /run/secrets/google_client_secret
+  ADOC_SESSION_HMAC_KEY_FILE: /run/secrets/session_hmac
+  ADOC_CSRF_HMAC_KEY_FILE: /run/secrets/csrf_hmac
+  ADOC_TOKEN_HASH_PEPPER_FILE: /run/secrets/token_hash_pepper
+  ADOC_OBJECT_STORAGE_DRIVER: local
+  ADOC_LOCAL_OBJECT_ROOT: /var/lib/adoc/objects
+  ADOC_ALLOWED_MIME_FILE: /etc/adoc/allowed-mime.txt
+  ADOC_AI_DRIVER: codex_cli
+  ADOC_CODEX_EXECUTABLE: /usr/bin/false
+
+x-app-secrets: &app-secrets
+  - database_url
+  - redis_url
+  - google_client_id
+  - google_client_secret
+  - session_hmac
+  - csrf_hmac
+  - token_hash_pepper
+
+services:
+  volume-init:
+    image: busybox:1.37.0
+    command: [chown, -R, "10001:10001", /objects]
+    volumes:
+      - object_data:/objects
+    networks: [internal]
+    restart: "no"
+
+  postgres:
+    image: postgres:16.15-bookworm
+    environment:
+      POSTGRES_DB: adoc
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets: [postgres_password]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U postgres -d adoc]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    networks: [internal]
+    deploy:
+      resources:
+        limits: {cpus: "2", memory: 1G}
+
+  redis:
+    image: redis:8.2.9-bookworm
+    command: [redis-server, --aclfile, /run/secrets/redis_acl, --appendonly, "no"]
+    secrets: [redis_acl]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [CMD, redis-cli, --user, health, ping]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    networks: [internal]
+    deploy:
+      resources:
+        limits: {cpus: "1", memory: 256M}
+
+  migrate:
+    build:
+      context: .
+      target: api
+      args: {ADOC_RELEASE_SHA: "${ADOC_RELEASE_SHA:-local}"}
+    command: [--migrate]
+    environment:
+      ADOC_ENV: development
+      ADOC_RELEASE_SHA: ${ADOC_RELEASE_SHA:-local}
+      ADOC_DATABASE_URL_FILE: /run/secrets/database_url
+      ADOC_DB_MAX_CONNECTIONS: "2"
+    secrets: [database_url]
+    depends_on:
+      postgres: {condition: service_healthy}
+    restart: "no"
+    networks: [internal]
+
+  api:
+    build:
+      context: .
+      target: api
+      args: {ADOC_RELEASE_SHA: "${ADOC_RELEASE_SHA:-local}"}
+    environment:
+      <<: *app-environment
+      ADOC_HTTP_BIND: 0.0.0.0:8081
+    secrets: *app-secrets
+    volumes:
+      - object_data:/var/lib/adoc/objects
+      - ./infra/docker/allowed-mime.txt:/etc/adoc/allowed-mime.txt:ro
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+      volume-init: {condition: service_completed_successfully}
+    healthcheck:
+      test: [CMD, curl, --fail, --silent, http://127.0.0.1:8081/health/ready]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    ports: ["127.0.0.1:${ADOC_API_PORT:-8081}:8081"]
+    networks: [internal, edge]
+    stop_grace_period: 35s
+
+  worker:
+    build:
+      context: .
+      target: worker
+      args: {ADOC_RELEASE_SHA: "${ADOC_RELEASE_SHA:-local}"}
+    environment: *app-environment
+    secrets: *app-secrets
+    volumes:
+      - object_data:/var/lib/adoc/objects
+      - ./infra/docker/allowed-mime.txt:/etc/adoc/allowed-mime.txt:ro
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+      volume-init: {condition: service_completed_successfully}
+    healthcheck:
+      test: [CMD, /usr/local/bin/adoc-worker, --health]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+    networks: [internal]
+    stop_grace_period: 35s
+
+  web:
+    build:
+      context: .
+      target: web
+      args: {ADOC_RELEASE_SHA: "${ADOC_RELEASE_SHA:-local}"}
+    environment:
+      ADOC_ENV: development
+      ADOC_RELEASE_SHA: ${ADOC_RELEASE_SHA:-local}
+      ADOC_HTTP_BIND: 0.0.0.0:8080
+    depends_on:
+      api: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, bun, -e, "fetch('http://127.0.0.1:8080/health/live').then(r=>{if(!r.ok)process.exit(1)})"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    ports: ["127.0.0.1:${ADOC_WEB_PORT:-8080}:8080"]
+    networks: [edge]
+
+  opensearch:
+    image: opensearchproject/opensearch:3.3.2
+    profiles: [search]
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: "true"
+      OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    healthcheck:
+      test: [CMD-SHELL, "curl --fail --silent http://127.0.0.1:9200/_cluster/health >/dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+    networks: [internal]
+
+  ai-runner:
+    build: {context: ., target: worker}
+    profiles: [ai-local]
+    command: [--check-config]
+    environment: *app-environment
+    secrets: *app-secrets
+    volumes:
+      - ./infra/docker/allowed-mime.txt:/etc/adoc/allowed-mime.txt:ro
+    networks: [internal]
+    restart: "no"
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.135.0
+    profiles: [observability]
+    command: [--config=/etc/otelcol/config.yaml]
+    volumes:
+      - ./infra/docker/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    networks: [internal]
+
+  backup:
+    image: postgres:16.15-bookworm
+    profiles: [backup]
+    entrypoint: [/opt/adoc/backup.sh]
+    environment:
+      ADOC_RELEASE_SHA: ${ADOC_RELEASE_SHA:-local}
+    secrets: [postgres_password]
+    volumes:
+      - object_data:/objects:ro
+      - backup_data:/backup
+      - ./infra/docker/backup.sh:/opt/adoc/backup.sh:ro
+    depends_on:
+      postgres: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
+    networks: [internal]
+    restart: "no"
+
+networks:
+  edge: {}
+  internal:
+    internal: true
+
+volumes:
+  postgres_data: {}
+  object_data: {}
+  backup_data: {}
+  redis_data: {}
+  opensearch_data: {}
+
+secrets:
+  postgres_password: {file: ./infra/docker/.local/secrets/postgres_password}
+  database_url: {file: ./infra/docker/.local/secrets/database_url}
+  redis_url: {file: ./infra/docker/.local/secrets/redis_url}
+  redis_acl: {file: ./infra/docker/.local/secrets/redis_acl}
+  google_client_id: {file: ./infra/docker/.local/secrets/google_client_id}
+  google_client_secret: {file: ./infra/docker/.local/secrets/google_client_secret}
+  session_hmac: {file: ./infra/docker/.local/secrets/session_hmac}
+  csrf_hmac: {file: ./infra/docker/.local/secrets/csrf_hmac}
+  token_hash_pepper: {file: ./infra/docker/.local/secrets/token_hash_pepper}

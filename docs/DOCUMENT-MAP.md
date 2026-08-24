@@ -183,6 +183,7 @@
 | PLAN-08 | `design/implementation/WORK-BREAKDOWN.md` | 파일·migration·test 단위의 전체 구현 작업 | 동결 |
 | PLAN-09 | `design/implementation/DETAIL-GAP-AUDIT.md` | 구현 차단 공백과 보강 결과 | 동결 |
 | PLAN-10 | `design/implementation/POSTGRESQL-FOUNDATION.md` | migration·pool·transaction·outbox·멱등성 구현 계약 | 구현 기준 |
+| PLAN-11 | `design/implementation/CONTAINER-RUNTIME.md` | image·Compose·health·secret·volume·backup 실행 계약 | 구현 기준 |
 
 ## 7. 작성 순서
 

@@ -1,0 +1,5 @@
+image/jpeg
+image/png
+image/webp
+application/pdf
+text/plain
