@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "doc",
+    "children": [
+      {
+        "id": "20000000-0000-7000-8000-000000000001",
+        "type": "heading",
+        "level": 1,
+        "children": [{"type": "text", "text": "인증 설계", "marks": [{"type": "bold"}]}]
+      },
+      {
+        "id": "20000000-0000-7000-8000-000000000002",
+        "type": "paragraph",
+        "children": [{"type": "text", "text": "발행된 지식을 기준으로 설명합니다."}]
+      }
+    ]
+  }
+}

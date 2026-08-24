@@ -1,5 +1,7 @@
 # Collaboration 도메인
 
+- **문서 ID**: DOM-03
+- **상태**: 동결
 ## 1. 책임
 
 Document를 중심으로 한 Discussion, 특정 Draft revision에 대한 Review, Mention과 사용자의

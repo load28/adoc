@@ -1,5 +1,7 @@
 # Workspace와 Governance 도메인
 
+- **문서 ID**: DOM-01
+- **상태**: 동결
 ## 1. 책임
 
 Workspace는 모든 제품 데이터의 최상위 소유·보안 경계다. Governance는 누가 Workspace에
@@ -95,10 +97,12 @@ Document 이동은 단순 navigation 변경이 아니다. 새 조상에서 Permi
 → Audit Event
 ```
 
-## 7. 미확정 결정
+## 7. 확정된 정책
 
-- 같은 depth에서 User·Group Grant가 충돌할 때의 precedence
-- 개인 `NO_ACCESS`와 Group 허용의 precedence
-- Manage capability가 요구하는 최소 access
-- Admin emergency access의 존재 여부와 감사 정책
-- Group 관리의 최초 출시 포함 여부
+- Group 생성·멤버 관리·Group Permission을 전체 구현에 포함한다.
+- 현재 Document에서 root 방향으로 가장 가까운 명시적 Grant를 사용한다.
+- 같은 위치에서는 개인 Grant가 Group Grant보다 우선한다.
+- 개인 Grant가 없으면 Group의 명시적 `NO_ACCESS`가 우선한다.
+- Group deny가 없으면 Group access 중 가장 높은 수준을 사용한다.
+- `Manage`는 최소 `EDITOR` access를 요구한다.
+- Workspace Admin도 Document 내용 access를 우회하지 않는다.

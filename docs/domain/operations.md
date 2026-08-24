@@ -1,5 +1,7 @@
 # Operations 도메인
 
+- **문서 ID**: DOM-06
+- **상태**: 동결
 ## 1. 책임
 
 여러 도메인이 참조하는 File Asset의 저장 생명주기와, 공식 Version History와 구분되는
@@ -47,12 +49,13 @@ Create metadata(UPLOADING)
    └─ failure: FAILED → retry or delete
 → references removed
 → unreferenced candidate
-→ retention policy
+→ 7-day unreferenced grace
 → physical delete + DELETED tombstone/audit
 ```
 
-부분 업로드 정리, checksum 불일치, 악성 파일 검사, preview 파생물과 보존 기간은 저장
-상세 설계에서 확정한다.
+부분 업로드는 upload session 만료 뒤 정리한다. checksum, detected MIME와 악성 파일 검사를
+통과해야 READY가 된다. 모든 Reference가 사라진 Asset은 7일 grace 뒤 다시 검사하고
+삭제한다. 상세 계약은 SPEC-15와 DATA-04가 소유한다.
 
 ## 4. Audit Event
 
@@ -90,4 +93,5 @@ Audit 대상이 아니다. 보안·운영 요구가 생기면 목적과 보존 �
 - AI를 독립 actor로 두지 않는다. AI Proposal 적용은 적용한 User의 행동이며 AI provenance는
   metadata에 둔다.
 - Audit은 Inbox를 대신하지 않고 Version History를 복제하지 않는다.
-- Event 보존·접근 권한과 개인정보 정책은 구현 전 상세 설계에서 확정한다.
+- Event는 Workspace가 active인 동안 보존한다. Document·Workspace 영구 삭제 시 삭제 사실,
+  opaque ID, actor와 time만 남기고 민감한 before·after와 표시 snapshot을 제거한다.

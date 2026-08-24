@@ -1,0 +1,8 @@
+{
+  "opId": "30000000-0000-7000-8000-000000000001",
+  "kind": "DELETE_BLOCK",
+  "scope": {"kind": "BLOCK", "blockId": "20000000-0000-7000-8000-000000000002"},
+  "precondition": {"draftRevision": 7, "targetHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+  "dependsOn": [],
+  "blockId": "20000000-0000-7000-8000-000000000002"
+}

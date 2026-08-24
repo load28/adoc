@@ -1,0 +1,60 @@
+asyncapi: 3.1.0
+x-document-id: API-03
+info:
+  title: Team Document Internal Events
+  version: 1.0.0
+  description: Internal outbox and browser SSE contracts.
+channels:
+  workspaceStream:
+    address: /api/v1/stream
+    messages:
+      workspaceEvent: {$ref: '#/components/messages/WorkspaceEvent'}
+  internalOutbox:
+    address: outbox.{workspaceId}
+    parameters:
+      workspaceId: {description: Tenant ID}
+    messages:
+      domainEvent: {$ref: '#/components/messages/DomainEvent'}
+operations:
+  receiveWorkspaceEvent:
+    action: receive
+    channel: {$ref: '#/channels/workspaceStream'}
+    messages: [{$ref: '#/channels/workspaceStream/messages/workspaceEvent'}]
+  consumeDomainEvent:
+    action: receive
+    channel: {$ref: '#/channels/internalOutbox'}
+    messages: [{$ref: '#/channels/internalOutbox/messages/domainEvent'}]
+  publishDomainEvent:
+    action: send
+    channel: {$ref: '#/channels/internalOutbox'}
+    messages: [{$ref: '#/channels/internalOutbox/messages/domainEvent'}]
+components:
+  messages:
+    WorkspaceEvent:
+      name: WorkspaceEvent
+      title: Permission-filtered browser notification
+      headers: {$ref: '#/components/schemas/StreamHeaders'}
+      payload: {$ref: '../contracts/event-payloads.schema.json'}
+    DomainEvent:
+      name: DomainEvent
+      title: Durable internal outbox fact
+      headers: {$ref: '#/components/schemas/OutboxHeaders'}
+      payload: {$ref: '../contracts/event-payloads.schema.json'}
+  schemas:
+    StreamHeaders:
+      type: object
+      additionalProperties: false
+      required: [eventId, retryMilliseconds]
+      properties:
+        eventId: {type: string, description: Opaque SSE resume cursor}
+        retryMilliseconds: {type: integer, minimum: 1000, maximum: 30000}
+    OutboxHeaders:
+      type: object
+      additionalProperties: false
+      required: [eventId, aggregateKind, aggregateId, aggregateSequence, attempt]
+      properties:
+        eventId: {type: string, format: uuid}
+        aggregateKind: {type: string}
+        aggregateId: {type: string, format: uuid}
+        aggregateSequence: {type: integer, minimum: 1}
+        attempt: {type: integer, minimum: 0}

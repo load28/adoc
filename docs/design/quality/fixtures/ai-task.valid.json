@@ -1,0 +1,13 @@
+{
+  "kind": "REWRITE",
+  "workspaceId": "10000000-0000-7000-8000-000000000001",
+  "actorId": "00000000-0000-7000-8000-000000000003",
+  "target": {
+    "kind": "REGION",
+    "documentId": "40000000-0000-7000-8000-000000000001",
+    "region": {"kind": "BLOCK", "blockId": "20000000-0000-7000-8000-000000000002"}
+  },
+  "expectedRevision": 7,
+  "externalWebEnabled": false,
+  "instruction": "의미를 유지하면서 명확하게 다듬어 주세요."
+}

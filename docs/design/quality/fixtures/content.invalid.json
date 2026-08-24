@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "type": "doc",
+    "children": [{
+      "id": "20000000-0000-7000-8000-000000000001",
+      "type": "paragraph",
+      "children": [],
+      "html": "<script>alert(1)</script>"
+    }]
+  }
+}

@@ -1,5 +1,7 @@
 # Writing Intelligence 도메인
 
+- **문서 ID**: DOM-05
+- **상태**: 동결
 ## 1. 책임
 
 사용자 의도를 제한된 AI Task로 변환하고, 권한이 확인된 Context와 Writing Policy를
@@ -113,8 +115,9 @@ AIResult
 - `REVIEW`: Finding과 수정안을 표시하되 기본적으로 Publish 차단 없음
 - `KNOWLEDGE_QUERY`: Source가 없는 조직 사실을 답으로 단정하지 않음
 
-작업 크기 경계는 미확정이며 UX·보안 상세 설계 없이 코드에서 글자 수 등 휴리스틱으로
-결정하지 않는다.
+좁은 Rewrite는 사용자가 현재 선택한 하나의 Region 안에서 기존 구조를 보존하는 변경이다.
+다중 Region, Block 구조 변경, Discussion 반영과 문서 전체 변경은 항상 Proposal 경계다.
+글자 수 휴리스틱으로 이 경계를 바꾸지 않는다.
 
 ## 8. Runtime 경계
 
@@ -122,7 +125,8 @@ AIResult
 AIRuntime.execute(AIRequest) → AIResult stream/final
 ```
 
-현재 구현 대상은 서버에서 구독형 CLI를 실행하는 `CliRuntime`이다. Runtime은 인증, process,
-streaming, timeout과 cancellation을 처리하지만 제품 Context를 스스로 검색하거나 DB를
-수정하지 않는다. 동시성 제한, Job queue, sandbox, 공급자 약관과 운영 격리는 구현 전
-상세 설계의 필수 조건이다.
+로컬·자체 호스팅은 `CodexCliRuntime`, 다중 사용자 운영 환경은
+`OpenAIResponsesRuntime`을 사용한다. Runtime은 인증, process·request, streaming, timeout과
+cancellation을 처리하지만 제품 Context를 스스로 검색하거나 DB를 수정하지 않는다. 개인
+구독 credential을 공용 서버에 저장하지 않고 Provider 실패 시 다른 model로 자동 전환하지
+않는다. 정확한 격리·Job 계약은 SPEC-14와 SEC-04가 소유한다.

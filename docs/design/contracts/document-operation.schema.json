@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adoc.local/contracts/document-operation.schema.json",
+  "x-document-id": "CONTRACT-02",
+  "title": "DocumentOperation",
+  "oneOf": [
+    { "$ref": "#/$defs/insertBlock" }, { "$ref": "#/$defs/deleteBlock" },
+    { "$ref": "#/$defs/moveBlock" }, { "$ref": "#/$defs/replaceText" },
+    { "$ref": "#/$defs/setBlockAttrs" }, { "$ref": "#/$defs/setMarks" },
+    { "$ref": "#/$defs/replaceRegion" }, { "$ref": "#/$defs/addReference" },
+    { "$ref": "#/$defs/removeReference" }
+  ],
+  "$defs": {
+    "id": { "type": "string", "format": "uuid" },
+    "base": {
+      "type": "object",
+      "required": ["opId", "kind", "scope", "precondition"],
+      "properties": {
+        "opId": { "$ref": "#/$defs/id" }, "kind": { "type": "string" },
+        "scope": { "$ref": "#/$defs/region" },
+        "precondition": { "$ref": "#/$defs/precondition" },
+        "dependsOn": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" } }
+      }
+    },
+    "precondition": {
+      "type": "object", "additionalProperties": false,
+      "required": ["draftRevision"],
+      "properties": { "draftRevision": { "type": "integer", "minimum": 0 }, "targetHash": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" } }
+    },
+    "region": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind", "blockId"], "properties": { "kind": { "const": "BLOCK" }, "blockId": { "$ref": "#/$defs/id" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "startBlockId", "endBlockId"], "properties": { "kind": { "const": "BLOCK_RANGE" }, "startBlockId": { "$ref": "#/$defs/id" }, "endBlockId": { "$ref": "#/$defs/id" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "headingId"], "properties": { "kind": { "const": "SECTION" }, "headingId": { "$ref": "#/$defs/id" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "blockId", "from", "to", "quoteHash"], "properties": { "kind": { "const": "TEXT_RANGE" }, "blockId": { "$ref": "#/$defs/id" }, "from": { "$ref": "#/$defs/textAnchor" }, "to": { "$ref": "#/$defs/textAnchor" }, "quoteHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" } } }
+      ]
+    },
+    "textAnchor": { "type": "object", "additionalProperties": false, "required": ["offset", "affinity", "contextHash"], "properties": { "offset": { "type": "integer", "minimum": 0 }, "affinity": { "enum": ["BEFORE", "AFTER"] }, "contextHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" } } },
+    "blockNode": { "$ref": "document-content.schema.json#/$defs/block" },
+    "insertBlock": { "allOf": [{ "$ref": "#/$defs/base" }, { "type": "object", "required": ["kind", "parentId", "index", "block"], "properties": { "kind": { "const": "INSERT_BLOCK" }, "parentId": { "oneOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] }, "index": { "type": "integer", "minimum": 0 }, "block": { "$ref": "#/$defs/blockNode" } } }], "unevaluatedProperties": false },
+    "deleteBlock": { "allOf": [{ "$ref": "#/$defs/base" }, { "type": "object", "required": ["kind", "blockId"], "properties": { "kind": { "const": "DELETE_BLOCK" }, "blockId": { "$ref": "#/$defs/id" } } }], "unevaluatedProperties": false },
+    "moveBlock": { "allOf": [{ "$ref": "#/$defs/base" }, { "type": "object", "required": ["kind", "blockId", "newParentId", "newIndex"], "properties": { "kind": { "const": "MOVE_BLOCK" }, "blockId": { "$ref": "#/$defs/id" }, "newParentId": { "oneOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] }, "newIndex": { "type": "integer", "minimum": 0 } } }], "unevaluatedProperties": false },
+    "replaceText": { "allOf": [{ "$ref": "#/$defs/base" }, { "type": "object", "required": ["kind", "range", "text"], "properties": { "kind": { "const": "REPLACE_TEXT" }, "range": { "$ref": "#/$defs/region" }, "text": { "type": "string", "maxLength": 1000000 } } }], "unevaluatedProperties": false },
+    "setBlockAttrs": { "allOf": [{ "$ref": "#/$defs/base" }, { "type": "object", "required": ["kind", "blockId", "attrs"], "properties": { "kind": { "const": "SET_BLOCK_ATTRS" }, "blockId": { "$ref": "#/$defs/id" }, "attrs": { "type": "object", "maxProperties": 16, "additionalProperties": { "type": ["string", "number", "integer", "boolean", "null"] } } } }], "unevaluatedProperties": false },
+    "setMarks": { "allOf": [{ "$ref": "#/$defs/base" }, { "type": "object", "required": ["kind", "range", "mode", "marks"], "properties": { "kind": { "const": "SET_MARKS" }, "range": { "$ref": "#/$defs/region" }, "mode": { "enum": ["ADD", "REMOVE", "REPLACE"] }, "marks": { "type": "array", "items": { "$ref": "document-content.schema.json#/$defs/mark" } } } }], "unevaluatedProperties": false },
+    "replaceRegion": { "allOf": [{ "$ref": "#/$defs/base" }, { "type": "object", "required": ["kind", "region", "blocks"], "properties": { "kind": { "const": "REPLACE_REGION" }, "region": { "$ref": "#/$defs/region" }, "blocks": { "type": "array", "items": { "$ref": "#/$defs/blockNode" } } } }], "unevaluatedProperties": false },
+    "addReference": { "allOf": [{ "$ref": "#/$defs/base" }, { "type": "object", "required": ["kind", "sourceRegion", "target"], "properties": { "kind": { "const": "ADD_REFERENCE" }, "sourceRegion": { "$ref": "#/$defs/region" }, "target": { "$ref": "#/$defs/referenceTarget" } } }], "unevaluatedProperties": false },
+    "removeReference": { "allOf": [{ "$ref": "#/$defs/base" }, { "type": "object", "required": ["kind", "referenceId"], "properties": { "kind": { "const": "REMOVE_REFERENCE" }, "referenceId": { "$ref": "#/$defs/id" } } }], "unevaluatedProperties": false },
+    "referenceTarget": { "type": "object", "additionalProperties": false, "required": ["kind", "id"], "properties": { "kind": { "enum": ["DOCUMENT", "REGION", "DISCUSSION", "VOCABULARY", "EXTERNAL"] }, "id": { "type": "string", "maxLength": 2048 } } }
+  }
+}

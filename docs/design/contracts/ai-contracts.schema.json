@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adoc.local/contracts/ai-contracts.schema.json",
+  "x-document-id": "CONTRACT-03",
+  "title": "AI Contracts",
+  "$defs": {
+    "id": { "type": "string", "format": "uuid" },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sourceId", "kind", "stableId", "authority", "snapshotHash"],
+      "properties": {
+        "sourceId": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["DRAFT", "PUBLISHED_REGION", "DISCUSSION", "VOCABULARY", "EXTERNAL_WEB", "USER_INPUT"] },
+        "stableId": { "type": "string" },
+        "authority": { "enum": ["USER_EXPLICIT", "OFFICIAL", "VOCABULARY", "DISCUSSION_CONFIRMED", "RELATED_INTERNAL", "EXTERNAL"] },
+        "snapshotHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "retrievedAt": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "task": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "workspaceId", "actorId", "target", "expectedRevision", "externalWebEnabled"],
+      "properties": {
+        "kind": { "enum": ["COMPOSE", "REWRITE", "REVIEW", "DISCUSSION_APPLY", "CONFLICT_MERGE", "KNOWLEDGE_QUERY"] },
+        "workspaceId": { "$ref": "#/$defs/id" },
+        "actorId": { "$ref": "#/$defs/id" },
+        "target": { "$ref": "#/$defs/target" },
+        "expectedRevision": { "type": "integer", "minimum": 0 },
+        "externalWebEnabled": { "type": "boolean" },
+        "instruction": { "type": "string", "maxLength": 10000 }
+      }
+    },
+    "target": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind", "documentId"], "properties": { "kind": { "const": "DOCUMENT" }, "documentId": { "$ref": "#/$defs/id" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "documentId", "region"], "properties": { "kind": { "const": "REGION" }, "documentId": { "$ref": "#/$defs/id" }, "region": { "$ref": "document-operation.schema.json#/$defs/region" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "discussionId"], "properties": { "kind": { "const": "DISCUSSION" }, "discussionId": { "$ref": "#/$defs/id" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "question"], "properties": { "kind": { "const": "WORKSPACE_QUERY" }, "question": { "type": "string", "maxLength": 10000 } } }
+      ]
+    },
+    "context": {
+      "type": "object", "additionalProperties": false,
+      "required": ["task", "sources", "writingRuleVersion"],
+      "properties": {
+        "task": { "$ref": "#/$defs/task" },
+        "sources": { "type": "array", "maxItems": 200, "items": { "$ref": "#/$defs/source" } },
+        "writingRuleVersion": { "type": "string" },
+        "vocabularyRevision": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "finding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["findingId", "ruleId", "severity", "region", "reason", "suggestion", "sourceIds"],
+      "properties": {
+        "findingId": { "$ref": "#/$defs/id" },
+        "ruleId": { "type": "string" },
+        "severity": { "enum": ["BLOCKING", "WARNING", "ADVISORY"] },
+        "region": { "$ref": "document-operation.schema.json#/$defs/region" },
+        "reason": { "type": "string" },
+        "suggestion": { "type": ["string", "null"] },
+        "sourceIds": { "type": "array", "items": { "$ref": "#/$defs/id" } }
+      }
+    },
+    "claim": {
+      "type": "object", "additionalProperties": false,
+      "required": ["text", "sourceIds", "certainty"],
+      "properties": {
+        "text": { "type": "string" },
+        "sourceIds": { "type": "array", "items": { "$ref": "#/$defs/id" } },
+        "certainty": { "enum": ["SUPPORTED", "CONFLICTING", "INSUFFICIENT"] }
+      }
+    },
+    "conflict": {
+      "type": "object", "additionalProperties": false,
+      "required": ["description", "sourceIds"],
+      "properties": {
+        "description": { "type": "string" },
+        "sourceIds": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/id" } }
+      }
+    },
+    "result": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schemaVersion", "taskKind", "status", "operations", "findings", "claims", "uncertainties", "conflicts", "usedSourceIds"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "taskKind": { "enum": ["COMPOSE", "REWRITE", "REVIEW", "DISCUSSION_APPLY", "CONFLICT_MERGE", "KNOWLEDGE_QUERY"] },
+        "status": { "enum": ["READY", "INSUFFICIENT_CONTEXT", "CONFLICTING_CONTEXT", "NO_CHANGE"] },
+        "operations": { "type": "array", "items": { "$ref": "document-operation.schema.json" } },
+        "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+        "claims": { "type": "array", "items": { "$ref": "#/$defs/claim" } },
+        "uncertainties": { "type": "array", "items": { "type": "string" } },
+        "conflicts": { "type": "array", "items": { "$ref": "#/$defs/conflict" } },
+        "usedSourceIds": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" } }
+      }
+    },
+    "proposal": {
+      "type": "object", "additionalProperties": false,
+      "required": ["proposalId", "jobId", "documentId", "baseRevision", "operations", "status"],
+      "properties": {
+        "proposalId": { "$ref": "#/$defs/id" },
+        "jobId": { "$ref": "#/$defs/id" },
+        "documentId": { "$ref": "#/$defs/id" },
+        "baseRevision": { "type": "integer", "minimum": 0 },
+        "operations": { "type": "array", "items": { "$ref": "document-operation.schema.json" } },
+        "status": { "enum": ["OPEN", "APPLIED", "REJECTED", "STALE", "CANCELLED"] }
+      }
+    }
+  },
+  "oneOf": [
+    { "$ref": "#/$defs/task" },
+    { "$ref": "#/$defs/context" },
+    { "$ref": "#/$defs/result" },
+    { "$ref": "#/$defs/proposal" }
+  ]
+}
