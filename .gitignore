@@ -1,9 +1,0 @@
-node_modules/
-dist/
-*.tsbuildinfo
-.teamdoc/cache/
-.DS_Store
-
-# Tauri / Rust
-apps/desktop/src-tauri/target/
-apps/desktop/src-tauri/gen/
