@@ -28,6 +28,7 @@
     "contracts:generate": "cargo run --quiet -p adoc-contract-codegen",
     "migrations:check": "node scripts/generate-migrations.mjs --check",
     "migrations:generate": "node scripts/generate-migrations.mjs",
+    "migrations:seal": "node scripts/generate-migrations.mjs",
     "compose:bootstrap": "sh infra/docker/bootstrap-local.sh",
     "compose:integration": "sh scripts/check-compose-integration.sh",
     "ci": "bun run check",

@@ -19,18 +19,19 @@ query만 허용하며 Redis, OpenSearch, ObjectStorage와 provider 호출은 com
 
 ## Migration 계약
 
-`docs/design/data/schema.sql`만 bootstrap 구조를 소유한다. `scripts/generate-migrations.mjs`는 다음
-순서의 pure transform으로 `infra/migrations/0001_canonical_baseline.sql`을 만든다.
+`docs/design/data/schema.sql`은 최신 fresh-install 구조를 소유한다. 최초 baseline은 다음 순서의 pure
+transform으로 생성했으며, 한번 commit된 migration은 다시 생성하거나 수정하지 않는다.
 
 1. UTF-8·LF와 마지막 newline을 확인한다.
 2. 첫 실행문 `BEGIN;`과 마지막 실행문 `COMMIT;`을 제거한다.
 3. 수동 편집 금지와 정본 경로를 나타내는 고정 header를 붙인다.
 4. 그 밖의 byte는 순서와 공백을 포함해 보존한다.
 
-`migrations:check`는 임시 출력과 committed migration의 byte가 다르면 실패한다. SQLx migrator가
-각 file transaction과 `_sqlx_migrations` checksum을 소유한다. checksum 불일치는 migration
-실패이며 자동 보정하지 않는다. baseline 이후에는 forward-only file만 추가하고 이미 적용된
-file을 수정하지 않는다.
+baseline 이후 migration은 `NNNN_<slug>.sql` forward-only file로 작성하고 최신 canonical schema에
+같은 결과를 반영한다. `migrations:seal`은 모든 migration의 filename·SHA-256을 정렬된 manifest에
+기록한다. `migrations:check`는 연속 version, filename pattern, manifest 집합과 byte checksum을
+검사하고 수정·삭제·끼워넣기를 거부한다. 새 migration은 마지막 version에만 추가할 수 있다.
+SQLx migrator도 `_sqlx_migrations` checksum을 독립적으로 검사하며 불일치를 자동 보정하지 않는다.
 
 초기 baseline은 clean PostgreSQL 16 database에 전체 적용한다. 이어 같은 migrator를 다시
 실행하고 적용 version·checksum이 변하지 않는지 확인한다. 실제 후속 migration부터는 직전

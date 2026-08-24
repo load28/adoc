@@ -3,6 +3,7 @@ name: adoc
 x-app-environment: &app-environment
   ADOC_ENV: development
   ADOC_RELEASE_SHA: ${ADOC_RELEASE_SHA:-local}
+  ADOC_PUBLIC_ORIGIN: http://localhost:${ADOC_WEB_PORT:-8080}
   ADOC_DATABASE_URL_FILE: /run/secrets/database_url
   ADOC_RETENTION_DATABASE_URL_FILE: /run/secrets/database_url
   ADOC_DB_MAX_CONNECTIONS: "10"
@@ -147,6 +148,8 @@ services:
       ADOC_ENV: development
       ADOC_RELEASE_SHA: ${ADOC_RELEASE_SHA:-local}
       ADOC_HTTP_BIND: 0.0.0.0:8080
+      ADOC_PUBLIC_ORIGIN: http://localhost:${ADOC_WEB_PORT:-8080}
+      ADOC_API_UPSTREAM: http://api:8081
     depends_on:
       api: {condition: service_healthy}
     healthcheck:
@@ -205,6 +208,17 @@ services:
       - ./infra/docker/backup.sh:/opt/adoc/backup.sh:ro
     depends_on:
       postgres: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
+    networks: [internal]
+    restart: "no"
+
+  test-runner:
+    build: {context: ., target: rust-builder}
+    profiles: [test]
+    environment:
+      ADOC_TEST_DATABASE_URL_FILE: /run/secrets/database_url
+    secrets: [database_url]
+    depends_on:
       migrate: {condition: service_completed_successfully}
     networks: [internal]
     restart: "no"

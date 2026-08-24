@@ -14,6 +14,7 @@ plain environment 직접 값은 시작 실패다. `_FILE`은 Docker secret file 
 | `ADOC_RELEASE_SHA` | all | immutable image label, 필수 | 재시작 |
 | `ADOC_HTTP_BIND` | web/api | `0.0.0.0:8080/8081` | 재시작 |
 | `ADOC_PUBLIC_ORIGIN` | web/api | HTTPS absolute, production 필수 | 재시작 |
+| `ADOC_API_UPSTREAM` | web | internal API origin, Browser에 노출 금지 | 재시작 |
 | `ADOC_SHUTDOWN_GRACE` | all | `30s`, 5~120s | 재시작 |
 | `ADOC_LOG_LEVEL` | all | `info`, content logging 금지 | signal reload |
 | `ADOC_OTEL_ENDPOINT` | all | optional HTTPS/gRPC | 재시작 |

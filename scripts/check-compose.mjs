@@ -18,6 +18,7 @@ const requiredServices = new Set([
   "ai-runner",
   "otel-collector",
   "backup",
+  "test-runner",
 ]);
 
 for (const service of requiredServices) {
@@ -50,7 +51,7 @@ for (const service of ["api", "worker"]) {
   )
     throw new Error(`${service} must wait for object volume ownership initialization`);
 }
-for (const profile of ["search", "ai-local", "observability", "backup"]) {
+for (const profile of ["search", "ai-local", "observability", "backup", "test"]) {
   if (!Object.values(compose.services).some((service) => service.profiles?.includes(profile)))
     throw new Error(`missing Compose profile: ${profile}`);
 }

@@ -32,6 +32,7 @@ service dependency는 container 시작이 아니라 health 또는 successful com
 | ai-local | ai-runner | ephemeral | AI 기능만 degraded |
 | observability | otel-collector | telemetry sink | 제품 core는 유지 |
 | backup | backup | backup_data staging | one-shot 실패·alert |
+| test | test-runner | ephemeral build/test | 제품 실행에 포함하지 않음 |
 
 `migrate`는 API image의 전용 `migrate` subcommand를 사용한다. 이 command는 database secret과 pool
 설정만 읽고 migration·PostgreSQL version·pending 0을 검사한 뒤 종료한다. OIDC·AI·ObjectStorage

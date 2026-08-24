@@ -16,7 +16,8 @@
 | TASK-010 | 에이전트 권장안 자율 결정 원칙 반영 | 운영 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-010](TASK-010-autonomous-recommended-decisions.md) |
 | TASK-011 | PostgreSQL 영속성 기반 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-011](TASK-011-postgresql-foundation.md) |
 | TASK-012 | Docker Compose 실행 기반 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-012](TASK-012-docker-compose-harness.md) |
+| TASK-013 | Identity·Session 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-013](TASK-013-identity-session.md) |
 
 ## 다음 태스크 번호
 
-**TASK-013**
+**TASK-014**

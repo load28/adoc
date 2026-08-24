@@ -10,8 +10,10 @@
 
 | Table | 핵심 column | constraint·index |
 |---|---|---|
-| users | id, google_subject, email, display_name, locale, timezone | unique google_subject |
-| sessions | id_hash, user_id, expires_at, rotated_from, revoked_at | expires, user index |
+| users | id, identity_issuer, google_subject, email, display_name, locale, timezone | unique issuer+subject |
+| login_flows | state_hash, marker_hash, nonce_hash, pkce_verifier, return_to, expires_at, consumed_at | state unique, expiry index |
+| sessions | id_hash, hash_key_id, user_id, idle_expires_at, absolute_expires_at, rotated_from, revoked_at | expiry, active user index |
+| user_command_receipts | user_id, operation_id, key, request_hash, response_json, expires_at | unique user+operation+key |
 | workspaces | id, slug, name, status, delete_after, revision | unique slug |
 | memberships | workspace_id, user_id, role, status, revision | unique pair |
 | invitations | id, workspace_id, email, token_hash, expires_at, accepted_at | token unique |

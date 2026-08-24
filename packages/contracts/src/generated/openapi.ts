@@ -2323,6 +2323,7 @@ export interface components {
         Range: string;
         IfMatch: string;
         IdempotencyKey: string;
+        CsrfToken: string;
         LeaseToken: string;
     };
     requestBodies: {
@@ -2562,6 +2563,7 @@ export interface operations {
             query?: never;
             header: {
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path?: never;
             cookie?: never;
@@ -2605,6 +2607,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path?: never;
             cookie?: never;

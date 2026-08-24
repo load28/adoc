@@ -6,6 +6,7 @@ export interface WebRuntimeConfig {
   readonly releaseSha: string;
   readonly httpBind: string;
   readonly publicOrigin?: URL;
+  readonly apiUpstream?: URL;
   readonly shutdownGraceMs: number;
   readonly logLevel: WebLogLevel;
   readonly otelEndpoint?: URL;
@@ -16,6 +17,7 @@ const keys = new Set([
   "ADOC_RELEASE_SHA",
   "ADOC_HTTP_BIND",
   "ADOC_PUBLIC_ORIGIN",
+  "ADOC_API_UPSTREAM",
   "ADOC_SHUTDOWN_GRACE",
   "ADOC_LOG_LEVEL",
   "ADOC_OTEL_ENDPOINT",
@@ -37,6 +39,7 @@ export function parseWebRuntimeConfig(
   const releaseSha = required(source, "ADOC_RELEASE_SHA");
   if (releaseSha.trim().length === 0) throw new Error("invalid configuration for ADOC_RELEASE_SHA");
   const publicOrigin = optionalUrl(source.ADOC_PUBLIC_ORIGIN, "ADOC_PUBLIC_ORIGIN");
+  const apiUpstream = optionalUrl(source.ADOC_API_UPSTREAM, "ADOC_API_UPSTREAM");
   if (environment === "production" && publicOrigin?.protocol !== "https:")
     throw new Error("production requires ADOC_PUBLIC_ORIGIN with HTTPS");
   const otelEndpoint = optionalUrl(source.ADOC_OTEL_ENDPOINT, "ADOC_OTEL_ENDPOINT");
@@ -47,6 +50,7 @@ export function parseWebRuntimeConfig(
     releaseSha,
     httpBind: socket(source.ADOC_HTTP_BIND ?? "0.0.0.0:8080"),
     publicOrigin,
+    apiUpstream,
     shutdownGraceMs: duration(source.ADOC_SHUTDOWN_GRACE ?? "30s", 5_000, 120_000),
     logLevel: oneOf(source.ADOC_LOG_LEVEL ?? "info", "ADOC_LOG_LEVEL", [
       "trace",

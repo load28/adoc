@@ -15,3 +15,11 @@ test("SPDX evaluator respects grouped OR and AND precedence", () => {
   assert.equal(isAllowedLicense("(MIT OR Apache-2.0) AND Unicode-3.0", allowed), true);
   assert.equal(isAllowedLicense("(MIT OR Apache-2.0) AND GPL-3.0", allowed), false);
 });
+
+test("repository policy accepts the TLS root data license", () => {
+  assert.equal(isAllowedLicense("CDLA-Permissive-2.0"), true);
+});
+
+test("repository policy accepts the Redis hash dependency license", () => {
+  assert.equal(isAllowedLicense("BSL-1.0"), true);
+});

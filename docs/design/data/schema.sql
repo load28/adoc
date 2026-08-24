@@ -21,7 +21,8 @@ CREATE TYPE job_status AS ENUM ('QUEUED', 'RUNNING', 'CANCEL_REQUESTED', 'SUCCEE
 
 CREATE TABLE users (
   id uuid PRIMARY KEY,
-  google_subject text NOT NULL UNIQUE,
+  identity_issuer text NOT NULL DEFAULT 'https://accounts.google.com',
+  google_subject text NOT NULL,
   email text NOT NULL,
   email_normalized text GENERATED ALWAYS AS (lower(email)) STORED,
   display_name text NOT NULL CHECK (char_length(display_name) BETWEEN 1 AND 200),
@@ -30,20 +31,56 @@ CREATE TABLE users (
   theme text NOT NULL DEFAULT 'SYSTEM' CHECK (theme IN ('LIGHT', 'DARK', 'SYSTEM')),
   revision bigint NOT NULL DEFAULT 0 CHECK (revision >= 0),
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (identity_issuer, google_subject)
 );
 CREATE INDEX users_email_normalized_idx ON users (email_normalized);
 
+CREATE TABLE login_flows (
+  state_hash bytea PRIMARY KEY CHECK (octet_length(state_hash) = 32),
+  marker_hash bytea NOT NULL CHECK (octet_length(marker_hash) = 32),
+  hash_key_id text NOT NULL CHECK (hash_key_id ~ '^[A-Za-z0-9._-]{1,64}$'),
+  nonce_hash bytea NOT NULL CHECK (octet_length(nonce_hash) = 32),
+  pkce_verifier text NOT NULL CHECK (char_length(pkce_verifier) BETWEEN 43 AND 128),
+  return_to text NOT NULL CHECK (char_length(return_to) BETWEEN 1 AND 2048),
+  created_at timestamptz NOT NULL,
+  expires_at timestamptz NOT NULL,
+  consumed_at timestamptz,
+  CHECK (expires_at > created_at),
+  CHECK (consumed_at IS NULL OR consumed_at >= created_at)
+);
+CREATE INDEX login_flows_expiry_idx ON login_flows (expires_at);
+
 CREATE TABLE sessions (
   id_hash bytea PRIMARY KEY CHECK (octet_length(id_hash) = 32),
+  hash_key_id text NOT NULL CHECK (hash_key_id ~ '^[A-Za-z0-9._-]{1,64}$'),
   user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   rotated_from_hash bytea UNIQUE,
-  expires_at timestamptz NOT NULL,
+  last_seen_at timestamptz NOT NULL,
+  idle_expires_at timestamptz NOT NULL,
+  absolute_expires_at timestamptz NOT NULL,
   revoked_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
+  CHECK (last_seen_at >= created_at),
+  CHECK (idle_expires_at >= last_seen_at),
+  CHECK (absolute_expires_at >= idle_expires_at),
   CHECK (revoked_at IS NULL OR revoked_at >= created_at)
 );
-CREATE INDEX sessions_active_user_idx ON sessions (user_id, expires_at) WHERE revoked_at IS NULL;
+CREATE INDEX sessions_active_user_idx ON sessions (user_id, idle_expires_at, absolute_expires_at)
+  WHERE revoked_at IS NULL;
+
+CREATE TABLE user_command_receipts (
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  operation_id text NOT NULL CHECK (char_length(operation_id) BETWEEN 1 AND 100),
+  key text NOT NULL CHECK (char_length(key) BETWEEN 16 AND 128),
+  request_hash text NOT NULL CHECK (request_hash ~ '^[a-f0-9]{64}$'),
+  response_json jsonb,
+  created_at timestamptz NOT NULL,
+  expires_at timestamptz NOT NULL,
+  PRIMARY KEY (user_id, operation_id, key),
+  CHECK (expires_at > created_at)
+);
+CREATE INDEX user_command_receipts_expiry_idx ON user_command_receipts (expires_at);
 
 CREATE TABLE workspaces (
   id uuid PRIMARY KEY,

@@ -11,3 +11,8 @@ layer = "domain"
 
 [dependencies]
 adoc-kernel.workspace = true
+chrono = { version = "0.4.42", features = ["serde"] }
+chrono-tz = "0.10.4"
+serde = { version = "1.0.228", features = ["derive"] }
+thiserror = "2.0.20"
+uuid = { version = "1.25.0", features = ["serde"] }

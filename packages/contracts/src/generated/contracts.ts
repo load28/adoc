@@ -2137,6 +2137,7 @@ export interface Operation__CompleteGoogleLoginRequest {
 export interface Operation__LogoutRequest {
   header: {
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
 }
 export interface Operation__GetUserPreferencesRequest {}
@@ -2144,6 +2145,7 @@ export interface Operation__UpdateUserPreferencesRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     locale: "ko" | "en";

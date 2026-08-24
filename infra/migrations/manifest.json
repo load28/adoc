@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "migrations": [
+    {
+      "file": "0001_canonical_baseline.sql",
+      "sha256": "a123b5c3e585e78b6e872625a3e4b1eea41729f71f46b7b1e26a2e777bb8e3b2"
+    },
+    {
+      "file": "0002_identity_session.sql",
+      "sha256": "9f53b4b2aeeb1490380067f2f700570903e93927f3eb3869050cf15a0fd14d89"
+    },
+    {
+      "file": "0003_user_command_idempotency.sql",
+      "sha256": "0b6abc5d18e191557713264109184e861420b47a5336ce5e217644c182a46c44"
+    }
+  ]
+}

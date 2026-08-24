@@ -48,7 +48,7 @@ paths:
     post:
       tags: [Workspace]
       operationId: logout
-      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       responses:
         '204': {description: Session revoked}
         default: {$ref: '#/components/responses/Problem'}
@@ -62,7 +62,7 @@ paths:
     put:
       tags: [Workspace]
       operationId: updateUserPreferences
-      parameters: [{$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody: {$ref: '#/components/requestBodies/UpdateUserPreferences'}
       responses:
         '200': {description: Preferences, content: {application/json: {schema: {$ref: '#/components/schemas/UserPreferences'}}}}
@@ -954,6 +954,7 @@ components:
     Range: {name: Range, in: header, schema: {type: string, pattern: '^bytes=[0-9]+-[0-9]*$'}}
     IfMatch: {name: If-Match, in: header, required: true, schema: {type: string, pattern: '^"[0-9]+"$'}}
     IdempotencyKey: {name: Idempotency-Key, in: header, required: true, schema: {type: string, minLength: 16, maxLength: 128}}
+    CsrfToken: {name: X-CSRF-Token, in: header, required: true, schema: {type: string, minLength: 43, maxLength: 1024}}
     LeaseToken: {name: X-Edit-Lease, in: header, required: true, schema: {type: string}}
   requestBodies:
     CreateWorkspace:

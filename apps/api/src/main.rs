@@ -9,6 +9,10 @@ use adoc_configuration::{
 use adoc_telemetry::{SafeEvent, TelemetryConfig};
 use axum::{Json, Router, extract::State, http::StatusCode, routing::get};
 
+mod identity_http;
+
+use identity_http::{IdentityRuntime, identity_routes};
+
 #[tokio::main]
 async fn main() -> ExitCode {
     let arguments = std::env::args().skip(1).collect::<Vec<_>>();
@@ -80,6 +84,7 @@ fn check_config() -> ExitCode {
 struct HealthState {
     store: PostgresStore,
     release_sha: Arc<str>,
+    identity: IdentityRuntime,
 }
 
 async fn serve() -> Result<(), Box<dyn std::error::Error>> {
@@ -97,21 +102,27 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     })
     .await?;
     store.preflight().await?;
+    let identity = IdentityRuntime::new(&config, &store).await?;
     let state = HealthState {
         store,
         release_sha: Arc::from(config.common.release_sha.as_str()),
+        identity,
     };
     let app = Router::new()
         .route("/health/live", get(live))
         .route("/health/ready", get(ready))
+        .nest("/api/v1", identity_routes())
         .with_state(state.clone());
     let listener = tokio::net::TcpListener::bind(bind).await?;
     SafeEvent::new(&telemetry, "SERVICE_STARTED")
         .field("environment", format!("{:?}", config.common.environment))
         .emit();
-    axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal())
-        .await?;
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+    )
+    .with_graceful_shutdown(shutdown_signal())
+    .await?;
     state.store.close().await;
     Ok(())
 }

@@ -10,6 +10,7 @@ describe("web runtime configuration", () => {
     const config = parseWebRuntimeConfig(valid);
     expect(config.httpBind).toBe("0.0.0.0:8080");
     expect(config.shutdownGraceMs).toBe(30_000);
+    expect(config.apiUpstream).toBeUndefined();
     expect(Object.isFrozen(config)).toBe(true);
   });
 
@@ -20,6 +21,7 @@ describe("web runtime configuration", () => {
       { ...valid, ADOC_HTTP_BIND: "localhost:8080" },
       { ...valid, ADOC_SHUTDOWN_GRACE: "4s" },
       { ...valid, ADOC_PUBLIC_ORIGIN: "relative" },
+      { ...valid, ADOC_API_UPSTREAM: "relative" },
       { ...valid, ADOC_ENV: "production", ADOC_PUBLIC_ORIGIN: "http://example.com" },
     ];
     for (const source of cases) expect(() => parseWebRuntimeConfig(source)).toThrow();

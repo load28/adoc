@@ -16,8 +16,7 @@ const HASH_B: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 #[tokio::test]
 #[ignore = "requires ADOC_TEST_DATABASE_URL pointing to an isolated PostgreSQL 16 database"]
 async fn postgres_foundation_contract() {
-    let url = env::var("ADOC_TEST_DATABASE_URL")
-        .expect("ADOC_TEST_DATABASE_URL must point to an isolated PostgreSQL 16 database");
+    let url = test_database_url();
     let store = PostgresStore::connect(DatabaseSettings {
         url: &url,
         max_connections: 5,
@@ -30,7 +29,7 @@ async fn postgres_foundation_contract() {
     let ledger_before = migration_ledger(&store).await;
     store.migrate().await.expect("second migration run");
     assert_eq!(migration_ledger(&store).await, ledger_before);
-    assert_eq!(ledger_before.len(), 1);
+    assert_eq!(ledger_before.len(), 3);
     assert_eq!(store.preflight().await.unwrap().server_major_version, 16);
 
     let table_count: i64 = sqlx::query_scalar(
@@ -41,7 +40,7 @@ async fn postgres_foundation_contract() {
     .fetch_one(store.pool())
     .await
     .unwrap();
-    assert_eq!(table_count, 41);
+    assert_eq!(table_count, 43);
 
     let user_id = uuid("018f0000-0000-7000-8000-000000000001");
     let workspace_id = uuid("018f0000-0000-7000-8000-000000000002");
@@ -327,4 +326,13 @@ fn outbox_event(id: Uuid, workspace_id: Uuid, aggregate_id: Uuid) -> OutboxEvent
 
 fn uuid(value: &str) -> Uuid {
     Uuid::parse_str(value).unwrap()
+}
+
+fn test_database_url() -> String {
+    if let Ok(url) = env::var("ADOC_TEST_DATABASE_URL") {
+        return url;
+    }
+    let path = env::var("ADOC_TEST_DATABASE_URL_FILE")
+        .expect("ADOC_TEST_DATABASE_URL or ADOC_TEST_DATABASE_URL_FILE is required");
+    std::fs::read_to_string(path).unwrap().trim().to_owned()
 }

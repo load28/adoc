@@ -13,10 +13,22 @@ layer = "adapters"
 adoc-application.workspace = true
 adoc-ports.workspace = true
 chrono = { version = "0.4.42", features = ["serde"] }
+getrandom = "0.3.4"
+hex = "0.4.3"
+jsonwebtoken = "9.3.1"
+reqwest = { version = "0.12.28", default-features = false, features = ["json", "rustls-tls"] }
+redis = { version = "1.6.0", default-features = false, features = ["connection-manager", "tokio-rustls-comp"] }
+serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
+sha2 = "0.10.9"
 sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio", "tls-rustls-ring-native-roots", "postgres", "migrate", "macros", "uuid", "chrono", "json"] }
+subtle = "2.6.1"
 thiserror = "2.0.20"
-uuid = { version = "1.25.0", features = ["serde"] }
+tokio = { version = "1", features = ["sync", "time"] }
+uuid = { version = "1.25.0", features = ["serde", "v7"] }
 
 [dev-dependencies]
+base64 = "0.22.1"
+rand = "0.8.7"
+rsa = "0.9.10"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
