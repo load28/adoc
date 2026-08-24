@@ -1,3 +1,4 @@
+mod collaboration;
 mod document;
 mod error;
 mod governance;
@@ -9,6 +10,7 @@ mod publishing;
 mod store;
 mod transaction;
 
+pub use collaboration::PostgresCollaborationRepository;
 pub use document::PostgresDocumentRepository;
 pub use governance::PostgresGovernanceRepository;
 pub use idempotency::{

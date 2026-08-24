@@ -9,12 +9,14 @@ use adoc_configuration::{
 use adoc_telemetry::{SafeEvent, TelemetryConfig};
 use axum::{Json, Router, extract::State, http::StatusCode, routing::get};
 
+mod collaboration_http;
 mod document_http;
 mod governance_http;
 mod identity_http;
 mod permission_http;
 mod publishing_http;
 
+use collaboration_http::{CollaborationRuntime, collaboration_routes};
 use document_http::{DocumentRuntime, document_routes};
 use governance_http::{GovernanceRuntime, governance_routes};
 use identity_http::{IdentityRuntime, identity_routes};
@@ -97,6 +99,7 @@ struct HealthState {
     document: DocumentRuntime,
     permission: PermissionRuntime,
     publishing: PublishingRuntime,
+    collaboration: CollaborationRuntime,
 }
 
 async fn serve() -> Result<(), Box<dyn std::error::Error>> {
@@ -119,6 +122,7 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     let permission = PermissionRuntime::new(&config, &store).await?;
     let document = DocumentRuntime::new(&store);
     let publishing = PublishingRuntime::new(&store);
+    let collaboration = CollaborationRuntime::new(&store);
     let state = HealthState {
         store,
         release_sha: Arc::from(config.common.release_sha.as_str()),
@@ -127,6 +131,7 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
         document,
         permission,
         publishing,
+        collaboration,
     };
     let app = Router::new()
         .route("/health/live", get(live))
@@ -137,7 +142,8 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
                 .merge(governance_routes())
                 .merge(document_routes())
                 .merge(permission_routes())
-                .merge(publishing_routes()),
+                .merge(publishing_routes())
+                .merge(collaboration_routes()),
         )
         .merge(public_routes())
         .with_state(state.clone());

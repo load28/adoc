@@ -7,7 +7,7 @@
     "typify": "0.7.0"
   },
   "sources": {
-    "docs/design/api/openapi.yaml": "9df6dfbe7c4de1c6456b3f5ff09f640de53cfc1a170da4bf281f734a2f654126",
+    "docs/design/api/openapi.yaml": "a93d6436e43826008837b77ab6b9acf47acbe2db672495eeb96b582bbe406a63",
     "docs/design/api/asyncapi.yaml": "56010b252cc20f760995d1f4ad5f9f9977604b8822dfebc26f8593b80bf99d08",
     "docs/design/contracts/ai-contracts.schema.json": "b2a2b5c20d34fa7652350a0061e00ed8c3574d719e3fd073d80a3c62dfc43901",
     "docs/design/contracts/document-content.schema.json": "bb8eec6392aaa24c16740cfe5e823add8cb2bb3a925db2def1c15237ed0d0c7c",
@@ -18,6 +18,6 @@
     "openapiOperations": 105,
     "asyncapiOperations": 3,
     "asyncapiMessages": 2,
-    "definitions": 345
+    "definitions": 346
   }
 }

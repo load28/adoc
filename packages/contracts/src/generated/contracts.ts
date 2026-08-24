@@ -101,6 +101,7 @@ export type AdocContractBundle =
   | OpenApi__RichMessage
   | OpenApi__Discussion
   | OpenApi__Message
+  | OpenApi__DiscussionPage
   | OpenApi__DiscussionDetail
   | OpenApi__Review
   | OpenApi__InboxItem
@@ -1030,7 +1031,7 @@ export type Operation__PublishDocumentResponse =
     };
 export type Operation__ListDiscussionsResponse = {
   status: "200";
-  body: OpenApi__Discussion[];
+  body: OpenApi__DiscussionPage;
 };
 export type Operation__CreateDiscussionResponse =
   | {
@@ -1080,7 +1081,7 @@ export type Operation__ReopenDiscussionResponse =
 export type Operation__AddDiscussionTopicResponse =
   | {
       status: "201";
-      body: OpenApi__Topic;
+      body: OpenApi__Discussion;
     }
   | {
       status: "default";
@@ -1929,10 +1930,15 @@ export interface OpenApi__Message {
   id: OpenApi__Id;
   authorId: OpenApi__Id;
   body: DocumentContent;
+  mentionUserIds: OpenApi__Id[];
   revision: number;
   createdAt: string;
   editedAt?: string | null;
   deletedAt?: string | null;
+}
+export interface OpenApi__DiscussionPage {
+  items: OpenApi__Discussion[];
+  nextCursor?: string | null;
 }
 export interface OpenApi__DiscussionDetail {
   discussion: OpenApi__Discussion;
@@ -1957,6 +1963,7 @@ export interface OpenApi__InboxItem {
     | "PERMISSION_CHANGED"
     | "AI_JOB_COMPLETED";
   target: OpenApi__ResourceTarget;
+  revision: number;
   createdAt: string;
   readAt: string | null;
   resolvedAt: string | null;
@@ -2419,6 +2426,9 @@ export interface Operation__GetDocumentRequest {
     workspaceId: OpenApi__Id;
     documentId: OpenApi__Id;
   };
+  query?: {
+    cursor?: string;
+  };
 }
 export interface Operation__UpdateDocumentMetadataRequest {
   path: {
@@ -2734,6 +2744,7 @@ export interface Operation__CreateDiscussionRequest {
   };
   header: {
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     title: string;
@@ -2749,6 +2760,9 @@ export interface Operation__GetDiscussionRequest {
     workspaceId: OpenApi__Id;
     discussionId: OpenApi__Id;
   };
+  query?: {
+    cursor?: string;
+  };
 }
 export interface Operation__UpdateDiscussionRequest {
   path: {
@@ -2758,6 +2772,7 @@ export interface Operation__UpdateDiscussionRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     title: string;
@@ -2771,6 +2786,7 @@ export interface Operation__CloseDiscussionRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     reason: string;
@@ -2784,6 +2800,7 @@ export interface Operation__ReopenDiscussionRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     reason: string;
@@ -2797,6 +2814,7 @@ export interface Operation__AddDiscussionTopicRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: OpenApi__TopicInput;
 }
@@ -2809,6 +2827,7 @@ export interface Operation__RemoveDiscussionTopicRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
 }
 export interface Operation__CreateMessageRequest {
@@ -2818,6 +2837,7 @@ export interface Operation__CreateMessageRequest {
   };
   header: {
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: OpenApi__RichMessage;
 }
@@ -2830,6 +2850,7 @@ export interface Operation__UpdateMessageRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: OpenApi__RichMessage;
 }
@@ -2842,6 +2863,7 @@ export interface Operation__DeleteMessageRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
 }
 export interface Operation__GetReviewRequest {
@@ -2879,6 +2901,7 @@ export interface Operation__MarkInboxItemReadRequest {
   };
   header: {
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
 }
 export interface Operation__MarkAllInboxReadRequest {
@@ -2887,6 +2910,7 @@ export interface Operation__MarkAllInboxReadRequest {
   };
   header: {
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     before: string;
@@ -2899,6 +2923,7 @@ export interface Operation__ResolveInboxItemRequest {
   };
   header: {
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
 }
 export interface Operation__SearchKnowledgeRequest {

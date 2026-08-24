@@ -28,6 +28,10 @@
     {
       "file": "0007_publish_version_public_link.sql",
       "sha256": "5903e6187fada70b4b15c191266e1dbee24654605bd83c26ad69de504c4747f4"
+    },
+    {
+      "file": "0008_discussion_message_inbox.sql",
+      "sha256": "b8f1bc81cde796f664c32d8f22d175fb225de5a8b6053b395e75e89c6e27c6e0"
     }
   ]
 }

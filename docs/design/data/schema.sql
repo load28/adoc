@@ -407,6 +407,7 @@ CREATE TABLE messages (
   discussion_id uuid NOT NULL,
   author_id uuid NOT NULL,
   body_json jsonb NOT NULL,
+  mention_user_ids uuid[] NOT NULL DEFAULT '{}',
   revision bigint NOT NULL DEFAULT 0 CHECK (revision >= 0),
   created_at timestamptz NOT NULL DEFAULT now(),
   edited_at timestamptz,
@@ -420,6 +421,8 @@ CREATE TABLE message_revisions (
   message_id uuid NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
   revision bigint NOT NULL CHECK (revision > 0),
   body_json jsonb NOT NULL,
+  mention_user_ids uuid[] NOT NULL DEFAULT '{}',
+  deleted_at timestamptz,
   edited_by uuid NOT NULL REFERENCES users(id),
   edited_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (message_id, revision)
@@ -466,6 +469,7 @@ CREATE TABLE inbox_items (
   workspace_id uuid NOT NULL,
   user_id uuid NOT NULL,
   kind text NOT NULL,
+  revision bigint NOT NULL DEFAULT 0 CHECK (revision >= 0),
   source_key text NOT NULL,
   target_json jsonb NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -476,6 +480,11 @@ CREATE TABLE inbox_items (
 );
 CREATE INDEX inbox_items_unresolved_idx ON inbox_items (workspace_id, user_id, created_at DESC)
   WHERE resolved_at IS NULL;
+
+CREATE OR REPLACE FUNCTION reject_message_revision_mutation() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN RAISE EXCEPTION 'message revisions are immutable'; END $$;
+CREATE TRIGGER message_revisions_immutable BEFORE UPDATE OR DELETE ON message_revisions
+FOR EACH ROW EXECUTE FUNCTION reject_message_revision_mutation();
 
 CREATE TABLE references_graph (
   id uuid PRIMARY KEY,

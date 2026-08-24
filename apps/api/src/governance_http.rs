@@ -779,6 +779,65 @@ impl From<GovernanceError> for Problem {
                 None,
                 None,
             ),
+            GovernanceError::DiscussionNotFound => (
+                StatusCode::NOT_FOUND,
+                "DISCUSSION_NOT_FOUND",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::DiscussionTargetInvalid => (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "DISCUSSION_TARGET_INVALID",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::DiscussionStateInvalid => (
+                StatusCode::CONFLICT,
+                "DISCUSSION_STATE_INVALID",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::DiscussionClosed => {
+                (StatusCode::CONFLICT, "DISCUSSION_CLOSED", false, None, None)
+            }
+            GovernanceError::DiscussionTopicRequired => (
+                StatusCode::CONFLICT,
+                "DISCUSSION_TOPIC_REQUIRED",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::MessageNotFound => (
+                StatusCode::NOT_FOUND,
+                "MESSAGE_NOT_FOUND",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::MessageEditWindowExpired => (
+                StatusCode::CONFLICT,
+                "MESSAGE_EDIT_WINDOW_EXPIRED",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::MessageStateInvalid => (
+                StatusCode::CONFLICT,
+                "MESSAGE_STATE_INVALID",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::InboxItemNotFound => (
+                StatusCode::NOT_FOUND,
+                "INBOX_ITEM_NOT_FOUND",
+                false,
+                None,
+                None,
+            ),
             GovernanceError::IdempotencyKeyReused => (
                 StatusCode::CONFLICT,
                 "IDEMPOTENCY_KEY_REUSED",

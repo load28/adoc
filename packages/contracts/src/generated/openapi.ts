@@ -1519,6 +1519,7 @@ export interface components {
             id: components["schemas"]["Id"];
             authorId: components["schemas"]["Id"];
             body: components["schemas"]["document-content.schema"];
+            mentionUserIds: components["schemas"]["Id"][];
             revision: number;
             /** Format: date-time */
             createdAt: string;
@@ -1526,6 +1527,10 @@ export interface components {
             editedAt?: string | null;
             /** Format: date-time */
             deletedAt?: string | null;
+        };
+        DiscussionPage: {
+            items: components["schemas"]["Discussion"][];
+            nextCursor?: string | null;
         };
         DiscussionDetail: {
             discussion: components["schemas"]["Discussion"];
@@ -1545,6 +1550,7 @@ export interface components {
             /** @enum {string} */
             kind: "REVIEW_REQUESTED" | "REVIEW_DECIDED" | "MENTIONED" | "DISCUSSION_CHANGED" | "PERMISSION_CHANGED" | "AI_JOB_COMPLETED";
             target: components["schemas"]["ResourceTarget"];
+            revision: number;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -3270,7 +3276,9 @@ export interface operations {
     };
     getDocument: {
         parameters: {
-            query?: never;
+            query?: {
+                cursor?: components["parameters"]["Cursor"];
+            };
             header?: never;
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -4030,7 +4038,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Discussion"][];
+                    "application/json": components["schemas"]["DiscussionPage"];
                 };
             };
         };
@@ -4040,6 +4048,7 @@ export interface operations {
             query?: never;
             header: {
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -4071,7 +4080,9 @@ export interface operations {
     };
     getDiscussion: {
         parameters: {
-            query?: never;
+            query?: {
+                cursor?: components["parameters"]["Cursor"];
+            };
             header?: never;
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -4099,6 +4110,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -4126,6 +4138,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -4153,6 +4166,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -4180,6 +4194,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -4189,13 +4204,13 @@ export interface operations {
         };
         requestBody: components["requestBodies"]["CreateTopic"];
         responses: {
-            /** @description Topic */
+            /** @description Updated discussion */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Topic"];
+                    "application/json": components["schemas"]["Discussion"];
                 };
             };
             default: components["responses"]["Problem"];
@@ -4207,6 +4222,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -4232,6 +4248,7 @@ export interface operations {
             query?: never;
             header: {
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -4259,6 +4276,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -4287,6 +4305,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -4389,6 +4408,7 @@ export interface operations {
             query?: never;
             header: {
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -4415,6 +4435,7 @@ export interface operations {
             query?: never;
             header: {
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -4440,6 +4461,7 @@ export interface operations {
             query?: never;
             header: {
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];

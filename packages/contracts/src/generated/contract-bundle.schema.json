@@ -307,6 +307,9 @@
       "$ref": "#/$defs/OpenApi__Message"
     },
     {
+      "$ref": "#/$defs/OpenApi__DiscussionPage"
+    },
+    {
       "$ref": "#/$defs/OpenApi__DiscussionDetail"
     },
     {
@@ -4306,6 +4309,7 @@
         "id",
         "authorId",
         "body",
+        "mentionUserIds",
         "revision",
         "createdAt"
       ],
@@ -4318,6 +4322,13 @@
         },
         "body": {
           "$ref": "#/$defs/DocumentContent"
+        },
+        "mentionUserIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/OpenApi__Id"
+          }
         },
         "revision": {
           "type": "integer",
@@ -4340,6 +4351,27 @@
             "null"
           ],
           "format": "date-time"
+        }
+      }
+    },
+    "OpenApi__DiscussionPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OpenApi__Discussion"
+          }
+        },
+        "nextCursor": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     },
@@ -4409,6 +4441,7 @@
         "id",
         "kind",
         "target",
+        "revision",
         "createdAt",
         "readAt",
         "resolvedAt"
@@ -4430,6 +4463,10 @@
         },
         "target": {
           "$ref": "#/$defs/OpenApi__ResourceTarget"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0
         },
         "createdAt": {
           "type": "string",
@@ -7526,6 +7563,16 @@
             "workspaceId",
             "documentId"
           ]
+        },
+        "query": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "cursor": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          }
         }
       },
       "required": [
@@ -9843,10 +9890,7 @@
               "const": "200"
             },
             "body": {
-              "type": "array",
-              "items": {
-                "$ref": "#/$defs/OpenApi__Discussion"
-              }
+              "$ref": "#/$defs/OpenApi__DiscussionPage"
             }
           }
         }
@@ -9880,10 +9924,16 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -9974,6 +10024,16 @@
             "workspaceId",
             "discussionId"
           ]
+        },
+        "query": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "cursor": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          }
         }
       },
       "required": [
@@ -10048,11 +10108,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -10144,11 +10210,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -10240,11 +10312,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -10336,11 +10414,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -10367,7 +10451,7 @@
               "const": "201"
             },
             "body": {
-              "$ref": "#/$defs/OpenApi__Topic"
+              "$ref": "#/$defs/OpenApi__Discussion"
             }
           }
         },
@@ -10425,11 +10509,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         }
       },
@@ -10498,10 +10588,16 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -10586,11 +10682,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -10675,11 +10777,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         }
       },
@@ -10981,10 +11089,16 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         }
       },
@@ -11053,10 +11167,16 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -11143,10 +11263,16 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         }
       },

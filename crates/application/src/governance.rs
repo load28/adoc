@@ -818,6 +818,24 @@ pub enum GovernanceError {
     PublicLinkStateInvalid,
     #[error("public link token was already issued")]
     PublicLinkTokenAlreadyIssued,
+    #[error("discussion was not found")]
+    DiscussionNotFound,
+    #[error("discussion target is invalid")]
+    DiscussionTargetInvalid,
+    #[error("discussion state is invalid")]
+    DiscussionStateInvalid,
+    #[error("discussion is closed")]
+    DiscussionClosed,
+    #[error("discussion requires at least one topic")]
+    DiscussionTopicRequired,
+    #[error("message was not found")]
+    MessageNotFound,
+    #[error("message edit window expired")]
+    MessageEditWindowExpired,
+    #[error("message state is invalid")]
+    MessageStateInvalid,
+    #[error("inbox item was not found")]
+    InboxItemNotFound,
     #[error("idempotency key was reused")]
     IdempotencyKeyReused,
     #[error("governance storage is unavailable")]

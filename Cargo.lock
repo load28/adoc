@@ -75,6 +75,10 @@ name = "adoc-collaboration"
 version = "0.1.0"
 dependencies = [
  "adoc-kernel",
+ "chrono",
+ "serde",
+ "serde_json",
+ "uuid",
 ]
 
 [[package]]
