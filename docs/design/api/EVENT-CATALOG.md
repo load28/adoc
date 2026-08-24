@@ -9,7 +9,8 @@
 | GroupChanged | Governance | permission cache·projection | groupId, member delta |
 | PermissionChanged | Governance | Search permission projection, SSE | documentId, affected root, revision |
 | PublishPolicyChanged | Governance | Review policy cache, SSE | documentId, revision, effective policy |
-| DocumentMoved | Document | Search, Reference display, SSE | documentId, before/after parent |
+| DocumentChanged | Document | Search, Reference display, SSE | documentId, action, revision, tree revision |
+| DocumentMoved | Document | Search, Reference display, SSE | documentId, before/after parent, tree revision |
 | DraftChanged | Document | Review invalidator, SSE | documentId, revision, operation IDs |
 | LeaseChanged | Document | SSE | documentId, holder, expiry |
 | VersionPublished | Document | Search, File ref, Inbox, public cache | versionId, number, source revision |

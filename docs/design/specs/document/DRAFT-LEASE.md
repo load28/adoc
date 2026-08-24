@@ -11,14 +11,15 @@ lease token을 요구한다.
 
 ## Lease
 
-lease TTL은 90초, holder heartbeat는 30초다. server time만 사용한다. acquire는 expired row를
-compare-and-swap하고 token hash를 저장한다. browser 여러 tab도 서로 다른 client instance로
-취급한다.
+lease TTL은 90초, holder heartbeat는 30초다. PostgreSQL server time만 사용한다. acquire는 expired
+row를 lock·교체하고 token hash를 저장한다. holder는 userId와 clientInstanceId의 쌍이며 browser 여러
+tab은 서로 다른 client instance다. 원 token은 acquire·force acquire 때 한 번만 반환한다.
 
 ## Takeover
 
-holder가 release하거나 expiry 후 새 사용자가 acquire한다. Manage 강제 takeover는 경고,
-reason과 Audit를 요구하고 기존 holder SSE에 즉시 알린다. lease 상실 뒤 save는
+holder가 release하면 API상 absent가 되지만 persisted lease revision tombstone은 event 순서를 위해 유지한다.
+release 또는 expiry 후 새 client가 acquire한다. Manage 강제 takeover는 경고,
+reason과 Audit 대상 outbox를 요구하고 기존 holder SSE에 즉시 알린다. lease 상실 뒤 save는
 `LEASE_LOST`로 거부한다.
 
 ## Autosave

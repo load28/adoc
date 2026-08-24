@@ -169,6 +169,9 @@
       "$ref": "#/$defs/EventPayloads__entityChanged"
     },
     {
+      "$ref": "#/$defs/EventPayloads__documentChanged"
+    },
+    {
       "$ref": "#/$defs/EventPayloads__documentMoved"
     },
     {
@@ -2742,7 +2745,6 @@
                   "GROUP_CHANGED",
                   "PERMISSION_CHANGED",
                   "PUBLISH_POLICY_CHANGED",
-                  "DOCUMENT_CHANGED",
                   "DISCUSSION_CHANGED",
                   "REVIEW_CHANGED",
                   "INBOX_CHANGED",
@@ -2758,6 +2760,22 @@
             "properties": {
               "payload": {
                 "$ref": "#/$defs/EventPayloads__entityChanged"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "DOCUMENT_CHANGED"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "$ref": "#/$defs/EventPayloads__documentChanged"
               }
             }
           }
@@ -2890,6 +2908,9 @@
           "$ref": "#/$defs/EventPayloads__entityChanged"
         },
         {
+          "$ref": "#/$defs/EventPayloads__documentChanged"
+        },
+        {
           "$ref": "#/$defs/EventPayloads__documentMoved"
         },
         {
@@ -2940,6 +2961,35 @@
         }
       }
     },
+    "EventPayloads__documentChanged": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "documentId",
+        "revision",
+        "treeRevision",
+        "action"
+      ],
+      "properties": {
+        "documentId": {
+          "$ref": "#/$defs/EventPayloads__id"
+        },
+        "revision": {
+          "$ref": "#/$defs/EventPayloads__revision"
+        },
+        "treeRevision": {
+          "$ref": "#/$defs/EventPayloads__revision"
+        },
+        "action": {
+          "enum": [
+            "CREATED",
+            "RENAMED",
+            "TRASHED",
+            "RESTORED"
+          ]
+        }
+      }
+    },
     "EventPayloads__documentMoved": {
       "type": "object",
       "additionalProperties": false,
@@ -2947,7 +2997,8 @@
         "documentId",
         "beforeParentId",
         "afterParentId",
-        "revision"
+        "revision",
+        "treeRevision"
       ],
       "properties": {
         "documentId": {
@@ -2968,6 +3019,9 @@
           "format": "uuid"
         },
         "revision": {
+          "$ref": "#/$defs/EventPayloads__revision"
+        },
+        "treeRevision": {
           "$ref": "#/$defs/EventPayloads__revision"
         }
       }
@@ -3687,10 +3741,13 @@
     },
     "OpenApi__Document": {
       "type": "object",
+      "additionalProperties": false,
       "required": [
         "id",
         "title",
+        "parentId",
         "status",
+        "currentVersionId",
         "revision"
       ],
       "properties": {
@@ -3715,7 +3772,8 @@
           "$ref": "#/$defs/OpenApi__NullableId"
         },
         "revision": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         }
       }
     },
@@ -3836,8 +3894,10 @@
       "required": [
         "id",
         "documentId",
+        "baseVersionId",
         "revision",
         "schemaVersion",
+        "contentFingerprint",
         "content"
       ],
       "properties": {
@@ -3851,10 +3911,16 @@
           "$ref": "#/$defs/OpenApi__NullableId"
         },
         "revision": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "schemaVersion": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 1
+        },
+        "contentFingerprint": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
         },
         "content": {
           "$ref": "#/$defs/DocumentContent"
@@ -3863,9 +3929,10 @@
     },
     "OpenApi__EditLease": {
       "type": "object",
+      "additionalProperties": false,
       "required": [
         "holderUserId",
-        "token",
+        "clientInstanceId",
         "expiresAt",
         "revision"
       ],
@@ -3873,16 +3940,22 @@
         "holderUserId": {
           "$ref": "#/$defs/OpenApi__Id"
         },
+        "clientInstanceId": {
+          "$ref": "#/$defs/OpenApi__Id"
+        },
         "token": {
           "type": "string",
-          "writeOnly": true
+          "writeOnly": true,
+          "minLength": 43,
+          "maxLength": 43
         },
         "expiresAt": {
           "type": "string",
           "format": "date-time"
         },
         "revision": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         }
       }
     },
@@ -3891,18 +3964,32 @@
     },
     "OpenApi__MutationResult": {
       "type": "object",
+      "additionalProperties": false,
       "required": [
         "revision",
-        "appliedOperationIds"
+        "contentFingerprint",
+        "appliedOperationIds",
+        "inverseOperations"
       ],
       "properties": {
         "revision": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 1
+        },
+        "contentFingerprint": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
         },
         "appliedOperationIds": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/OpenApi__Id"
+          }
+        },
+        "inverseOperations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OpenApi__DocumentOperation"
           }
         }
       }
@@ -3994,8 +4081,10 @@
     },
     "OpenApi__MoveDocumentInput": {
       "type": "object",
+      "additionalProperties": false,
       "required": [
-        "newParentId"
+        "newParentId",
+        "afterDocumentId"
       ],
       "properties": {
         "newParentId": {
@@ -4008,6 +4097,7 @@
     },
     "OpenApi__ImpactPreview": {
       "type": "object",
+      "additionalProperties": false,
       "required": [
         "previewToken",
         "permissionChanges",
@@ -4016,13 +4106,17 @@
       ],
       "properties": {
         "previewToken": {
-          "type": "string"
+          "type": "string",
+          "minLength": 43,
+          "maxLength": 43
         },
         "permissionChanges": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "policyChanges": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "expiresAt": {
           "type": "string",
@@ -7183,10 +7277,16 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -7198,7 +7298,7 @@
             "title": {
               "type": "string",
               "minLength": 1,
-              "maxLength": 240
+              "maxLength": 500
             },
             "parentId": {
               "$ref": "#/$defs/OpenApi__NullableId"
@@ -7468,11 +7568,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -7564,11 +7670,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -7660,11 +7772,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -7756,11 +7874,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -7848,10 +7972,16 @@
             "If-Match": {
               "type": "string",
               "pattern": "^\"[0-9]+\"$"
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
-            "If-Match"
+            "If-Match",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -7932,11 +8062,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -8571,10 +8707,16 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         }
       },
@@ -8651,11 +8793,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -8755,12 +8903,22 @@
             },
             "X-Edit-Lease": {
               "type": "string"
+            },
+            "X-Client-Instance": {
+              "$ref": "#/$defs/OpenApi__Id"
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
             "Idempotency-Key",
-            "X-Edit-Lease"
+            "X-Edit-Lease",
+            "X-Client-Instance",
+            "X-CSRF-Token"
           ]
         }
       },
@@ -8836,12 +8994,22 @@
             },
             "X-Edit-Lease": {
               "type": "string"
+            },
+            "X-Client-Instance": {
+              "$ref": "#/$defs/OpenApi__Id"
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
             "Idempotency-Key",
-            "X-Edit-Lease"
+            "X-Edit-Lease",
+            "X-Client-Instance",
+            "X-CSRF-Token"
           ]
         }
       },
@@ -8921,12 +9089,22 @@
             },
             "X-Edit-Lease": {
               "type": "string"
+            },
+            "X-Client-Instance": {
+              "$ref": "#/$defs/OpenApi__Id"
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
             "Idempotency-Key",
-            "X-Edit-Lease"
+            "X-Edit-Lease",
+            "X-Client-Instance",
+            "X-CSRF-Token"
           ]
         },
         "body": {

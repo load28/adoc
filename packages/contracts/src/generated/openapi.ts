@@ -1392,10 +1392,10 @@ export interface components {
         Document: {
             id: components["schemas"]["Id"];
             title: string;
-            parentId?: components["schemas"]["NullableId"];
+            parentId: components["schemas"]["NullableId"];
             /** @enum {string} */
             status: "ACTIVE" | "TRASHED" | "PURGING";
-            currentVersionId?: components["schemas"]["NullableId"];
+            currentVersionId: components["schemas"]["NullableId"];
             revision: number;
         };
         DocumentPage: {
@@ -1422,14 +1422,16 @@ export interface components {
         Draft: {
             id: components["schemas"]["Id"];
             documentId: components["schemas"]["Id"];
-            baseVersionId?: components["schemas"]["NullableId"];
+            baseVersionId: components["schemas"]["NullableId"];
             revision: number;
             schemaVersion: number;
+            contentFingerprint: string;
             content: components["schemas"]["document-content.schema"];
         };
         EditLease: {
             holderUserId: components["schemas"]["Id"];
-            token: string;
+            clientInstanceId: components["schemas"]["Id"];
+            token?: string;
             /** Format: date-time */
             expiresAt: string;
             revision: number;
@@ -1437,7 +1439,9 @@ export interface components {
         DocumentOperation: components["schemas"]["document-operation.schema"];
         MutationResult: {
             revision: number;
+            contentFingerprint: string;
             appliedOperationIds: components["schemas"]["Id"][];
+            inverseOperations: components["schemas"]["document-operation.schema"][];
         };
         PublishedVersion: {
             id: components["schemas"]["Id"];
@@ -1461,7 +1465,7 @@ export interface components {
         };
         MoveDocumentInput: {
             newParentId: components["schemas"]["NullableId"];
-            afterDocumentId?: components["schemas"]["NullableId"];
+            afterDocumentId: components["schemas"]["NullableId"];
         };
         ImpactPreview: {
             previewToken: string;
@@ -2351,6 +2355,7 @@ export interface components {
         IdempotencyKey: string;
         CsrfToken: string;
         LeaseToken: string;
+        ClientInstance: components["schemas"]["Id"];
     };
     requestBodies: {
         CreateWorkspace: {
@@ -3179,6 +3184,7 @@ export interface operations {
             query?: never;
             header: {
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -3285,6 +3291,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -3312,6 +3319,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -3339,6 +3347,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -3366,6 +3375,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -3392,6 +3402,7 @@ export interface operations {
             query?: never;
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -3419,6 +3430,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -3635,6 +3647,7 @@ export interface operations {
             query?: never;
             header: {
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -3662,6 +3675,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -3699,6 +3713,8 @@ export interface operations {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
                 "X-Edit-Lease": components["parameters"]["LeaseToken"];
+                "X-Client-Instance": components["parameters"]["ClientInstance"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -3725,6 +3741,8 @@ export interface operations {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
                 "X-Edit-Lease": components["parameters"]["LeaseToken"];
+                "X-Client-Instance": components["parameters"]["ClientInstance"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -3753,6 +3771,8 @@ export interface operations {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
                 "X-Edit-Lease": components["parameters"]["LeaseToken"];
+                "X-Client-Instance": components["parameters"]["ClientInstance"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];

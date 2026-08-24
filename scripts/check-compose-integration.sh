@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-project=adoc-task015
+project=adoc-task017
 response_file=$(mktemp)
 export ADOC_API_PORT=18081
 export ADOC_WEB_PORT=18080
@@ -53,6 +53,8 @@ docker compose -p "$project" exec -T postgres psql --username postgres --dbname 
 docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
   <infra/migrations/0005_permission_policy_revisions.sql >/dev/null
 docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
+  <infra/migrations/0006_document_tree_draft_lease.sql >/dev/null
+docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
   --tuples-only --no-align --command \
   "SELECT count(*) FROM information_schema.columns WHERE table_name='sessions' AND column_name IN ('hash_key_id','idle_expires_at','absolute_expires_at')" \
   | grep -qx 3
@@ -64,13 +66,22 @@ docker compose -p "$project" exec -T postgres psql --username postgres --dbname 
   --tuples-only --no-align --command \
   "SELECT count(*) FROM information_schema.columns WHERE table_name='documents' AND column_name IN ('permission_revision','policy_revision')" \
   | grep -qx 2
+docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
+  --tuples-only --no-align --command \
+  "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('workspace_document_revisions','document_move_previews')" \
+  | grep -qx 2
+docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
+  --tuples-only --no-align --command \
+  "SELECT count(*) FROM information_schema.columns WHERE table_name='edit_leases' AND column_name IN ('client_instance_id','released_at')" \
+  | grep -qx 2
 docker compose -p "$project" --profile test build test-runner
 docker compose -p "$project" --profile test run --rm test-runner \
-  cargo test --locked -p adoc-adapters --test identity_session -- --ignored --nocapture
-docker compose -p "$project" --profile test run --rm test-runner \
-  cargo test --locked -p adoc-adapters --test workspace_governance -- --ignored --nocapture
-docker compose -p "$project" --profile test run --rm test-runner \
-  cargo test --locked -p adoc-adapters --test permission_policy -- --ignored --nocapture
+  cargo test --locked -p adoc-adapters \
+  --test identity_session \
+  --test workspace_governance \
+  --test permission_policy \
+  --test document_core \
+  -- --ignored --nocapture
 docker compose -p "$project" --profile backup run --rm backup >/dev/null
 docker compose -p "$project" --profile backup run --rm --entrypoint sh backup -c \
   'test -s /backup/latest/manifest.json && cd /backup/latest && sha256sum -c checksums.sha256'

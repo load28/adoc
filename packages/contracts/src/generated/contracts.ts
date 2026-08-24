@@ -56,6 +56,7 @@ export type AdocContractBundle =
   | EventPayloads_Revision
   | EventPayloads_Payload
   | EventPayloads_EntityChanged
+  | EventPayloads_DocumentChanged
   | EventPayloads_DocumentMoved
   | EventPayloads_DraftChanged
   | EventPayloads_LeaseChanged
@@ -515,6 +516,7 @@ export type EventPayloads_Id = string;
 export type EventPayloads_Revision = number;
 export type EventPayloads_Payload =
   | EventPayloads_EntityChanged
+  | EventPayloads_DocumentChanged
   | EventPayloads_DocumentMoved
   | EventPayloads_DraftChanged
   | EventPayloads_LeaseChanged
@@ -1669,11 +1671,18 @@ export interface EventPayloads_EntityChanged {
   revision: EventPayloads_Revision;
   action: "CREATED" | "UPDATED" | "DELETED" | "INVALIDATED" | "RESTORED" | "CLOSED" | "REOPENED";
 }
+export interface EventPayloads_DocumentChanged {
+  documentId: EventPayloads_Id;
+  revision: EventPayloads_Revision;
+  treeRevision: EventPayloads_Revision;
+  action: "CREATED" | "RENAMED" | "TRASHED" | "RESTORED";
+}
 export interface EventPayloads_DocumentMoved {
   documentId: EventPayloads_Id;
   beforeParentId: string | null;
   afterParentId: string | null;
   revision: EventPayloads_Revision;
+  treeRevision: EventPayloads_Revision;
 }
 export interface EventPayloads_DraftChanged {
   documentId: EventPayloads_Id;
@@ -1804,11 +1813,10 @@ export interface OpenApi__PublishPolicy {
 export interface OpenApi__Document {
   id: OpenApi__Id;
   title: string;
-  parentId?: OpenApi__NullableId;
+  parentId: OpenApi__NullableId;
   status: "ACTIVE" | "TRASHED" | "PURGING";
-  currentVersionId?: OpenApi__NullableId;
+  currentVersionId: OpenApi__NullableId;
   revision: number;
-  [k: string]: unknown;
 }
 export interface OpenApi__DocumentPage {
   items: OpenApi__Document[];
@@ -1829,9 +1837,10 @@ export interface OpenApi__JobReference {
 export interface OpenApi__Draft {
   id: OpenApi__Id;
   documentId: OpenApi__Id;
-  baseVersionId?: OpenApi__NullableId;
+  baseVersionId: OpenApi__NullableId;
   revision: number;
   schemaVersion: number;
+  contentFingerprint: string;
   content: DocumentContent;
 }
 export interface OpenApi__PublishedVersion {
@@ -1846,15 +1855,16 @@ export interface OpenApi__PublishedVersion {
 }
 export interface OpenApi__EditLease {
   holderUserId: OpenApi__Id;
-  token: string;
+  clientInstanceId: OpenApi__Id;
+  token?: string;
   expiresAt: string;
   revision: number;
-  [k: string]: unknown;
 }
 export interface OpenApi__MutationResult {
   revision: number;
+  contentFingerprint: string;
   appliedOperationIds: OpenApi__Id[];
-  [k: string]: unknown;
+  inverseOperations: DocumentOperation[];
 }
 export interface OpenApi__VersionPage {
   items: OpenApi__PublishedVersion[];
@@ -1867,15 +1877,13 @@ export interface OpenApi__DocumentDiff {
 }
 export interface OpenApi__MoveDocumentInput {
   newParentId: OpenApi__NullableId;
-  afterDocumentId?: OpenApi__NullableId;
-  [k: string]: unknown;
+  afterDocumentId: OpenApi__NullableId;
 }
 export interface OpenApi__ImpactPreview {
   previewToken: string;
   permissionChanges: number;
   policyChanges: number;
   expiresAt: string;
-  [k: string]: unknown;
 }
 export interface OpenApi__TopicInput {
   kind: "TEXT" | "DOCUMENT" | "REGION" | "EXTERNAL";
@@ -2374,6 +2382,7 @@ export interface Operation__CreateDocumentRequest {
   };
   header: {
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     title: string;
@@ -2409,6 +2418,7 @@ export interface Operation__UpdateDocumentMetadataRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     title: string;
@@ -2422,6 +2432,7 @@ export interface Operation__PurgeDocumentRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     reason: string;
@@ -2435,6 +2446,7 @@ export interface Operation__TrashDocumentRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     reason: string;
@@ -2448,6 +2460,7 @@ export interface Operation__RestoreDocumentRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     parentId: OpenApi__NullableId;
@@ -2461,6 +2474,7 @@ export interface Operation__PreviewDocumentMoveRequest {
   };
   header: {
     "If-Match": string;
+    "X-CSRF-Token": string;
   };
   body: OpenApi__MoveDocumentInput;
 }
@@ -2472,6 +2486,7 @@ export interface Operation__MoveDocumentRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: OpenApi__MoveDocumentInput & {
     previewToken: string;
@@ -2551,6 +2566,7 @@ export interface Operation__CreateOrGetDraftRequest {
   };
   header: {
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
 }
 export interface Operation__AcquireEditLeaseRequest {
@@ -2561,6 +2577,7 @@ export interface Operation__AcquireEditLeaseRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     clientInstanceId: OpenApi__Id;
@@ -2578,6 +2595,8 @@ export interface Operation__ReleaseEditLeaseRequest {
     "If-Match": string;
     "Idempotency-Key": string;
     "X-Edit-Lease": string;
+    "X-Client-Instance": OpenApi__Id;
+    "X-CSRF-Token": string;
   };
 }
 export interface Operation__RenewEditLeaseRequest {
@@ -2589,6 +2608,8 @@ export interface Operation__RenewEditLeaseRequest {
     "If-Match": string;
     "Idempotency-Key": string;
     "X-Edit-Lease": string;
+    "X-Client-Instance": OpenApi__Id;
+    "X-CSRF-Token": string;
   };
 }
 export interface Operation__ApplyDraftOperationsRequest {
@@ -2600,6 +2621,8 @@ export interface Operation__ApplyDraftOperationsRequest {
     "If-Match": string;
     "Idempotency-Key": string;
     "X-Edit-Lease": string;
+    "X-Client-Instance": OpenApi__Id;
+    "X-CSRF-Token": string;
   };
   body: {
     /**

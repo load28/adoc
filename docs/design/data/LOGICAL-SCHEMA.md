@@ -30,9 +30,11 @@ subject는 active Membership만 허용하도록 deferred constraint trigger로 �
 | Table | 핵심 column | constraint·index |
 |---|---|---|
 | documents | id, workspace_id, parent_id, rank, title, status, current_version_id, revision, permission_revision, policy_revision, trashed_at, purge_after | tree identity·local policy concurrency |
+| workspace_document_revisions | workspace_id, tree_revision, updated_at | tree query watermark |
+| document_move_previews | token_hash, workspace_id, actor_user_id, document_id, claims_json, expires_at | one-time move capability |
 | workspace_access_revisions | workspace_id, permission_revision, policy_revision, updated_at | cache·projection stamp |
 | drafts | id, workspace_id, document_id, base_version_id, content_json, schema_version, revision, updated_by | unique active document |
-| edit_leases | document_id, holder_user_id, token_hash, expires_at, revision | PK document_id |
+| edit_leases | document_id, holder_user_id, client_instance_id, token_hash, expires_at, released_at, revision | PK document_id, inactive tombstone 유지 |
 | published_versions | id, workspace_id, document_id, number, content_json, schema_version, publisher_id, published_at, summary | unique document+number |
 | version_context | version_id, review_snapshot_json, discussion_ids, source_revision | PK version_id |
 | public_links | id, workspace_id, document_id, token_hash, expires_at, revoked_at, created_by | token unique |

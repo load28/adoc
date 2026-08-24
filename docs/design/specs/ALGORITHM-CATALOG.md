@@ -27,8 +27,8 @@ fingerprint를 포함하며 Permission·Group·move event가 fingerprint를 무�
 
 transaction에서 Document와 old/new parent를 UUID 순으로 lock한다. recursive CTE로 new parent의
 ancestor에 target이 있는지 검사한다. preview token의 document revision, new parent, sibling
-anchors, permission/policy fingerprints와 expiry를 검증한다. rank는 두 anchor 사이 fractional
-lexical rank를 만들고 공간이 없을 때 같은 parent sibling만 deterministic rebalance한다. unique
+anchors, permission/policy fingerprints와 expiry를 검증한다. rank는 C collation의 고정 32자리
+base-62 두 anchor 사이 midpoint를 만들고 공간이 없을 때 같은 parent sibling만 deterministic rebalance한다. unique
 충돌은 transaction을 다시 읽어 최대 3회 재계산한다.
 
 ## ALG-003 Operation apply

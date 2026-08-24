@@ -1,3 +1,4 @@
+mod document;
 mod error;
 mod governance;
 mod idempotency;
@@ -7,6 +8,7 @@ mod permission;
 mod store;
 mod transaction;
 
+pub use document::PostgresDocumentRepository;
 pub use governance::PostgresGovernanceRepository;
 pub use idempotency::{
     IdempotencyDecision, IdempotencyError, IdempotencyIdentity, IdempotencyReservation,

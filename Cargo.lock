@@ -122,6 +122,7 @@ name = "adoc-document"
 version = "0.1.0"
 dependencies = [
  "adoc-kernel",
+ "chrono",
  "hex",
  "serde",
  "serde_json",

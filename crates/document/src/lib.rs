@@ -5,6 +5,7 @@
 mod content;
 mod model;
 mod reducer;
+mod tree;
 
 pub use content::{ValidatedContent, canonical_hash, normalize_content};
 pub use model::{
@@ -14,3 +15,7 @@ pub use model::{
     TextAnchor,
 };
 pub use reducer::{apply_operations, reanchor_region};
+pub use tree::{
+    Document, DocumentStatus, DocumentTitle, Draft, EditLease, LeaseDecision, TreeRank,
+    TreeValidationError, validate_lease_acquire, validate_lease_holder,
+};

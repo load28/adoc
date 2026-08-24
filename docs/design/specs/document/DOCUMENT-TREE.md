@@ -16,14 +16,15 @@ commit은 token hash와 expected document revision을 요구한다.
 
 ## Ordering
 
-lexicographic fractional rank를 사용한다. rank 길이 threshold를 넘으면 sibling set만
-background rebalance하며 사용자 의미 event를 만들지 않는다. concurrent reorder는 expected
-parent revision conflict로 재시도한다.
+ASCII base-62 고정 32자리 fractional rank와 PostgreSQL `C` collation을 사용한다. 두 anchor 사이
+정수 midpoint 공간이 없으면 destination sibling set만 transaction 안에서 균등 rebalance하며 사용자
+의미 event·Document revision을 만들지 않는다. concurrent reorder는 새 snapshot으로 최대 3회 재시도한다.
 
 ## Trash
 
-subtree는 논리적으로 함께 숨기되 각 child status를 즉시 rewrite하지 않고 trashed ancestor를
-query한다. restore는 원 parent가 없으면 접근 가능한 root destination을 명시하게 한다.
+command target만 명시적 TRASHED root로 기록하고 subtree는 trashed ancestor CTE로 함께 숨긴다.
+중첩된 명시적 TRASHED descendant는 ancestor restore로 복원하지 않는다. restore는 원 parent가
+effective active가 아니면 접근 가능한 root destination을 명시하게 한다.
 
 ## Public link
 

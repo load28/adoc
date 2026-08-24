@@ -301,7 +301,8 @@ async fn seed_document(
     creator: Uuid,
     rank: &str,
 ) {
-    sqlx::query("INSERT INTO documents(id,workspace_id,parent_id,rank,title,created_by) VALUES($1,$2,$3,$4,$5,$6)").bind(id).bind(workspace).bind(parent).bind(rank).bind(format!("Document {rank}")).bind(creator).execute(store.pool()).await.unwrap();
+    let canonical_rank = format!("{rank:0>32}");
+    sqlx::query("INSERT INTO documents(id,workspace_id,parent_id,rank,title,created_by) VALUES($1,$2,$3,$4,$5,$6)").bind(id).bind(workspace).bind(parent).bind(canonical_rank).bind(format!("Document {rank}")).bind(creator).execute(store.pool()).await.unwrap();
 }
 async fn seed_group(store: &PostgresStore, workspace: Uuid, name: &str, members: &[Uuid]) -> Uuid {
     let id = Uuid::now_v7();

@@ -231,7 +231,7 @@ paths:
     post:
       tags: [Document]
       operationId: createDocument
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody:
         required: true
         content:
@@ -240,7 +240,7 @@ paths:
               type: object
               required: [title]
               properties:
-                title: {type: string, minLength: 1, maxLength: 240}
+                title: {type: string, minLength: 1, maxLength: 500}
                 parentId: {$ref: '#/components/schemas/NullableId'}
                 afterDocumentId: {$ref: '#/components/schemas/NullableId'}
       responses:
@@ -273,7 +273,7 @@ paths:
     put:
       tags: [Document]
       operationId: updateDocumentMetadata
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody: {$ref: '#/components/requestBodies/UpdateDocumentMetadata'}
       responses:
         '200': {description: Updated, content: {application/json: {schema: {$ref: '#/components/schemas/Document'}}}}
@@ -281,7 +281,7 @@ paths:
     delete:
       tags: [Document]
       operationId: purgeDocument
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody: {$ref: '#/components/requestBodies/Reason'}
       responses:
         '202': {description: Purge accepted, content: {application/json: {schema: {$ref: '#/components/schemas/JobReference'}}}}
@@ -290,7 +290,7 @@ paths:
     post:
       tags: [Document]
       operationId: trashDocument
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody: {$ref: '#/components/requestBodies/Reason'}
       responses:
         '200': {description: Trashed, content: {application/json: {schema: {$ref: '#/components/schemas/Document'}}}}
@@ -299,7 +299,7 @@ paths:
     post:
       tags: [Document]
       operationId: restoreDocument
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody: {$ref: '#/components/requestBodies/RestoreDocument'}
       responses:
         '200': {description: Restored, content: {application/json: {schema: {$ref: '#/components/schemas/Document'}}}}
@@ -308,7 +308,7 @@ paths:
     post:
       tags: [Document]
       operationId: previewDocumentMove
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody: {$ref: '#/components/requestBodies/MoveDocument'}
       responses:
         '200': {description: Impact, content: {application/json: {schema: {$ref: '#/components/schemas/ImpactPreview'}}}}
@@ -317,7 +317,7 @@ paths:
     post:
       tags: [Document]
       operationId: moveDocument
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody:
         required: true
         content: {application/json: {schema: {allOf: [{$ref: '#/components/schemas/MoveDocumentInput'}, {type: object, required: [previewToken], properties: {previewToken: {type: string}}}]}}}
@@ -389,7 +389,7 @@ paths:
     post:
       tags: [Document]
       operationId: createOrGetDraft
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       responses:
         '200': {description: Draft, content: {application/json: {schema: {$ref: '#/components/schemas/Draft'}}}}
         default: {$ref: '#/components/responses/Problem'}
@@ -397,7 +397,7 @@ paths:
     post:
       tags: [Document]
       operationId: acquireEditLease
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody:
         required: true
         content: {application/json: {schema: {type: object, required: [clientInstanceId], properties: {clientInstanceId: {$ref: '#/components/schemas/Id'}, force: {type: boolean, default: false}, reason: {type: string, maxLength: 500}}}}}
@@ -407,7 +407,7 @@ paths:
     delete:
       tags: [Document]
       operationId: releaseEditLease
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/LeaseToken'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/LeaseToken'}, {$ref: '#/components/parameters/ClientInstance'}, {$ref: '#/components/parameters/CsrfToken'}]
       responses:
         '204': {description: Released}
         default: {$ref: '#/components/responses/Problem'}
@@ -415,7 +415,7 @@ paths:
     post:
       tags: [Document]
       operationId: renewEditLease
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/LeaseToken'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/LeaseToken'}, {$ref: '#/components/parameters/ClientInstance'}, {$ref: '#/components/parameters/CsrfToken'}]
       responses:
         '200': {description: Renewed, content: {application/json: {schema: {$ref: '#/components/schemas/EditLease'}}}}
         default: {$ref: '#/components/responses/Problem'}
@@ -423,7 +423,7 @@ paths:
     post:
       tags: [Document]
       operationId: applyDraftOperations
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/LeaseToken'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/LeaseToken'}, {$ref: '#/components/parameters/ClientInstance'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody:
         required: true
         content: {application/json: {schema: {type: object, required: [operations], properties: {operations: {type: array, minItems: 1, items: {$ref: '#/components/schemas/DocumentOperation'}}}}}}
@@ -958,6 +958,7 @@ components:
     IdempotencyKey: {name: Idempotency-Key, in: header, required: true, schema: {type: string, minLength: 16, maxLength: 128}}
     CsrfToken: {name: X-CSRF-Token, in: header, required: true, schema: {type: string, minLength: 43, maxLength: 1024}}
     LeaseToken: {name: X-Edit-Lease, in: header, required: true, schema: {type: string}}
+    ClientInstance: {name: X-Client-Instance, in: header, required: true, schema: {$ref: '#/components/schemas/Id'}}
   requestBodies:
     CreateWorkspace:
       required: true
@@ -1042,21 +1043,21 @@ components:
     PermissionExplanation: {type: object, additionalProperties: false, required: [effective, steps, fingerprint], properties: {effective: {$ref: '#/components/schemas/EffectivePermission'}, steps: {type: array, items: {type: object, additionalProperties: false, required: [documentId, decision], properties: {documentId: {$ref: '#/components/schemas/Id'}, decision: {type: string, enum: [NO_GRANT, USER_GRANT, GROUP_DENY, GROUP_MAX, INHERITED]}}}}, fingerprint: {type: string, pattern: '^[a-f0-9]{64}$'}}}
     ReviewerRule: {oneOf: [{type: object, additionalProperties: false, required: [kind], properties: {kind: {const: ANY_EDITOR}}}, {type: object, additionalProperties: false, required: [kind, userIds], properties: {kind: {const: USERS}, userIds: {type: array, minItems: 1, items: {$ref: '#/components/schemas/Id'}}}}, {type: object, additionalProperties: false, required: [kind, groupIds], properties: {kind: {const: GROUPS}, groupIds: {type: array, minItems: 1, items: {$ref: '#/components/schemas/Id'}}}}]}
     PublishPolicy: {type: object, additionalProperties: false, required: [documentId, mode, requiredApprovals, reviewerRule, inheritedFromDocumentId, revision], properties: {documentId: {$ref: '#/components/schemas/Id'}, mode: {type: string, enum: [DIRECT, REVIEW_REQUIRED]}, requiredApprovals: {type: integer, minimum: 0, maximum: 20}, reviewerRule: {$ref: '#/components/schemas/ReviewerRule'}, inheritedFromDocumentId: {$ref: '#/components/schemas/NullableId'}, revision: {type: integer, minimum: 0}}}
-    Document: {type: object, required: [id, title, status, revision], properties: {id: {$ref: '#/components/schemas/Id'}, title: {type: string}, parentId: {$ref: '#/components/schemas/NullableId'}, status: {type: string, enum: [ACTIVE, TRASHED, PURGING]}, currentVersionId: {$ref: '#/components/schemas/NullableId'}, revision: {type: integer}}}
+    Document: {type: object, additionalProperties: false, required: [id, title, parentId, status, currentVersionId, revision], properties: {id: {$ref: '#/components/schemas/Id'}, title: {type: string}, parentId: {$ref: '#/components/schemas/NullableId'}, status: {type: string, enum: [ACTIVE, TRASHED, PURGING]}, currentVersionId: {$ref: '#/components/schemas/NullableId'}, revision: {type: integer, minimum: 0}}}
     DocumentPage: {type: object, additionalProperties: false, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/Document'}}, nextCursor: {type: [string, 'null']}}}
     DocumentTree: {type: object, additionalProperties: false, required: [nodes, watermark], properties: {nodes: {type: array, items: {$ref: '#/components/schemas/DocumentTreeNode'}}, watermark: {type: integer, minimum: 0}}}
     DocumentTreeNode: {type: object, additionalProperties: false, required: [document, children], properties: {document: {$ref: '#/components/schemas/Document'}, children: {type: array, items: {$ref: '#/components/schemas/DocumentTreeNode'}}}}
     JobReference: {type: object, additionalProperties: false, required: [jobId, status], properties: {jobId: {$ref: '#/components/schemas/Id'}, status: {type: string, enum: [QUEUED]}}}
     DocumentDetail: {allOf: [{$ref: '#/components/schemas/Document'}, {type: object, properties: {draft: {oneOf: [{$ref: '#/components/schemas/Draft'}, {type: 'null'}]}, publishedVersion: {oneOf: [{$ref: '#/components/schemas/PublishedVersion'}, {type: 'null'}]}}}]}
-    Draft: {type: object, additionalProperties: false, required: [id, documentId, revision, schemaVersion, content], properties: {id: {$ref: '#/components/schemas/Id'}, documentId: {$ref: '#/components/schemas/Id'}, baseVersionId: {$ref: '#/components/schemas/NullableId'}, revision: {type: integer}, schemaVersion: {type: integer}, content: {$ref: '../contracts/document-content.schema.json'}}}
-    EditLease: {type: object, required: [holderUserId, token, expiresAt, revision], properties: {holderUserId: {$ref: '#/components/schemas/Id'}, token: {type: string, writeOnly: true}, expiresAt: {type: string, format: date-time}, revision: {type: integer}}}
+    Draft: {type: object, additionalProperties: false, required: [id, documentId, baseVersionId, revision, schemaVersion, contentFingerprint, content], properties: {id: {$ref: '#/components/schemas/Id'}, documentId: {$ref: '#/components/schemas/Id'}, baseVersionId: {$ref: '#/components/schemas/NullableId'}, revision: {type: integer, minimum: 0}, schemaVersion: {type: integer, minimum: 1}, contentFingerprint: {type: string, pattern: '^[a-f0-9]{64}$'}, content: {$ref: '../contracts/document-content.schema.json'}}}
+    EditLease: {type: object, additionalProperties: false, required: [holderUserId, clientInstanceId, expiresAt, revision], properties: {holderUserId: {$ref: '#/components/schemas/Id'}, clientInstanceId: {$ref: '#/components/schemas/Id'}, token: {type: string, writeOnly: true, minLength: 43, maxLength: 43}, expiresAt: {type: string, format: date-time}, revision: {type: integer, minimum: 0}}}
     DocumentOperation: {$ref: '../contracts/document-operation.schema.json'}
-    MutationResult: {type: object, required: [revision, appliedOperationIds], properties: {revision: {type: integer}, appliedOperationIds: {type: array, items: {$ref: '#/components/schemas/Id'}}}}
+    MutationResult: {type: object, additionalProperties: false, required: [revision, contentFingerprint, appliedOperationIds, inverseOperations], properties: {revision: {type: integer, minimum: 1}, contentFingerprint: {type: string, pattern: '^[a-f0-9]{64}$'}, appliedOperationIds: {type: array, items: {$ref: '#/components/schemas/Id'}}, inverseOperations: {type: array, items: {$ref: '#/components/schemas/DocumentOperation'}}}}
     PublishedVersion: {type: object, additionalProperties: false, required: [id, documentId, number, publishedAt, publisherId, schemaVersion, content], properties: {id: {$ref: '#/components/schemas/Id'}, documentId: {$ref: '#/components/schemas/Id'}, number: {type: integer, minimum: 1}, publishedAt: {type: string, format: date-time}, publisherId: {$ref: '#/components/schemas/Id'}, schemaVersion: {type: integer}, content: {$ref: '../contracts/document-content.schema.json'}, summary: {type: string}}}
     VersionPage: {type: object, additionalProperties: false, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/PublishedVersion'}}, nextCursor: {type: [string, 'null']}}}
     DocumentDiff: {type: object, additionalProperties: false, required: [fromVersionId, toVersionId, operations], properties: {fromVersionId: {$ref: '#/components/schemas/Id'}, toVersionId: {$ref: '#/components/schemas/Id'}, operations: {type: array, items: {$ref: '../contracts/document-operation.schema.json'}}}}
-    MoveDocumentInput: {type: object, required: [newParentId], properties: {newParentId: {$ref: '#/components/schemas/NullableId'}, afterDocumentId: {$ref: '#/components/schemas/NullableId'}}}
-    ImpactPreview: {type: object, required: [previewToken, permissionChanges, policyChanges, expiresAt], properties: {previewToken: {type: string}, permissionChanges: {type: integer}, policyChanges: {type: integer}, expiresAt: {type: string, format: date-time}}}
+    MoveDocumentInput: {type: object, additionalProperties: false, required: [newParentId, afterDocumentId], properties: {newParentId: {$ref: '#/components/schemas/NullableId'}, afterDocumentId: {$ref: '#/components/schemas/NullableId'}}}
+    ImpactPreview: {type: object, additionalProperties: false, required: [previewToken, permissionChanges, policyChanges, expiresAt], properties: {previewToken: {type: string, minLength: 43, maxLength: 43}, permissionChanges: {type: integer, minimum: 0}, policyChanges: {type: integer, minimum: 0}, expiresAt: {type: string, format: date-time}}}
     TopicInput: {type: object, additionalProperties: false, required: [kind, label], properties: {kind: {type: string, enum: [TEXT, DOCUMENT, REGION, EXTERNAL]}, label: {type: string, minLength: 1, maxLength: 500}, text: {type: string, maxLength: 5000}, targetId: {$ref: '#/components/schemas/NullableId'}, region: {$ref: '../contracts/document-operation.schema.json#/$defs/region'}, url: {type: string, format: uri, maxLength: 2048}}}
     Topic: {type: object, additionalProperties: false, required: [id, kind, label, rank], properties: {id: {$ref: '#/components/schemas/Id'}, kind: {type: string, enum: [TEXT, DOCUMENT, REGION, EXTERNAL]}, label: {type: string}, rank: {type: string}, text: {type: string}, targetId: {$ref: '#/components/schemas/NullableId'}, region: {$ref: '../contracts/document-operation.schema.json#/$defs/region'}, url: {type: string, format: uri}}}
     RichMessage: {type: object, additionalProperties: false, required: [body], properties: {body: {$ref: '../contracts/document-content.schema.json'}, mentionUserIds: {type: array, uniqueItems: true, items: {$ref: '#/components/schemas/Id'}}, attachmentIds: {type: array, uniqueItems: true, items: {$ref: '#/components/schemas/Id'}}}}

@@ -758,6 +758,34 @@ pub enum GovernanceError {
     GroupMemberNotFound,
     #[error("document was not found")]
     DocumentNotFound,
+    #[error("document parent is invalid")]
+    DocumentParentInvalid,
+    #[error("document tree would contain a cycle")]
+    DocumentTreeCycle,
+    #[error("document sibling rank conflicts")]
+    DocumentRankConflict,
+    #[error("document state is invalid")]
+    DocumentStateInvalid,
+    #[error("document is effectively trashed")]
+    DocumentEffectivelyTrashed,
+    #[error("document move preview is stale")]
+    MovePreviewStale,
+    #[error("draft was not found")]
+    DraftNotFound,
+    #[error("draft already exists")]
+    DraftExists,
+    #[error("document operation precondition failed")]
+    OperationPreconditionFailed,
+    #[error("edit lease is held")]
+    EditLeaseHeld { expires_at: DateTime<Utc> },
+    #[error("edit lease is invalid")]
+    EditLeaseInvalid,
+    #[error("edit lease expired")]
+    EditLeaseExpired,
+    #[error("operation has no effect")]
+    NoEffect,
+    #[error("required domain dependency is unavailable")]
+    DependencyUnavailable,
     #[error("document permission is denied")]
     PermissionDenied,
     #[error("permission subject is invalid")]

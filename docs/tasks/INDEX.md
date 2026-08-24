@@ -20,7 +20,8 @@
 | TASK-014 | Workspace·Membership·Group 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-014](TASK-014-workspace-membership-group.md) |
 | TASK-015 | Permission·PublishPolicy 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-015](TASK-015-permission-publish-policy.md) |
 | TASK-016 | Content·Operation reducer 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-016](TASK-016-content-operation-reducer.md) |
+| TASK-017 | Document Tree·Draft·Lease 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-017](TASK-017-document-tree-draft-lease.md) |
 
 ## 다음 태스크 번호
 
-**TASK-017**
+**TASK-018**

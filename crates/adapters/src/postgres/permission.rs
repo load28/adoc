@@ -323,7 +323,7 @@ async fn access_stamp_tx(
     })
 }
 
-async fn point_snapshot_tx(
+pub(super) async fn point_snapshot_tx(
     tx: &mut Transaction<'_, Postgres>,
     user_id: Uuid,
     workspace_id: Uuid,
@@ -381,7 +381,7 @@ async fn group_snapshot_tx(
     })
 }
 
-async fn scope_snapshot_tx(
+pub(super) async fn scope_snapshot_tx(
     tx: &mut Transaction<'_, Postgres>,
     user_id: Uuid,
     workspace_id: Uuid,

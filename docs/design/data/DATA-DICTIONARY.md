@@ -12,13 +12,13 @@
 | revision | bigint | 0 이상, 성공 mutation마다 +1 |
 | created_at/updated_at | timestamptz | server UTC |
 | status | enum | 정의된 transition만 허용 |
-| rank | text | sibling lexical ordering, rebalance 가능 |
+| rank | text COLLATE C | 32자리 base-62 sibling ordering, midpoint 고갈 시 rebalance |
 | schema_version | integer | serialized payload reader 선택 |
 | token_hash | bytea | 원 token 미저장, constant-time compare |
 
 ## Content
 
-`content_json`은 `{schemaVersion, root:{type:'doc', children}, blockIndex}` 구조다. Block ID는
+`content_json`은 `{schemaVersion, root:{type:'doc', children}}` 구조다. Block ID는
 UUIDv7 string이고 document 안에서 unique다. text mark는 allowlisted kind와 validated attr만
 가진다. 최대 크기와 node depth는 shared ContentLimits로 검증한다.
 

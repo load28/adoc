@@ -588,6 +588,86 @@ impl From<GovernanceError> for Problem {
                 None,
                 None,
             ),
+            GovernanceError::DocumentParentInvalid => (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "DOCUMENT_PARENT_INVALID",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::DocumentTreeCycle => (
+                StatusCode::CONFLICT,
+                "DOCUMENT_TREE_CYCLE",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::DocumentRankConflict => (
+                StatusCode::CONFLICT,
+                "DOCUMENT_RANK_CONFLICT",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::DocumentStateInvalid => (
+                StatusCode::CONFLICT,
+                "DOCUMENT_STATE_INVALID",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::DocumentEffectivelyTrashed => (
+                StatusCode::CONFLICT,
+                "DOCUMENT_EFFECTIVELY_TRASHED",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::MovePreviewStale => (
+                StatusCode::CONFLICT,
+                "MOVE_PREVIEW_STALE",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::DraftNotFound => {
+                (StatusCode::NOT_FOUND, "DRAFT_NOT_FOUND", false, None, None)
+            }
+            GovernanceError::DraftExists => {
+                (StatusCode::CONFLICT, "DRAFT_EXISTS", false, None, None)
+            }
+            GovernanceError::OperationPreconditionFailed => (
+                StatusCode::CONFLICT,
+                "OPERATION_PRECONDITION_FAILED",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::EditLeaseHeld { .. } => {
+                (StatusCode::LOCKED, "EDIT_LEASE_HELD", false, None, None)
+            }
+            GovernanceError::EditLeaseInvalid => (
+                StatusCode::CONFLICT,
+                "EDIT_LEASE_INVALID",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::EditLeaseExpired => (
+                StatusCode::CONFLICT,
+                "EDIT_LEASE_EXPIRED",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::NoEffect => (StatusCode::CONFLICT, "NO_EFFECT", false, None, None),
+            GovernanceError::DependencyUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "DEPENDENCY_UNAVAILABLE",
+                true,
+                None,
+                None,
+            ),
             GovernanceError::PermissionDenied => (
                 StatusCode::FORBIDDEN,
                 "PERMISSION_DENIED",

@@ -9,10 +9,12 @@ use adoc_configuration::{
 use adoc_telemetry::{SafeEvent, TelemetryConfig};
 use axum::{Json, Router, extract::State, http::StatusCode, routing::get};
 
+mod document_http;
 mod governance_http;
 mod identity_http;
 mod permission_http;
 
+use document_http::{DocumentRuntime, document_routes};
 use governance_http::{GovernanceRuntime, governance_routes};
 use identity_http::{IdentityRuntime, identity_routes};
 use permission_http::{PermissionRuntime, permission_routes};
@@ -90,6 +92,7 @@ struct HealthState {
     release_sha: Arc<str>,
     identity: IdentityRuntime,
     governance: GovernanceRuntime,
+    document: DocumentRuntime,
     permission: PermissionRuntime,
 }
 
@@ -111,11 +114,13 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     let identity = IdentityRuntime::new(&config, &store).await?;
     let governance = GovernanceRuntime::new(&config, &store)?;
     let permission = PermissionRuntime::new(&config, &store).await?;
+    let document = DocumentRuntime::new(&store);
     let state = HealthState {
         store,
         release_sha: Arc::from(config.common.release_sha.as_str()),
         identity,
         governance,
+        document,
         permission,
     };
     let app = Router::new()
@@ -125,6 +130,7 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
             "/api/v1",
             identity_routes()
                 .merge(governance_routes())
+                .merge(document_routes())
                 .merge(permission_routes()),
         )
         .with_state(state.clone());

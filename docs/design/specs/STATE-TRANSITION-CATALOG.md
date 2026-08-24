@@ -19,8 +19,8 @@
 | Membership | ACTIVE | suspend | SUSPENDED | last Owner 아님 | lease 취소·permission invalidation |
 | Membership | ACTIVE/SUSPENDED | remove | REMOVED | last Owner 아님 | group 제거·lease 취소 |
 | Document | — | create | ACTIVE | parent Contributor | empty identity |
-| Document | ACTIVE | trash | TRASHED | Editor | subtree timestamps·review invalidation |
-| Document | TRASHED | restore | ACTIVE | Editor, valid parent | subtree status·projection upsert |
+| Document | ACTIVE | trash | TRASHED | Editor | root timestamp·descendant lease 종료·review invalidation |
+| Document | TRASHED | restore | ACTIVE | Editor, valid parent | root status·projection upsert |
 | Document | TRASHED | purge start | PURGING | retention/Admin Manage | purge ledger·tombstone event |
 | Document | PURGING | purge complete | row removed | refs·versions·files 처리 | minimal Audit tombstone |
 

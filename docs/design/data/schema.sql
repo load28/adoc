@@ -194,7 +194,7 @@ CREATE TABLE documents (
   id uuid NOT NULL,
   workspace_id uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
   parent_id uuid,
-  rank text NOT NULL CHECK (char_length(rank) BETWEEN 1 AND 255),
+  rank text COLLATE "C" NOT NULL CHECK (rank ~ '^[0-9A-Za-z]{32}$'),
   title text NOT NULL CHECK (char_length(title) BETWEEN 1 AND 500),
   status document_status NOT NULL DEFAULT 'ACTIVE',
   current_version_id uuid,
@@ -217,6 +217,37 @@ CREATE TABLE documents (
 );
 CREATE UNIQUE INDEX documents_sibling_rank_idx ON documents (workspace_id, parent_id, rank) WHERE status <> 'PURGING';
 CREATE INDEX documents_tree_idx ON documents (workspace_id, parent_id, status, rank);
+
+CREATE TABLE workspace_document_revisions (
+  workspace_id uuid PRIMARY KEY REFERENCES workspaces(id) ON DELETE CASCADE,
+  tree_revision bigint NOT NULL DEFAULT 0 CHECK (tree_revision >= 0),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE FUNCTION initialize_workspace_document_revision() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  INSERT INTO workspace_document_revisions(workspace_id) VALUES(NEW.id);
+  RETURN NEW;
+END;
+$$;
+CREATE TRIGGER workspace_document_revision_initialize
+  AFTER INSERT ON workspaces
+  FOR EACH ROW EXECUTE FUNCTION initialize_workspace_document_revision();
+
+CREATE TABLE document_move_previews (
+  token_hash bytea PRIMARY KEY CHECK (octet_length(token_hash) = 32),
+  workspace_id uuid NOT NULL,
+  actor_user_id uuid NOT NULL,
+  document_id uuid NOT NULL,
+  claims_json jsonb NOT NULL,
+  expires_at timestamptz NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  FOREIGN KEY (workspace_id, actor_user_id) REFERENCES memberships(workspace_id, user_id) ON DELETE CASCADE,
+  FOREIGN KEY (workspace_id, document_id) REFERENCES documents(workspace_id, id) ON DELETE CASCADE,
+  CHECK (jsonb_typeof(claims_json) = 'object'),
+  CHECK (expires_at > created_at)
+);
+CREATE INDEX document_move_previews_expiry_idx ON document_move_previews (expires_at);
 
 CREATE TABLE workspace_access_revisions (
   workspace_id uuid PRIMARY KEY REFERENCES workspaces(id) ON DELETE CASCADE,
@@ -299,12 +330,15 @@ CREATE TABLE edit_leases (
   document_id uuid PRIMARY KEY,
   workspace_id uuid NOT NULL,
   holder_user_id uuid NOT NULL,
+  client_instance_id uuid NOT NULL,
   token_hash bytea NOT NULL UNIQUE CHECK (octet_length(token_hash) = 32),
   expires_at timestamptz NOT NULL,
+  released_at timestamptz,
   revision bigint NOT NULL DEFAULT 0 CHECK (revision >= 0),
   acquired_at timestamptz NOT NULL DEFAULT now(),
   FOREIGN KEY (workspace_id, document_id) REFERENCES documents(workspace_id, id) ON DELETE CASCADE,
-  FOREIGN KEY (workspace_id, holder_user_id) REFERENCES memberships(workspace_id, user_id)
+  FOREIGN KEY (workspace_id, holder_user_id) REFERENCES memberships(workspace_id, user_id),
+  CHECK (released_at IS NULL OR released_at >= acquired_at)
 );
 CREATE INDEX edit_leases_expiry_idx ON edit_leases (expires_at);
 

@@ -20,6 +20,10 @@
     {
       "file": "0005_permission_policy_revisions.sql",
       "sha256": "1831e7824efeb2ae3c4a8cb699d4717358becef94827688e395c8afde8488e59"
+    },
+    {
+      "file": "0006_document_tree_draft_lease.sql",
+      "sha256": "e99811066c2c4fc167227fda6feb1844c9a76da873e45d7d88b2975fc1d21c7d"
     }
   ]
 }
