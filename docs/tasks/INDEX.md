@@ -13,7 +13,8 @@
 | TASK-007 | asdf 로컬 툴체인 표준화 | 설계 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-007](TASK-007-adopt-asdf-local-toolchain.md) |
 | TASK-008 | Rust·TypeScript 계약 생성 기반 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-008](TASK-008-generate-cross-language-contracts.md) |
 | TASK-009 | Typed configuration·telemetry 기반 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-009](TASK-009-configuration-telemetry.md) |
+| TASK-010 | 에이전트 권장안 자율 결정 원칙 반영 | 운영 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-010](TASK-010-autonomous-recommended-decisions.md) |
 
 ## 다음 태스크 번호
 
-**TASK-010**
+**TASK-011**
