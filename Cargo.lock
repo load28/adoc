@@ -61,6 +61,8 @@ dependencies = [
  "chrono",
  "hex",
  "hmac",
+ "serde",
+ "serde_json",
  "sha2",
  "subtle",
  "thiserror",
@@ -127,6 +129,12 @@ name = "adoc-governance"
 version = "0.1.0"
 dependencies = [
  "adoc-kernel",
+ "chrono",
+ "email_address",
+ "serde",
+ "thiserror",
+ "unicode-normalization",
+ "uuid",
 ]
 
 [[package]]

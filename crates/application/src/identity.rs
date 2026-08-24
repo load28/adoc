@@ -77,11 +77,38 @@ impl KeyRing {
             .map(|key| hash_with(key, value))
             .collect()
     }
+
+    pub fn mac_current(&self, context: &[u8], value: &[u8]) -> HashCandidate {
+        mac_with(&self.current, context, value)
+    }
+
+    pub fn mac_for_key_id(
+        &self,
+        key_id: &str,
+        context: &[u8],
+        value: &[u8],
+    ) -> Option<HashCandidate> {
+        std::iter::once(&self.current)
+            .chain(self.previous.iter())
+            .find(|key| key.id == key_id)
+            .map(|key| mac_with(key, context, value))
+    }
 }
 
 fn hash_with(key: &SigningKey, value: &str) -> HashCandidate {
     let mut mac = HmacSha256::new_from_slice(&key.value).expect("validated HMAC key");
     mac.update(value.as_bytes());
+    HashCandidate {
+        key_id: key.id.clone(),
+        hash: TokenHash(mac.finalize().into_bytes().into()),
+    }
+}
+
+fn mac_with(key: &SigningKey, context: &[u8], value: &[u8]) -> HashCandidate {
+    let mut mac = HmacSha256::new_from_slice(&key.value).expect("validated HMAC key");
+    mac.update(context);
+    mac.update(&[0]);
+    mac.update(value);
     HashCandidate {
         key_id: key.id.clone(),
         hash: TokenHash(mac.finalize().into_bytes().into()),

@@ -76,7 +76,7 @@ paths:
     post:
       tags: [Workspace]
       operationId: createWorkspace
-      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody: {$ref: '#/components/requestBodies/CreateWorkspace'}
       responses:
         '201': {description: Created, content: {application/json: {schema: {$ref: '#/components/schemas/Workspace'}}}}
@@ -92,7 +92,7 @@ paths:
     put:
       tags: [Workspace]
       operationId: updateWorkspace
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody: {$ref: '#/components/requestBodies/UpdateWorkspace'}
       responses:
         '200': {description: Updated, content: {application/json: {schema: {$ref: '#/components/schemas/Workspace'}}}}
@@ -101,7 +101,7 @@ paths:
     post:
       tags: [Workspace]
       operationId: scheduleWorkspaceDeletion
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody: {$ref: '#/components/requestBodies/Reason'}
       responses:
         '200': {description: Scheduled, content: {application/json: {schema: {$ref: '#/components/schemas/Workspace'}}}}
@@ -109,7 +109,7 @@ paths:
     delete:
       tags: [Workspace]
       operationId: cancelWorkspaceDeletion
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       responses:
         '200': {description: Cancelled, content: {application/json: {schema: {$ref: '#/components/schemas/Workspace'}}}}
         default: {$ref: '#/components/responses/Problem'}
@@ -124,7 +124,7 @@ paths:
     put:
       tags: [Governance]
       operationId: updateMemberRole
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/UserId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/UserId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody: {$ref: '#/components/requestBodies/UpdateMemberRole'}
       responses:
         '200': {description: Updated, content: {application/json: {schema: {$ref: '#/components/schemas/Membership'}}}}
@@ -133,7 +133,7 @@ paths:
     delete:
       tags: [Governance]
       operationId: removeMember
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/UserId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/UserId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       responses:
         '200': {description: Removed, content: {application/json: {schema: {$ref: '#/components/schemas/Membership'}}}}
         default: {$ref: '#/components/responses/Problem'}
@@ -148,7 +148,7 @@ paths:
     post:
       tags: [Governance]
       operationId: inviteMember
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody: {$ref: '#/components/requestBodies/InviteMember'}
       responses:
         '201': {description: Invitation created, content: {application/json: {schema: {$ref: '#/components/schemas/Invitation'}}}}
@@ -157,7 +157,7 @@ paths:
     delete:
       tags: [Governance]
       operationId: revokeInvitation
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/InvitationId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/InvitationId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       responses:
         '200': {description: Revoked, content: {application/json: {schema: {$ref: '#/components/schemas/Invitation'}}}}
         default: {$ref: '#/components/responses/Problem'}
@@ -168,6 +168,7 @@ paths:
       parameters:
         - {name: token, in: path, required: true, schema: {type: string, minLength: 32}}
         - {$ref: '#/components/parameters/IdempotencyKey'}
+        - {$ref: '#/components/parameters/CsrfToken'}
       responses:
         '201': {description: Membership, content: {application/json: {schema: {$ref: '#/components/schemas/Membership'}}}}
         default: {$ref: '#/components/responses/Problem'}
@@ -181,10 +182,10 @@ paths:
     post:
       tags: [Governance]
       operationId: createGroup
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody:
         required: true
-        content: {application/json: {schema: {type: object, required: [name], properties: {name: {type: string, minLength: 1, maxLength: 120}, memberIds: {type: array, items: {$ref: '#/components/schemas/Id'}}}}}}
+        content: {application/json: {schema: {type: object, additionalProperties: false, required: [name], properties: {name: {type: string, minLength: 1, maxLength: 200}, memberIds: {type: array, uniqueItems: true, maxItems: 1000, items: {$ref: '#/components/schemas/Id'}}}}}}
       responses:
         '201': {description: Created, content: {application/json: {schema: {$ref: '#/components/schemas/Group'}}}}
         default: {$ref: '#/components/responses/Problem'}
@@ -199,7 +200,7 @@ paths:
     put:
       tags: [Governance]
       operationId: updateGroup
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/GroupId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/GroupId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody: {$ref: '#/components/requestBodies/UpdateGroup'}
       responses:
         '200': {description: Updated, content: {application/json: {schema: {$ref: '#/components/schemas/Group'}}}}
@@ -207,7 +208,7 @@ paths:
     delete:
       tags: [Governance]
       operationId: deleteGroup
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/GroupId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/GroupId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       responses:
         '204': {description: Deleted}
         default: {$ref: '#/components/responses/Problem'}
@@ -215,14 +216,14 @@ paths:
     put:
       tags: [Governance]
       operationId: addGroupMember
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/GroupId'}, {$ref: '#/components/parameters/UserId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/GroupId'}, {$ref: '#/components/parameters/UserId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       responses:
         '200': {description: Updated, content: {application/json: {schema: {$ref: '#/components/schemas/Group'}}}}
         default: {$ref: '#/components/responses/Problem'}
     delete:
       tags: [Governance]
       operationId: removeGroupMember
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/GroupId'}, {$ref: '#/components/parameters/UserId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/GroupId'}, {$ref: '#/components/parameters/UserId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       responses:
         '200': {description: Updated, content: {application/json: {schema: {$ref: '#/components/schemas/Group'}}}}
         default: {$ref: '#/components/responses/Problem'}
@@ -959,7 +960,7 @@ components:
   requestBodies:
     CreateWorkspace:
       required: true
-      content: {application/json: {schema: {type: object, required: [name], properties: {name: {type: string, minLength: 1, maxLength: 120}}}}}
+      content: {application/json: {schema: {type: object, additionalProperties: false, required: [name], properties: {name: {type: string, minLength: 1, maxLength: 200}}}}}
     MoveDocument:
       required: true
       content: {application/json: {schema: {$ref: '#/components/schemas/MoveDocumentInput'}}}
@@ -1027,11 +1028,11 @@ components:
     SessionView: {type: object, additionalProperties: false, required: [user, workspaces], properties: {user: {$ref: '#/components/schemas/UserSummary'}, workspaces: {type: array, items: {$ref: '#/components/schemas/Workspace'}}}}
     UserSummary: {type: object, additionalProperties: false, required: [id, email, displayName, locale, timezone], properties: {id: {$ref: '#/components/schemas/Id'}, email: {type: string, format: email}, displayName: {type: string}, locale: {type: string, enum: [ko, en]}, timezone: {type: string}}}
     UserPreferences: {type: object, additionalProperties: false, required: [locale, timezone, theme, revision], properties: {locale: {type: string, enum: [ko, en]}, timezone: {type: string}, theme: {type: string, enum: [LIGHT, DARK, SYSTEM]}, revision: {type: integer, minimum: 0}}}
-    Workspace: {type: object, required: [id, name, slug, status, revision], properties: {id: {$ref: '#/components/schemas/Id'}, name: {type: string}, slug: {type: string}, status: {type: string, enum: [ACTIVE, DELETION_SCHEDULED, PURGING, DELETED]}, revision: {type: integer, minimum: 0}}}
-    Membership: {type: object, required: [userId, role, status, revision], properties: {userId: {$ref: '#/components/schemas/Id'}, role: {type: string, enum: [MEMBER, ADMIN, OWNER]}, status: {type: string, enum: [ACTIVE, SUSPENDED, REMOVED]}, revision: {type: integer}}}
+    Workspace: {type: object, additionalProperties: false, required: [id, name, slug, status, revision], properties: {id: {$ref: '#/components/schemas/Id'}, name: {type: string}, slug: {type: string}, status: {type: string, enum: [ACTIVE, DELETION_SCHEDULED, PURGING, DELETED]}, revision: {type: integer, minimum: 0}}}
+    Membership: {type: object, additionalProperties: false, required: [userId, role, status, revision], properties: {userId: {$ref: '#/components/schemas/Id'}, role: {type: string, enum: [MEMBER, ADMIN, OWNER]}, status: {type: string, enum: [ACTIVE, SUSPENDED, REMOVED]}, revision: {type: integer, minimum: 0}}}
     Invitation: {type: object, additionalProperties: false, required: [id, email, role, status, expiresAt, revision], properties: {id: {$ref: '#/components/schemas/Id'}, email: {type: string, format: email}, role: {type: string, enum: [MEMBER, ADMIN]}, status: {type: string, enum: [PENDING, ACCEPTED, REVOKED, EXPIRED]}, expiresAt: {type: string, format: date-time}, revision: {type: integer, minimum: 0}}}
     InvitationPage: {type: object, additionalProperties: false, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/Invitation'}}, nextCursor: {type: [string, 'null']}}}
-    Group: {type: object, required: [id, name, memberIds, revision], properties: {id: {$ref: '#/components/schemas/Id'}, name: {type: string}, memberIds: {type: array, items: {$ref: '#/components/schemas/Id'}}, revision: {type: integer}}}
+    Group: {type: object, additionalProperties: false, required: [id, name, memberIds, revision], properties: {id: {$ref: '#/components/schemas/Id'}, name: {type: string}, memberIds: {type: array, items: {$ref: '#/components/schemas/Id'}}, revision: {type: integer, minimum: 0}}}
     Access: {type: string, enum: [NO_ACCESS, VIEWER, CONTRIBUTOR, EDITOR]}
     PermissionGrantInput: {type: object, additionalProperties: false, required: [subjectKind, subjectId, access, manage], properties: {subjectKind: {type: string, enum: [USER, GROUP]}, subjectId: {$ref: '#/components/schemas/Id'}, access: {$ref: '#/components/schemas/Access'}, manage: {type: boolean}}}
     PermissionGrant: {type: object, additionalProperties: false, required: [id, subjectKind, subjectId, access, manage, revision], properties: {id: {$ref: '#/components/schemas/Id'}, subjectKind: {type: string, enum: [USER, GROUP]}, subjectId: {$ref: '#/components/schemas/Id'}, access: {$ref: '#/components/schemas/Access'}, manage: {type: boolean}, revision: {type: integer, minimum: 0}}}

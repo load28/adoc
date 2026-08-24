@@ -1,10 +1,12 @@
 mod error;
+mod governance;
 mod idempotency;
 mod identity;
 mod outbox;
 mod store;
 mod transaction;
 
+pub use governance::PostgresGovernanceRepository;
 pub use idempotency::{
     IdempotencyDecision, IdempotencyError, IdempotencyIdentity, IdempotencyReservation,
     StoredResponse, complete_idempotency, reserve_idempotency,

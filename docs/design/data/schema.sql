@@ -153,6 +153,7 @@ CREATE TABLE invitations (
   email_normalized text GENERATED ALWAYS AS (lower(email)) STORED,
   role membership_role NOT NULL DEFAULT 'MEMBER' CHECK (role <> 'OWNER'),
   token_hash bytea NOT NULL UNIQUE CHECK (octet_length(token_hash) = 32),
+  token_key_id text NOT NULL CHECK (char_length(token_key_id) BETWEEN 1 AND 64),
   invited_by uuid NOT NULL,
   expires_at timestamptz NOT NULL,
   accepted_at timestamptz,
@@ -160,6 +161,7 @@ CREATE TABLE invitations (
   revision bigint NOT NULL DEFAULT 0 CHECK (revision >= 0),
   created_at timestamptz NOT NULL DEFAULT now(),
   FOREIGN KEY (workspace_id, invited_by) REFERENCES memberships(workspace_id, user_id),
+  CHECK (expires_at > created_at),
   CHECK (accepted_at IS NULL OR revoked_at IS NULL)
 );
 CREATE UNIQUE INDEX invitations_active_email_idx ON invitations (workspace_id, email_normalized)

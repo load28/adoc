@@ -16,7 +16,7 @@
 | user_command_receipts | user_id, operation_id, key, request_hash, response_json, expires_at | unique user+operation+key |
 | workspaces | id, slug, name, status, delete_after, revision | unique slug |
 | memberships | workspace_id, user_id, role, status, revision | unique pair |
-| invitations | id, workspace_id, email, token_hash, expires_at, accepted_at | token unique |
+| invitations | id, workspace_id, email, token_hash, token_key_id, expires_at, accepted_at | token unique |
 | groups | id, workspace_id, name, revision | unique active name |
 | group_members | workspace_id, group_id, user_id | unique triple |
 | permission_grants | id, workspace_id, document_id, subject_kind, subject_id, access, manage | unique target+subject |

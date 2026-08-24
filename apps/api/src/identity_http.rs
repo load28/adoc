@@ -114,7 +114,7 @@ impl IdentityRuntime {
     }
 }
 
-fn key_ring(secret: &RotatingSecret) -> Result<KeyRing, IdentityError> {
+pub(crate) fn key_ring(secret: &RotatingSecret) -> Result<KeyRing, IdentityError> {
     let current = SigningKey {
         id: secret.current_id().to_owned(),
         value: Arc::from(secret.current().expose().as_bytes()),
@@ -211,9 +211,9 @@ async fn complete_google_login(
     Ok(response)
 }
 
-struct Authenticated {
-    principal: SessionPrincipal,
-    token: String,
+pub(crate) struct Authenticated {
+    pub(crate) principal: SessionPrincipal,
+    pub(crate) token: String,
 }
 
 impl FromRequestParts<HealthState> for Authenticated {
@@ -249,6 +249,12 @@ async fn get_session(
         )
         .map_err(Problem::from)?;
     let user = authenticated.principal.user;
+    let workspaces = state
+        .governance
+        .service
+        .list_workspaces(user.id)
+        .await
+        .map_err(Problem::from)?;
     let mut response = Json(json!({
         "user": {
             "id": user.id,
@@ -257,7 +263,7 @@ async fn get_session(
             "locale": user.locale,
             "timezone": user.timezone,
         },
-        "workspaces": [],
+        "workspaces": workspaces,
     }))
     .into_response();
     append_set_cookie(
@@ -331,7 +337,7 @@ fn preferences_json(preferences: adoc_application::identity::UserPreferences) ->
     })
 }
 
-fn validate_command(
+pub(crate) fn validate_command(
     runtime: &IdentityRuntime,
     headers: &HeaderMap,
     authenticated: &Authenticated,
@@ -359,7 +365,7 @@ fn validate_command(
         .map_err(Problem::from)
 }
 
-fn idempotency_key(headers: &HeaderMap) -> Result<&str, Problem> {
+pub(crate) fn idempotency_key(headers: &HeaderMap) -> Result<&str, Problem> {
     headers
         .get("idempotency-key")
         .and_then(|value| value.to_str().ok())
@@ -367,7 +373,7 @@ fn idempotency_key(headers: &HeaderMap) -> Result<&str, Problem> {
         .ok_or_else(|| Problem::from(IdentityError::Validation))
 }
 
-fn expected_revision(headers: &HeaderMap) -> Result<i64, Problem> {
+pub(crate) fn expected_revision(headers: &HeaderMap) -> Result<i64, Problem> {
     headers
         .get(header::IF_MATCH)
         .and_then(|value| value.to_str().ok())
@@ -418,19 +424,21 @@ fn append_set_cookie(response: &mut Response, value: String) -> Result<(), Probl
 }
 
 pub(crate) struct Problem {
-    status: StatusCode,
-    code: &'static str,
-    retryable: bool,
-    current_revision: Option<i64>,
+    pub(crate) status: StatusCode,
+    pub(crate) code: &'static str,
+    pub(crate) retryable: bool,
+    pub(crate) current_revision: Option<i64>,
+    pub(crate) reference_count: Option<i64>,
 }
 
 impl Problem {
-    fn internal() -> Self {
+    pub(crate) fn internal() -> Self {
         Self {
             status: StatusCode::INTERNAL_SERVER_ERROR,
             code: "INTERNAL_ERROR",
             retryable: false,
             current_revision: None,
+            reference_count: None,
         }
     }
 }
@@ -443,54 +451,63 @@ impl From<IdentityError> for Problem {
                 code: "VALIDATION_FAILED",
                 retryable: false,
                 current_revision: None,
+                reference_count: None,
             },
             IdentityError::AuthenticationRequired => Self {
                 status: StatusCode::UNAUTHORIZED,
                 code: "AUTH_REQUIRED",
                 retryable: false,
                 current_revision: None,
+                reference_count: None,
             },
             IdentityError::InvalidCallback => Self {
                 status: StatusCode::BAD_REQUEST,
                 code: "AUTH_CALLBACK_INVALID",
                 retryable: false,
                 current_revision: None,
+                reference_count: None,
             },
             IdentityError::CsrfInvalid => Self {
                 status: StatusCode::FORBIDDEN,
                 code: "CSRF_INVALID",
                 retryable: false,
                 current_revision: None,
+                reference_count: None,
             },
             IdentityError::RevisionConflict { current_revision } => Self {
                 status: StatusCode::CONFLICT,
                 code: "REVISION_CONFLICT",
                 retryable: false,
                 current_revision: Some(current_revision),
+                reference_count: None,
             },
             IdentityError::IdempotencyKeyReused => Self {
                 status: StatusCode::CONFLICT,
                 code: "IDEMPOTENCY_KEY_REUSED",
                 retryable: false,
                 current_revision: None,
+                reference_count: None,
             },
             IdentityError::ProviderUnavailable => Self {
                 status: StatusCode::SERVICE_UNAVAILABLE,
                 code: "AUTH_PROVIDER_UNAVAILABLE",
                 retryable: true,
                 current_revision: None,
+                reference_count: None,
             },
             IdentityError::StorageUnavailable => Self {
                 status: StatusCode::SERVICE_UNAVAILABLE,
                 code: "DEPENDENCY_UNAVAILABLE",
                 retryable: true,
                 current_revision: None,
+                reference_count: None,
             },
             IdentityError::RateLimited => Self {
                 status: StatusCode::TOO_MANY_REQUESTS,
                 code: "RATE_LIMITED",
                 retryable: true,
                 current_revision: None,
+                reference_count: None,
             },
             IdentityError::Internal => Self::internal(),
         }
@@ -511,6 +528,9 @@ impl IntoResponse for Problem {
         });
         if let Some(revision) = self.current_revision {
             body["currentRevision"] = json!(revision);
+        }
+        if let Some(count) = self.reference_count {
+            body["referenceCount"] = json!(count);
         }
         let rate_limited = self.code == "RATE_LIMITED";
         let mut response = (

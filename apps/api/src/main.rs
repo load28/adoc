@@ -9,8 +9,10 @@ use adoc_configuration::{
 use adoc_telemetry::{SafeEvent, TelemetryConfig};
 use axum::{Json, Router, extract::State, http::StatusCode, routing::get};
 
+mod governance_http;
 mod identity_http;
 
+use governance_http::{GovernanceRuntime, governance_routes};
 use identity_http::{IdentityRuntime, identity_routes};
 
 #[tokio::main]
@@ -85,6 +87,7 @@ struct HealthState {
     store: PostgresStore,
     release_sha: Arc<str>,
     identity: IdentityRuntime,
+    governance: GovernanceRuntime,
 }
 
 async fn serve() -> Result<(), Box<dyn std::error::Error>> {
@@ -103,15 +106,17 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     .await?;
     store.preflight().await?;
     let identity = IdentityRuntime::new(&config, &store).await?;
+    let governance = GovernanceRuntime::new(&config, &store)?;
     let state = HealthState {
         store,
         release_sha: Arc::from(config.common.release_sha.as_str()),
         identity,
+        governance,
     };
     let app = Router::new()
         .route("/health/live", get(live))
         .route("/health/ready", get(ready))
-        .nest("/api/v1", identity_routes())
+        .nest("/api/v1", identity_routes().merge(governance_routes()))
         .with_state(state.clone());
     let listener = tokio::net::TcpListener::bind(bind).await?;
     SafeEvent::new(&telemetry, "SERVICE_STARTED")

@@ -12988,19 +12988,22 @@ pub struct OpenApiFileUpload {
 ///      "type": "string"
 ///    },
 ///    "revision": {
-///      "type": "integer"
+///      "type": "integer",
+///      "minimum": 0.0
 ///    }
-///  }
+///  },
+///  "additionalProperties": false
 ///}
 /// ```
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct OpenApiGroup {
     pub id: OpenApiId,
     #[serde(rename = "memberIds")]
     pub member_ids: ::std::vec::Vec<OpenApiId>,
     pub name: ::std::string::String,
-    pub revision: i64,
+    pub revision: u64,
 }
 ///`OpenApiId`
 ///
@@ -13668,7 +13671,8 @@ impl ::std::convert::TryFrom<::std::string::String> for OpenApiJobReferenceStatu
 ///  ],
 ///  "properties": {
 ///    "revision": {
-///      "type": "integer"
+///      "type": "integer",
+///      "minimum": 0.0
 ///    },
 ///    "role": {
 ///      "type": "string",
@@ -13689,13 +13693,15 @@ impl ::std::convert::TryFrom<::std::string::String> for OpenApiJobReferenceStatu
 ///    "userId": {
 ///      "$ref": "#/$defs/OpenApi__Id"
 ///    }
-///  }
+///  },
+///  "additionalProperties": false
 ///}
 /// ```
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct OpenApiMembership {
-    pub revision: i64,
+    pub revision: u64,
     pub role: OpenApiMembershipRole,
     pub status: OpenApiMembershipStatus,
     #[serde(rename = "userId")]
@@ -17135,11 +17141,13 @@ impl<'de> ::serde::Deserialize<'de> for OpenApiVocabularyTermTerm {
 ///        "DELETED"
 ///      ]
 ///    }
-///  }
+///  },
+///  "additionalProperties": false
 ///}
 /// ```
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct OpenApiWorkspace {
     pub id: OpenApiId,
     pub name: ::std::string::String,
@@ -17549,13 +17557,19 @@ impl<'de> ::serde::Deserialize<'de> for OpenApiWritingRuleOverrideValuesItem {
 ///    "header": {
 ///      "type": "object",
 ///      "required": [
-///        "Idempotency-Key"
+///        "Idempotency-Key",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
 ///          "type": "string",
 ///          "maxLength": 128,
 ///          "minLength": 16
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -17592,13 +17606,19 @@ pub struct OperationAcceptInvitationRequest {
 ///{
 ///  "type": "object",
 ///  "required": [
-///    "Idempotency-Key"
+///    "Idempotency-Key",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
 ///      "type": "string",
 ///      "maxLength": 128,
 ///      "minLength": 16
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -17610,6 +17630,8 @@ pub struct OperationAcceptInvitationRequest {
 pub struct OperationAcceptInvitationRequestHeader {
     #[serde(rename = "Idempotency-Key")]
     pub idempotency_key: OperationAcceptInvitationRequestHeaderIdempotencyKey,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationAcceptInvitationRequestHeaderXCsrfToken,
 }
 ///`OperationAcceptInvitationRequestHeaderIdempotencyKey`
 ///
@@ -17678,6 +17700,84 @@ impl ::std::convert::TryFrom<::std::string::String>
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationAcceptInvitationRequestHeaderIdempotencyKey {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationAcceptInvitationRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationAcceptInvitationRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationAcceptInvitationRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationAcceptInvitationRequestHeaderXCsrfToken>
+    for ::std::string::String
+{
+    fn from(value: OperationAcceptInvitationRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationAcceptInvitationRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationAcceptInvitationRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationAcceptInvitationRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationAcceptInvitationRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationAcceptInvitationRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -18664,7 +18764,8 @@ impl ::std::convert::From<OpenApiProblem> for OperationAddDiscussionTopicRespons
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
-///        "If-Match"
+///        "If-Match",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
@@ -18675,6 +18776,11 @@ impl ::std::convert::From<OpenApiProblem> for OperationAddDiscussionTopicRespons
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -18719,7 +18825,8 @@ pub struct OperationAddGroupMemberRequest {
 ///  "type": "object",
 ///  "required": [
 ///    "Idempotency-Key",
-///    "If-Match"
+///    "If-Match",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
@@ -18730,6 +18837,11 @@ pub struct OperationAddGroupMemberRequest {
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -18743,6 +18855,8 @@ pub struct OperationAddGroupMemberRequestHeader {
     pub idempotency_key: OperationAddGroupMemberRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationAddGroupMemberRequestHeaderIfMatch,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationAddGroupMemberRequestHeaderXCsrfToken,
 }
 ///`OperationAddGroupMemberRequestHeaderIdempotencyKey`
 ///
@@ -18885,6 +18999,84 @@ impl ::std::convert::TryFrom<::std::string::String>
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationAddGroupMemberRequestHeaderIfMatch {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationAddGroupMemberRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationAddGroupMemberRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationAddGroupMemberRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationAddGroupMemberRequestHeaderXCsrfToken>
+    for ::std::string::String
+{
+    fn from(value: OperationAddGroupMemberRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationAddGroupMemberRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationAddGroupMemberRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationAddGroupMemberRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationAddGroupMemberRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationAddGroupMemberRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -20755,7 +20947,8 @@ impl ::std::convert::From<OpenApiProblem> for OperationCancelReviewResponse {
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
-///        "If-Match"
+///        "If-Match",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
@@ -20766,6 +20959,11 @@ impl ::std::convert::From<OpenApiProblem> for OperationCancelReviewResponse {
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -20802,7 +21000,8 @@ pub struct OperationCancelWorkspaceDeletionRequest {
 ///  "type": "object",
 ///  "required": [
 ///    "Idempotency-Key",
-///    "If-Match"
+///    "If-Match",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
@@ -20813,6 +21012,11 @@ pub struct OperationCancelWorkspaceDeletionRequest {
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -20826,6 +21030,8 @@ pub struct OperationCancelWorkspaceDeletionRequestHeader {
     pub idempotency_key: OperationCancelWorkspaceDeletionRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationCancelWorkspaceDeletionRequestHeaderIfMatch,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationCancelWorkspaceDeletionRequestHeaderXCsrfToken,
 }
 ///`OperationCancelWorkspaceDeletionRequestHeaderIdempotencyKey`
 ///
@@ -20972,6 +21178,84 @@ impl ::std::convert::TryFrom<::std::string::String>
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationCancelWorkspaceDeletionRequestHeaderIfMatch {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationCancelWorkspaceDeletionRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationCancelWorkspaceDeletionRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationCancelWorkspaceDeletionRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationCancelWorkspaceDeletionRequestHeaderXCsrfToken>
+    for ::std::string::String
+{
+    fn from(value: OperationCancelWorkspaceDeletionRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationCancelWorkspaceDeletionRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationCancelWorkspaceDeletionRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationCancelWorkspaceDeletionRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationCancelWorkspaceDeletionRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationCancelWorkspaceDeletionRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -23700,25 +23984,34 @@ impl ::std::convert::From<OpenApiProblem> for OperationCreateFileUploadResponse 
 ///          "type": "array",
 ///          "items": {
 ///            "$ref": "#/$defs/OpenApi__Id"
-///          }
+///          },
+///          "maxItems": 1000,
+///          "uniqueItems": true
 ///        },
 ///        "name": {
 ///          "type": "string",
-///          "maxLength": 120,
+///          "maxLength": 200,
 ///          "minLength": 1
 ///        }
-///      }
+///      },
+///      "additionalProperties": false
 ///    },
 ///    "header": {
 ///      "type": "object",
 ///      "required": [
-///        "Idempotency-Key"
+///        "Idempotency-Key",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
 ///          "type": "string",
 ///          "maxLength": 128,
 ///          "minLength": 16
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -23762,25 +24055,29 @@ pub struct OperationCreateGroupRequest {
 ///      "type": "array",
 ///      "items": {
 ///        "$ref": "#/$defs/OpenApi__Id"
-///      }
+///      },
+///      "maxItems": 1000,
+///      "uniqueItems": true
 ///    },
 ///    "name": {
 ///      "type": "string",
-///      "maxLength": 120,
+///      "maxLength": 200,
 ///      "minLength": 1
 ///    }
-///  }
+///  },
+///  "additionalProperties": false
 ///}
 /// ```
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct OperationCreateGroupRequestBody {
     #[serde(
         rename = "memberIds",
         default,
-        skip_serializing_if = "::std::vec::Vec::is_empty"
+        skip_serializing_if = "::std::option::Option::is_none"
     )]
-    pub member_ids: ::std::vec::Vec<OpenApiId>,
+    pub member_ids: ::std::option::Option<Vec<OpenApiId>>,
     pub name: OperationCreateGroupRequestBodyName,
 }
 ///`OperationCreateGroupRequestBodyName`
@@ -23790,7 +24087,7 @@ pub struct OperationCreateGroupRequestBody {
 /// ```json
 ///{
 ///  "type": "string",
-///  "maxLength": 120,
+///  "maxLength": 200,
 ///  "minLength": 1
 ///}
 /// ```
@@ -23812,8 +24109,8 @@ impl ::std::convert::From<OperationCreateGroupRequestBodyName> for ::std::string
 impl ::std::str::FromStr for OperationCreateGroupRequestBodyName {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        if value.chars().count() > 120usize {
-            return Err("longer than 120 characters".into());
+        if value.chars().count() > 200usize {
+            return Err("longer than 200 characters".into());
         }
         if value.chars().count() < 1usize {
             return Err("shorter than 1 characters".into());
@@ -23863,13 +24160,19 @@ impl<'de> ::serde::Deserialize<'de> for OperationCreateGroupRequestBodyName {
 ///{
 ///  "type": "object",
 ///  "required": [
-///    "Idempotency-Key"
+///    "Idempotency-Key",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
 ///      "type": "string",
 ///      "maxLength": 128,
 ///      "minLength": 16
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -23881,6 +24184,8 @@ impl<'de> ::serde::Deserialize<'de> for OperationCreateGroupRequestBodyName {
 pub struct OperationCreateGroupRequestHeader {
     #[serde(rename = "Idempotency-Key")]
     pub idempotency_key: OperationCreateGroupRequestHeaderIdempotencyKey,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationCreateGroupRequestHeaderXCsrfToken,
 }
 ///`OperationCreateGroupRequestHeaderIdempotencyKey`
 ///
@@ -23949,6 +24254,82 @@ impl ::std::convert::TryFrom<::std::string::String>
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationCreateGroupRequestHeaderIdempotencyKey {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationCreateGroupRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationCreateGroupRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationCreateGroupRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationCreateGroupRequestHeaderXCsrfToken> for ::std::string::String {
+    fn from(value: OperationCreateGroupRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationCreateGroupRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationCreateGroupRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationCreateGroupRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationCreateGroupRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationCreateGroupRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -25823,21 +26204,28 @@ impl ::std::convert::From<OpenApiProblem> for OperationCreateVocabularyConceptRe
 ///      "properties": {
 ///        "name": {
 ///          "type": "string",
-///          "maxLength": 120,
+///          "maxLength": 200,
 ///          "minLength": 1
 ///        }
-///      }
+///      },
+///      "additionalProperties": false
 ///    },
 ///    "header": {
 ///      "type": "object",
 ///      "required": [
-///        "Idempotency-Key"
+///        "Idempotency-Key",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
 ///          "type": "string",
 ///          "maxLength": 128,
 ///          "minLength": 16
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -25866,14 +26254,16 @@ pub struct OperationCreateWorkspaceRequest {
 ///  "properties": {
 ///    "name": {
 ///      "type": "string",
-///      "maxLength": 120,
+///      "maxLength": 200,
 ///      "minLength": 1
 ///    }
-///  }
+///  },
+///  "additionalProperties": false
 ///}
 /// ```
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct OperationCreateWorkspaceRequestBody {
     pub name: OperationCreateWorkspaceRequestBodyName,
 }
@@ -25884,7 +26274,7 @@ pub struct OperationCreateWorkspaceRequestBody {
 /// ```json
 ///{
 ///  "type": "string",
-///  "maxLength": 120,
+///  "maxLength": 200,
 ///  "minLength": 1
 ///}
 /// ```
@@ -25906,8 +26296,8 @@ impl ::std::convert::From<OperationCreateWorkspaceRequestBodyName> for ::std::st
 impl ::std::str::FromStr for OperationCreateWorkspaceRequestBodyName {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        if value.chars().count() > 120usize {
-            return Err("longer than 120 characters".into());
+        if value.chars().count() > 200usize {
+            return Err("longer than 200 characters".into());
         }
         if value.chars().count() < 1usize {
             return Err("shorter than 1 characters".into());
@@ -25957,13 +26347,19 @@ impl<'de> ::serde::Deserialize<'de> for OperationCreateWorkspaceRequestBodyName 
 ///{
 ///  "type": "object",
 ///  "required": [
-///    "Idempotency-Key"
+///    "Idempotency-Key",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
 ///      "type": "string",
 ///      "maxLength": 128,
 ///      "minLength": 16
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -25975,6 +26371,8 @@ impl<'de> ::serde::Deserialize<'de> for OperationCreateWorkspaceRequestBodyName 
 pub struct OperationCreateWorkspaceRequestHeader {
     #[serde(rename = "Idempotency-Key")]
     pub idempotency_key: OperationCreateWorkspaceRequestHeaderIdempotencyKey,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationCreateWorkspaceRequestHeaderXCsrfToken,
 }
 ///`OperationCreateWorkspaceRequestHeaderIdempotencyKey`
 ///
@@ -26043,6 +26441,84 @@ impl ::std::convert::TryFrom<::std::string::String>
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationCreateWorkspaceRequestHeaderIdempotencyKey {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationCreateWorkspaceRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationCreateWorkspaceRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationCreateWorkspaceRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationCreateWorkspaceRequestHeaderXCsrfToken>
+    for ::std::string::String
+{
+    fn from(value: OperationCreateWorkspaceRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationCreateWorkspaceRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationCreateWorkspaceRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationCreateWorkspaceRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationCreateWorkspaceRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationCreateWorkspaceRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -26797,7 +27273,8 @@ impl ::std::convert::From<OpenApiProblem> for OperationDeleteFileResponse {
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
-///        "If-Match"
+///        "If-Match",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
@@ -26808,6 +27285,11 @@ impl ::std::convert::From<OpenApiProblem> for OperationDeleteFileResponse {
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -26848,7 +27330,8 @@ pub struct OperationDeleteGroupRequest {
 ///  "type": "object",
 ///  "required": [
 ///    "Idempotency-Key",
-///    "If-Match"
+///    "If-Match",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
@@ -26859,6 +27342,11 @@ pub struct OperationDeleteGroupRequest {
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -26872,6 +27360,8 @@ pub struct OperationDeleteGroupRequestHeader {
     pub idempotency_key: OperationDeleteGroupRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationDeleteGroupRequestHeaderIfMatch,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationDeleteGroupRequestHeaderXCsrfToken,
 }
 ///`OperationDeleteGroupRequestHeaderIdempotencyKey`
 ///
@@ -27010,6 +27500,82 @@ impl ::std::convert::TryFrom<::std::string::String> for OperationDeleteGroupRequ
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationDeleteGroupRequestHeaderIfMatch {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationDeleteGroupRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationDeleteGroupRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationDeleteGroupRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationDeleteGroupRequestHeaderXCsrfToken> for ::std::string::String {
+    fn from(value: OperationDeleteGroupRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationDeleteGroupRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationDeleteGroupRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationDeleteGroupRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationDeleteGroupRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationDeleteGroupRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -31623,13 +32189,19 @@ impl ::std::convert::From<OpenApiProblem> for OperationGetWritingConfigurationRe
 ///    "header": {
 ///      "type": "object",
 ///      "required": [
-///        "Idempotency-Key"
+///        "Idempotency-Key",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
 ///          "type": "string",
 ///          "maxLength": 128,
 ///          "minLength": 16
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -31842,13 +32414,19 @@ impl ::std::convert::TryFrom<::std::string::String> for OperationInviteMemberReq
 ///{
 ///  "type": "object",
 ///  "required": [
-///    "Idempotency-Key"
+///    "Idempotency-Key",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
 ///      "type": "string",
 ///      "maxLength": 128,
 ///      "minLength": 16
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -31860,6 +32438,8 @@ impl ::std::convert::TryFrom<::std::string::String> for OperationInviteMemberReq
 pub struct OperationInviteMemberRequestHeader {
     #[serde(rename = "Idempotency-Key")]
     pub idempotency_key: OperationInviteMemberRequestHeaderIdempotencyKey,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationInviteMemberRequestHeaderXCsrfToken,
 }
 ///`OperationInviteMemberRequestHeaderIdempotencyKey`
 ///
@@ -31928,6 +32508,82 @@ impl ::std::convert::TryFrom<::std::string::String>
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationInviteMemberRequestHeaderIdempotencyKey {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationInviteMemberRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationInviteMemberRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationInviteMemberRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationInviteMemberRequestHeaderXCsrfToken> for ::std::string::String {
+    fn from(value: OperationInviteMemberRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationInviteMemberRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationInviteMemberRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationInviteMemberRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationInviteMemberRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationInviteMemberRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -38076,7 +38732,8 @@ impl ::std::convert::From<OpenApiProblem> for OperationRemoveDiscussionTopicResp
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
-///        "If-Match"
+///        "If-Match",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
@@ -38087,6 +38744,11 @@ impl ::std::convert::From<OpenApiProblem> for OperationRemoveDiscussionTopicResp
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -38131,7 +38793,8 @@ pub struct OperationRemoveGroupMemberRequest {
 ///  "type": "object",
 ///  "required": [
 ///    "Idempotency-Key",
-///    "If-Match"
+///    "If-Match",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
@@ -38142,6 +38805,11 @@ pub struct OperationRemoveGroupMemberRequest {
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -38155,6 +38823,8 @@ pub struct OperationRemoveGroupMemberRequestHeader {
     pub idempotency_key: OperationRemoveGroupMemberRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationRemoveGroupMemberRequestHeaderIfMatch,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationRemoveGroupMemberRequestHeaderXCsrfToken,
 }
 ///`OperationRemoveGroupMemberRequestHeaderIdempotencyKey`
 ///
@@ -38310,6 +38980,84 @@ impl<'de> ::serde::Deserialize<'de> for OperationRemoveGroupMemberRequestHeaderI
             })
     }
 }
+///`OperationRemoveGroupMemberRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationRemoveGroupMemberRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationRemoveGroupMemberRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationRemoveGroupMemberRequestHeaderXCsrfToken>
+    for ::std::string::String
+{
+    fn from(value: OperationRemoveGroupMemberRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationRemoveGroupMemberRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationRemoveGroupMemberRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationRemoveGroupMemberRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationRemoveGroupMemberRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationRemoveGroupMemberRequestHeaderXCsrfToken {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
 ///`OperationRemoveGroupMemberRequestPath`
 ///
 /// <details><summary>JSON schema</summary>
@@ -38424,7 +39172,8 @@ impl ::std::convert::From<OpenApiProblem> for OperationRemoveGroupMemberResponse
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
-///        "If-Match"
+///        "If-Match",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
@@ -38435,6 +39184,11 @@ impl ::std::convert::From<OpenApiProblem> for OperationRemoveGroupMemberResponse
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -38475,7 +39229,8 @@ pub struct OperationRemoveMemberRequest {
 ///  "type": "object",
 ///  "required": [
 ///    "Idempotency-Key",
-///    "If-Match"
+///    "If-Match",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
@@ -38486,6 +39241,11 @@ pub struct OperationRemoveMemberRequest {
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -38499,6 +39259,8 @@ pub struct OperationRemoveMemberRequestHeader {
     pub idempotency_key: OperationRemoveMemberRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationRemoveMemberRequestHeaderIfMatch,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationRemoveMemberRequestHeaderXCsrfToken,
 }
 ///`OperationRemoveMemberRequestHeaderIdempotencyKey`
 ///
@@ -38637,6 +39399,82 @@ impl ::std::convert::TryFrom<::std::string::String> for OperationRemoveMemberReq
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationRemoveMemberRequestHeaderIfMatch {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationRemoveMemberRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationRemoveMemberRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationRemoveMemberRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationRemoveMemberRequestHeaderXCsrfToken> for ::std::string::String {
+    fn from(value: OperationRemoveMemberRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationRemoveMemberRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationRemoveMemberRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationRemoveMemberRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationRemoveMemberRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationRemoveMemberRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -40525,7 +41363,8 @@ impl ::std::convert::From<OpenApiProblem> for OperationRestoreDocumentResponse {
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
-///        "If-Match"
+///        "If-Match",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
@@ -40536,6 +41375,11 @@ impl ::std::convert::From<OpenApiProblem> for OperationRestoreDocumentResponse {
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -40576,7 +41420,8 @@ pub struct OperationRevokeInvitationRequest {
 ///  "type": "object",
 ///  "required": [
 ///    "Idempotency-Key",
-///    "If-Match"
+///    "If-Match",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
@@ -40587,6 +41432,11 @@ pub struct OperationRevokeInvitationRequest {
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -40600,6 +41450,8 @@ pub struct OperationRevokeInvitationRequestHeader {
     pub idempotency_key: OperationRevokeInvitationRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationRevokeInvitationRequestHeaderIfMatch,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationRevokeInvitationRequestHeaderXCsrfToken,
 }
 ///`OperationRevokeInvitationRequestHeaderIdempotencyKey`
 ///
@@ -40742,6 +41594,84 @@ impl ::std::convert::TryFrom<::std::string::String>
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationRevokeInvitationRequestHeaderIfMatch {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationRevokeInvitationRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationRevokeInvitationRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationRevokeInvitationRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationRevokeInvitationRequestHeaderXCsrfToken>
+    for ::std::string::String
+{
+    fn from(value: OperationRevokeInvitationRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationRevokeInvitationRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationRevokeInvitationRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationRevokeInvitationRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationRevokeInvitationRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationRevokeInvitationRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -41213,7 +42143,8 @@ impl ::std::convert::From<OpenApiProblem> for OperationRevokePublicLinkResponse 
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
-///        "If-Match"
+///        "If-Match",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
@@ -41224,6 +42155,11 @@ impl ::std::convert::From<OpenApiProblem> for OperationRevokePublicLinkResponse 
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -41365,7 +42301,8 @@ impl<'de> ::serde::Deserialize<'de> for OperationScheduleWorkspaceDeletionReques
 ///  "type": "object",
 ///  "required": [
 ///    "Idempotency-Key",
-///    "If-Match"
+///    "If-Match",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
@@ -41376,6 +42313,11 @@ impl<'de> ::serde::Deserialize<'de> for OperationScheduleWorkspaceDeletionReques
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -41389,6 +42331,8 @@ pub struct OperationScheduleWorkspaceDeletionRequestHeader {
     pub idempotency_key: OperationScheduleWorkspaceDeletionRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationScheduleWorkspaceDeletionRequestHeaderIfMatch,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationScheduleWorkspaceDeletionRequestHeaderXCsrfToken,
 }
 ///`OperationScheduleWorkspaceDeletionRequestHeaderIdempotencyKey`
 ///
@@ -41537,6 +42481,84 @@ impl ::std::convert::TryFrom<::std::string::String>
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationScheduleWorkspaceDeletionRequestHeaderIfMatch {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationScheduleWorkspaceDeletionRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationScheduleWorkspaceDeletionRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationScheduleWorkspaceDeletionRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationScheduleWorkspaceDeletionRequestHeaderXCsrfToken>
+    for ::std::string::String
+{
+    fn from(value: OperationScheduleWorkspaceDeletionRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationScheduleWorkspaceDeletionRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationScheduleWorkspaceDeletionRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationScheduleWorkspaceDeletionRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationScheduleWorkspaceDeletionRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationScheduleWorkspaceDeletionRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -45134,7 +46156,8 @@ impl ::std::convert::From<OpenApiProblem> for OperationUpdateDocumentMetadataRes
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
-///        "If-Match"
+///        "If-Match",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
@@ -45145,6 +46168,11 @@ impl ::std::convert::From<OpenApiProblem> for OperationUpdateDocumentMetadataRes
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -45284,7 +46312,8 @@ impl<'de> ::serde::Deserialize<'de> for OperationUpdateGroupRequestBodyName {
 ///  "type": "object",
 ///  "required": [
 ///    "Idempotency-Key",
-///    "If-Match"
+///    "If-Match",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
@@ -45295,6 +46324,11 @@ impl<'de> ::serde::Deserialize<'de> for OperationUpdateGroupRequestBodyName {
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -45308,6 +46342,8 @@ pub struct OperationUpdateGroupRequestHeader {
     pub idempotency_key: OperationUpdateGroupRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationUpdateGroupRequestHeaderIfMatch,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationUpdateGroupRequestHeaderXCsrfToken,
 }
 ///`OperationUpdateGroupRequestHeaderIdempotencyKey`
 ///
@@ -45457,6 +46493,82 @@ impl<'de> ::serde::Deserialize<'de> for OperationUpdateGroupRequestHeaderIfMatch
             })
     }
 }
+///`OperationUpdateGroupRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationUpdateGroupRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationUpdateGroupRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationUpdateGroupRequestHeaderXCsrfToken> for ::std::string::String {
+    fn from(value: OperationUpdateGroupRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationUpdateGroupRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationUpdateGroupRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationUpdateGroupRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationUpdateGroupRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationUpdateGroupRequestHeaderXCsrfToken {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
 ///`OperationUpdateGroupRequestPath`
 ///
 /// <details><summary>JSON schema</summary>
@@ -45583,7 +46695,8 @@ impl ::std::convert::From<OpenApiProblem> for OperationUpdateGroupResponse {
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
-///        "If-Match"
+///        "If-Match",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
@@ -45594,6 +46707,11 @@ impl ::std::convert::From<OpenApiProblem> for OperationUpdateGroupResponse {
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -45741,7 +46859,8 @@ impl ::std::convert::TryFrom<::std::string::String> for OperationUpdateMemberRol
 ///  "type": "object",
 ///  "required": [
 ///    "Idempotency-Key",
-///    "If-Match"
+///    "If-Match",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
@@ -45752,6 +46871,11 @@ impl ::std::convert::TryFrom<::std::string::String> for OperationUpdateMemberRol
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -45765,6 +46889,8 @@ pub struct OperationUpdateMemberRoleRequestHeader {
     pub idempotency_key: OperationUpdateMemberRoleRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationUpdateMemberRoleRequestHeaderIfMatch,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationUpdateMemberRoleRequestHeaderXCsrfToken,
 }
 ///`OperationUpdateMemberRoleRequestHeaderIdempotencyKey`
 ///
@@ -45907,6 +47033,84 @@ impl ::std::convert::TryFrom<::std::string::String>
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationUpdateMemberRoleRequestHeaderIfMatch {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationUpdateMemberRoleRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationUpdateMemberRoleRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationUpdateMemberRoleRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationUpdateMemberRoleRequestHeaderXCsrfToken>
+    for ::std::string::String
+{
+    fn from(value: OperationUpdateMemberRoleRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationUpdateMemberRoleRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationUpdateMemberRoleRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationUpdateMemberRoleRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationUpdateMemberRoleRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationUpdateMemberRoleRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -47660,7 +48864,8 @@ impl ::std::convert::From<OpenApiProblem> for OperationUpdateVocabularyConceptRe
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
-///        "If-Match"
+///        "If-Match",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
@@ -47671,6 +48876,11 @@ impl ::std::convert::From<OpenApiProblem> for OperationUpdateVocabularyConceptRe
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -47903,7 +49113,8 @@ impl<'de> ::serde::Deserialize<'de> for OperationUpdateWorkspaceRequestBodyName 
 ///  "type": "object",
 ///  "required": [
 ///    "Idempotency-Key",
-///    "If-Match"
+///    "If-Match",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
@@ -47914,6 +49125,11 @@ impl<'de> ::serde::Deserialize<'de> for OperationUpdateWorkspaceRequestBodyName 
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -47927,6 +49143,8 @@ pub struct OperationUpdateWorkspaceRequestHeader {
     pub idempotency_key: OperationUpdateWorkspaceRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationUpdateWorkspaceRequestHeaderIfMatch,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationUpdateWorkspaceRequestHeaderXCsrfToken,
 }
 ///`OperationUpdateWorkspaceRequestHeaderIdempotencyKey`
 ///
@@ -48069,6 +49287,84 @@ impl ::std::convert::TryFrom<::std::string::String>
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationUpdateWorkspaceRequestHeaderIfMatch {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationUpdateWorkspaceRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationUpdateWorkspaceRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationUpdateWorkspaceRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationUpdateWorkspaceRequestHeaderXCsrfToken>
+    for ::std::string::String
+{
+    fn from(value: OperationUpdateWorkspaceRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationUpdateWorkspaceRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationUpdateWorkspaceRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationUpdateWorkspaceRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationUpdateWorkspaceRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationUpdateWorkspaceRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,

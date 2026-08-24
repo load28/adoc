@@ -18,8 +18,8 @@ Workspace
 Membership
 ├─ workspaceId
 ├─ userId
-├─ role: MEMBER | ADMIN
-└─ status: ACTIVE | REMOVED
+├─ role: MEMBER | ADMIN | OWNER
+└─ status: ACTIVE | SUSPENDED | REMOVED
 
 PermissionGrant
 ├─ workspaceId
@@ -35,8 +35,8 @@ PublishPolicy
 └─ requiredApprovals
 ```
 
-Group과 capability의 구체 구조는 상세 설계 전 별도 결정이 필요하지만 PermissionGrant가
-User ID 하나에만 고정되면 안 된다.
+Group은 같은 Workspace의 active Membership만 포함한다. Workspace role capability와
+PermissionGrant의 Document capability는 별도 경계이며 PermissionGrant는 User와 Group을 지원한다.
 
 ## 3. 불변식
 

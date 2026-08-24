@@ -1705,7 +1705,6 @@ export interface OpenApi__Workspace {
   slug: string;
   status: "ACTIVE" | "DELETION_SCHEDULED" | "PURGING" | "DELETED";
   revision: number;
-  [k: string]: unknown;
 }
 export interface OpenApi__UserPreferences {
   locale: "ko" | "en";
@@ -1718,7 +1717,6 @@ export interface OpenApi__Membership {
   role: "MEMBER" | "ADMIN" | "OWNER";
   status: "ACTIVE" | "SUSPENDED" | "REMOVED";
   revision: number;
-  [k: string]: unknown;
 }
 export interface OpenApi__Invitation {
   id: OpenApi__Id;
@@ -1737,7 +1735,6 @@ export interface OpenApi__Group {
   name: string;
   memberIds: OpenApi__Id[];
   revision: number;
-  [k: string]: unknown;
 }
 export interface OpenApi__PermissionGrantInput {
   subjectKind: "USER" | "GROUP";
@@ -2157,10 +2154,10 @@ export interface Operation__ListWorkspacesRequest {}
 export interface Operation__CreateWorkspaceRequest {
   header: {
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     name: string;
-    [k: string]: unknown;
   };
 }
 export interface Operation__GetWorkspaceRequest {
@@ -2175,6 +2172,7 @@ export interface Operation__UpdateWorkspaceRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     name?: string;
@@ -2188,6 +2186,7 @@ export interface Operation__ScheduleWorkspaceDeletionRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     reason: string;
@@ -2200,6 +2199,7 @@ export interface Operation__CancelWorkspaceDeletionRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
 }
 export interface Operation__ListMembersRequest {
@@ -2215,6 +2215,7 @@ export interface Operation__UpdateMemberRoleRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     role: "MEMBER" | "ADMIN" | "OWNER";
@@ -2228,6 +2229,7 @@ export interface Operation__RemoveMemberRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
 }
 export interface Operation__ListInvitationsRequest {
@@ -2244,6 +2246,7 @@ export interface Operation__InviteMemberRequest {
   };
   header: {
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     email: string;
@@ -2258,6 +2261,7 @@ export interface Operation__RevokeInvitationRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
 }
 export interface Operation__AcceptInvitationRequest {
@@ -2266,6 +2270,7 @@ export interface Operation__AcceptInvitationRequest {
   };
   header: {
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
 }
 export interface Operation__ListGroupsRequest {
@@ -2279,11 +2284,14 @@ export interface Operation__CreateGroupRequest {
   };
   header: {
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     name: string;
+    /**
+     * @maxItems 1000
+     */
     memberIds?: OpenApi__Id[];
-    [k: string]: unknown;
   };
 }
 export interface Operation__GetGroupRequest {
@@ -2300,6 +2308,7 @@ export interface Operation__UpdateGroupRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     name: string;
@@ -2313,6 +2322,7 @@ export interface Operation__DeleteGroupRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
 }
 export interface Operation__AddGroupMemberRequest {
@@ -2324,6 +2334,7 @@ export interface Operation__AddGroupMemberRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
 }
 export interface Operation__RemoveGroupMemberRequest {
@@ -2335,6 +2346,7 @@ export interface Operation__RemoveGroupMemberRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
 }
 export interface Operation__CreateDocumentRequest {
