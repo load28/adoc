@@ -443,11 +443,10 @@ CREATE TABLE reviews (
   PRIMARY KEY (id),
   UNIQUE (workspace_id, id),
   FOREIGN KEY (workspace_id, document_id) REFERENCES documents(workspace_id, id) ON DELETE CASCADE,
-  FOREIGN KEY (workspace_id, draft_id) REFERENCES drafts(workspace_id, id) ON DELETE CASCADE,
   FOREIGN KEY (workspace_id, requested_by) REFERENCES memberships(workspace_id, user_id),
   CHECK ((status = 'REQUESTED') = (resolved_at IS NULL))
 );
-CREATE UNIQUE INDEX reviews_active_document_idx ON reviews (document_id) WHERE status IN ('REQUESTED', 'APPROVED');
+CREATE UNIQUE INDEX reviews_active_document_idx ON reviews (document_id) WHERE status = 'REQUESTED';
 
 CREATE TABLE review_assignments (
   workspace_id uuid NOT NULL,
@@ -462,6 +461,20 @@ CREATE TABLE review_assignments (
   FOREIGN KEY (workspace_id, reviewer_id) REFERENCES memberships(workspace_id, user_id),
   FOREIGN KEY (workspace_id, discussion_id) REFERENCES discussions(workspace_id, id),
   CHECK ((decision = 'PENDING') = (decided_at IS NULL))
+);
+
+CREATE TABLE review_decision_revisions (
+  workspace_id uuid NOT NULL,
+  review_id uuid NOT NULL,
+  reviewer_id uuid NOT NULL,
+  revision bigint NOT NULL CHECK (revision > 0),
+  decision review_decision NOT NULL,
+  discussion_id uuid,
+  decided_at timestamptz NOT NULL,
+  PRIMARY KEY (review_id, reviewer_id, revision),
+  FOREIGN KEY (workspace_id, review_id) REFERENCES reviews(workspace_id, id) ON DELETE CASCADE,
+  FOREIGN KEY (workspace_id, reviewer_id) REFERENCES memberships(workspace_id, user_id),
+  FOREIGN KEY (workspace_id, discussion_id) REFERENCES discussions(workspace_id, id)
 );
 
 CREATE TABLE inbox_items (
@@ -485,6 +498,11 @@ CREATE OR REPLACE FUNCTION reject_message_revision_mutation() RETURNS trigger LA
 BEGIN RAISE EXCEPTION 'message revisions are immutable'; END $$;
 CREATE TRIGGER message_revisions_immutable BEFORE UPDATE OR DELETE ON message_revisions
 FOR EACH ROW EXECUTE FUNCTION reject_message_revision_mutation();
+
+CREATE OR REPLACE FUNCTION reject_review_decision_revision_mutation() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN RAISE EXCEPTION 'review decision revisions are immutable'; END $$;
+CREATE TRIGGER review_decision_revisions_immutable BEFORE UPDATE OR DELETE ON review_decision_revisions
+FOR EACH ROW EXECUTE FUNCTION reject_review_decision_revision_mutation();
 
 CREATE TABLE references_graph (
   id uuid PRIMARY KEY,

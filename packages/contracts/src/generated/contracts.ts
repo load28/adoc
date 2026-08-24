@@ -103,6 +103,8 @@ export type AdocContractBundle =
   | OpenApi__Message
   | OpenApi__DiscussionPage
   | OpenApi__DiscussionDetail
+  | OpenApi__ReviewDecisionInput
+  | OpenApi__ReviewAssignment
   | OpenApi__Review
   | OpenApi__InboxItem
   | OpenApi__InboxPage
@@ -551,6 +553,15 @@ export type OpenApi__DocumentDetail = OpenApi__Document & {
   publishedVersion?: OpenApi__PublishedVersion | null;
   [k: string]: unknown;
 };
+export type OpenApi__ReviewDecisionInput =
+  | {
+      decision: "APPROVE";
+      discussionId?: null;
+    }
+  | {
+      decision: "REQUEST_CHANGES";
+      discussionId: OpenApi__Id;
+    };
 export type OpenApi__Proposal = AiContracts_Proposal & {
   revision?: number;
   [k: string]: unknown;
@@ -1945,13 +1956,28 @@ export interface OpenApi__DiscussionDetail {
   messages: OpenApi__Message[];
   nextCursor?: string | null;
 }
+export interface OpenApi__ReviewAssignment {
+  reviewerId: OpenApi__Id;
+  decision: "PENDING" | "APPROVED" | "CHANGES_REQUESTED";
+  discussionId: OpenApi__NullableId;
+  decidedAt: string | null;
+  revision: number;
+}
 export interface OpenApi__Review {
   id: OpenApi__Id;
   documentId: OpenApi__Id;
+  draftId: OpenApi__Id;
   draftRevision: number;
+  requestedBy: OpenApi__Id;
+  policySnapshot: {
+    [k: string]: unknown;
+  };
+  policyOutdated: boolean;
   status: "REQUESTED" | "APPROVED" | "CHANGES_REQUESTED" | "CANCELLED" | "INVALIDATED";
+  assignments: OpenApi__ReviewAssignment[];
+  requestedAt: string;
+  resolvedAt: string | null;
   revision: number;
-  [k: string]: unknown;
 }
 export interface OpenApi__InboxItem {
   id: OpenApi__Id;
@@ -2566,6 +2592,7 @@ export interface Operation__SetPublishPolicyRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     mode: "DIRECT" | "REVIEW_REQUIRED";
@@ -2660,6 +2687,7 @@ export interface Operation__RequestReviewRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
 }
 export interface Operation__ListVersionsRequest {
@@ -2708,12 +2736,9 @@ export interface Operation__SubmitReviewDecisionRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
-  body: {
-    decision: "APPROVE" | "REQUEST_CHANGES";
-    discussionId?: OpenApi__NullableId;
-    [k: string]: unknown;
-  };
+  body: OpenApi__ReviewDecisionInput;
 }
 export interface Operation__PublishDocumentRequest {
   path: {
@@ -2880,6 +2905,7 @@ export interface Operation__CancelReviewRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     reason: string;

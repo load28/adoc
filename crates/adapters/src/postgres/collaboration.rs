@@ -2,11 +2,12 @@ use adoc_application::{
     collaboration::{
         CollaborationRepository, Discussion, DiscussionAction, DiscussionCommand, DiscussionDetail,
         DiscussionPage, DiscussionStatus, InboxAction, InboxCommand, InboxFilter, InboxItem,
-        InboxKind, InboxPage, Message, MessageAction, MessageCommand, Topic, TopicInput, TopicKind,
-        may_edit_message,
+        InboxKind, InboxPage, Message, MessageAction, MessageCommand, Review, ReviewAction,
+        ReviewAssignment, ReviewCommand, ReviewDecision, ReviewDecisionInputKind, ReviewStatus,
+        Topic, TopicInput, TopicKind, may_edit_message, review_status,
     },
     governance::GovernanceError,
-    permission::Access,
+    permission::{Access, PublishMode, ReviewerRule},
 };
 use adoc_ports::BoxFuture;
 use chrono::{DateTime, Utc};
@@ -20,6 +21,7 @@ use super::{
     governance::{
         OutboxEvent, append_event, begin_workspace, check_revision, complete_workspace, map_store,
     },
+    permission::load_effective_policy,
 };
 
 #[derive(Clone)]
@@ -523,6 +525,403 @@ impl CollaborationRepository for PostgresCollaborationRepository {
             Ok(result)
         })
     }
+    fn get_review<'a>(
+        &'a self,
+        actor: Uuid,
+        workspace: Uuid,
+        id: Uuid,
+    ) -> BoxFuture<'a, Result<Review, GovernanceError>> {
+        Box::pin(async move {
+            let mut tx = self.pool.begin().await.map_err(map_store)?;
+            let row = review_row(&mut tx, workspace, id, false).await?;
+            let document: Uuid = row.get("document_id");
+            require_access(&mut tx, actor, workspace, document, Access::Viewer, false)
+                .await
+                .map_err(|_| GovernanceError::ReviewNotFound)?;
+            let result = load_review(&mut tx, workspace, &row).await?;
+            tx.commit().await.map_err(map_store)?;
+            Ok(result)
+        })
+    }
+    fn mutate_review<'a>(
+        &'a self,
+        input: ReviewCommand,
+    ) -> BoxFuture<'a, Result<Review, GovernanceError>> {
+        Box::pin(async move {
+            let mut tx = self.pool.begin().await.map_err(map_store)?;
+            let document = if matches!(input.action, ReviewAction::Request) {
+                input.document_id.ok_or(GovernanceError::Validation)?
+            } else {
+                review_row(&mut tx, input.workspace_id, input.review_id, false)
+                    .await?
+                    .get("document_id")
+            };
+            let minimum = if matches!(input.action, ReviewAction::Request) {
+                Access::Contributor
+            } else {
+                Access::Viewer
+            };
+            require_access(
+                &mut tx,
+                input.command.actor_id,
+                input.workspace_id,
+                document,
+                minimum,
+                false,
+            )
+            .await
+            .map_err(|_| {
+                if matches!(input.action, ReviewAction::Request) {
+                    GovernanceError::DocumentNotFound
+                } else {
+                    GovernanceError::ReviewNotFound
+                }
+            })?;
+            if let Some(replay) =
+                begin_workspace::<Review>(&mut tx, input.workspace_id, &input.command).await?
+            {
+                tx.commit().await.map_err(map_store)?;
+                return Ok(replay);
+            }
+            match input.action {
+                ReviewAction::Request => request_review(&mut tx, &input, document).await?,
+                ReviewAction::Decide => decide_review(&mut tx, &input, document).await?,
+                ReviewAction::Cancel => cancel_review(&mut tx, &input, document).await?,
+            }
+            let row = review_row(&mut tx, input.workspace_id, input.review_id, false).await?;
+            let result = load_review(&mut tx, input.workspace_id, &row).await?;
+            let event_action = if result.status == ReviewStatus::Invalidated {
+                "INVALIDATED".to_owned()
+            } else {
+                format!("{:?}", input.action)
+            };
+            append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"Review",aggregate_id:input.review_id,sequence:result.revision+1,event_type:"ReviewChanged.v1",payload:json!({"reviewId":result.id,"documentId":result.document_id,"draftRevision":result.draft_revision,"revision":result.revision,"action":event_action}),occurred_at:input.command.now}).await?;
+            complete_workspace(&mut tx, input.workspace_id, &input.command, 200, &result).await?;
+            tx.commit().await.map_err(map_store)?;
+            Ok(result)
+        })
+    }
+}
+
+async fn request_review(
+    tx: &mut Transaction<'_, Postgres>,
+    input: &ReviewCommand,
+    document: Uuid,
+) -> Result<(), GovernanceError> {
+    require_effective_active(tx, input.workspace_id, document).await?;
+    let draft=sqlx::query("SELECT id,revision,content_json FROM drafts WHERE workspace_id=$1 AND document_id=$2 FOR UPDATE").bind(input.workspace_id).bind(document).fetch_optional(&mut **tx).await.map_err(map_store)?.ok_or(GovernanceError::DraftNotFound)?;
+    check_revision(draft.get("revision"), input.expected_revision)?;
+    let policy = load_effective_policy(&mut **tx, input.workspace_id, document).await?;
+    if policy.mode != PublishMode::ReviewRequired {
+        return Err(GovernanceError::PublishPolicyInvalid);
+    }
+    let active=sqlx::query("SELECT id,status::text,policy_snapshot_json FROM reviews WHERE workspace_id=$1 AND document_id=$2 AND (status='REQUESTED' OR (status='APPROVED' AND draft_id=$3)) FOR UPDATE").bind(input.workspace_id).bind(document).bind(draft.get::<Uuid,_>("id")).fetch_optional(&mut **tx).await.map_err(map_store)?;
+    if let Some(active) = active {
+        let snapshot: Value = active.get("policy_snapshot_json");
+        let source = serde_json::to_value(policy.inherited_from_document_id)
+            .map_err(|_| GovernanceError::Internal)?;
+        let outdated = snapshot.get("policyRevision").and_then(Value::as_i64)
+            != Some(policy.revision)
+            || snapshot.get("sourceDocumentId") != Some(&source);
+        if active.get::<String, _>("status") == "APPROVED" && outdated {
+            invalidate_reviews(tx, input.workspace_id, &[document], input.command.now).await?;
+        } else {
+            return Err(GovernanceError::ReviewStateInvalid);
+        }
+    }
+    let reviewers = eligible_reviewers(
+        tx,
+        input.workspace_id,
+        document,
+        input.command.actor_id,
+        &policy.reviewer_rule,
+    )
+    .await?;
+    if reviewers.len() < policy.required_approvals as usize {
+        return Err(GovernanceError::ReviewNotEligible);
+    }
+    let snapshot = json!({"sourceDocumentId":policy.inherited_from_document_id,"policyRevision":policy.revision,"requiredApprovals":policy.required_approvals,"reviewerRule":policy.reviewer_rule,"reviewerIds":reviewers});
+    sqlx::query("INSERT INTO reviews(id,workspace_id,document_id,draft_id,draft_revision,policy_snapshot_json,status,requested_by,requested_at) VALUES($1,$2,$3,$4,$5,$6,'REQUESTED',$7,$8)").bind(input.review_id).bind(input.workspace_id).bind(document).bind(draft.get::<Uuid,_>("id")).bind(input.expected_revision).bind(&snapshot).bind(input.command.actor_id).bind(input.command.now).execute(&mut **tx).await.map_err(map_store)?;
+    for reviewer in reviewers {
+        sqlx::query(
+            "INSERT INTO review_assignments(workspace_id,review_id,reviewer_id) VALUES($1,$2,$3)",
+        )
+        .bind(input.workspace_id)
+        .bind(input.review_id)
+        .bind(reviewer)
+        .execute(&mut **tx)
+        .await
+        .map_err(map_store)?;
+        let source = format!("review:{}:{}", input.review_id, reviewer);
+        let row=sqlx::query("INSERT INTO inbox_items(id,workspace_id,user_id,kind,source_key,target_json,created_at) VALUES($1,$2,$3,'REVIEW_REQUESTED',$4,$5,$6) ON CONFLICT(workspace_id,user_id,source_key) DO UPDATE SET resolved_at=NULL,revision=inbox_items.revision+1 RETURNING id,kind,target_json,revision,created_at,read_at,resolved_at").bind(Uuid::now_v7()).bind(input.workspace_id).bind(reviewer).bind(source).bind(json!({"kind":"REVIEW","id":input.review_id})).bind(input.command.now).fetch_one(&mut **tx).await.map_err(map_store)?;
+        append_inbox_event(
+            tx,
+            input.workspace_id,
+            &inbox(&row)?,
+            "REVIEW_REQUESTED",
+            input.command.now,
+        )
+        .await?;
+    }
+    Ok(())
+}
+
+async fn decide_review(
+    tx: &mut Transaction<'_, Postgres>,
+    input: &ReviewCommand,
+    document: Uuid,
+) -> Result<(), GovernanceError> {
+    let review = review_row(tx, input.workspace_id, input.review_id, true).await?;
+    check_revision(review.get("revision"), input.expected_revision)?;
+    let status: String = review.get("status");
+    if !matches!(status.as_str(), "REQUESTED" | "APPROVED") {
+        return Err(GovernanceError::ReviewStateInvalid);
+    }
+    let decision = input.decision.as_ref().ok_or(GovernanceError::Validation)?;
+    let assignment=sqlx::query("SELECT decision::text,revision FROM review_assignments WHERE workspace_id=$1 AND review_id=$2 AND reviewer_id=$3 FOR UPDATE").bind(input.workspace_id).bind(input.review_id).bind(input.command.actor_id).fetch_optional(&mut **tx).await.map_err(map_store)?.ok_or(GovernanceError::ReviewNotEligible)?;
+    let reviewers=sqlx::query_scalar::<_,Uuid>("SELECT reviewer_id FROM review_assignments WHERE workspace_id=$1 AND review_id=$2 ORDER BY reviewer_id").bind(input.workspace_id).bind(input.review_id).fetch_all(&mut **tx).await.map_err(map_store)?;
+    for reviewer in reviewers {
+        if require_access(
+            tx,
+            reviewer,
+            input.workspace_id,
+            document,
+            Access::Viewer,
+            false,
+        )
+        .await
+        .is_err()
+        {
+            sqlx::query("UPDATE reviews SET status='INVALIDATED',resolved_at=$3,revision=revision+1 WHERE workspace_id=$1 AND id=$2").bind(input.workspace_id).bind(input.review_id).bind(input.command.now).execute(&mut **tx).await.map_err(map_store)?;
+            resolve_review_inbox(tx, input.workspace_id, input.review_id, input.command.now)
+                .await?;
+            return Ok(());
+        }
+    }
+    if let Some(discussion) = decision.discussion_id {
+        let row = discussion_row(tx, input.workspace_id, discussion, false)
+            .await
+            .map_err(|_| GovernanceError::DiscussionTargetInvalid)?;
+        if row.get::<Uuid, _>("document_id") != document {
+            return Err(GovernanceError::DiscussionTargetInvalid);
+        }
+    }
+    let next = assignment.get::<i64, _>("revision") + 1;
+    let value = match decision.decision {
+        ReviewDecisionInputKind::Approve => "APPROVED",
+        ReviewDecisionInputKind::RequestChanges => "CHANGES_REQUESTED",
+    };
+    sqlx::query("INSERT INTO review_decision_revisions(workspace_id,review_id,reviewer_id,revision,decision,discussion_id,decided_at) VALUES($1,$2,$3,$4,$5::review_decision,$6,$7)").bind(input.workspace_id).bind(input.review_id).bind(input.command.actor_id).bind(next).bind(value).bind(decision.discussion_id).bind(input.command.now).execute(&mut **tx).await.map_err(map_store)?;
+    sqlx::query("UPDATE review_assignments SET decision=$4::review_decision,discussion_id=$5,decided_at=$6,revision=$7 WHERE workspace_id=$1 AND review_id=$2 AND reviewer_id=$3").bind(input.workspace_id).bind(input.review_id).bind(input.command.actor_id).bind(value).bind(decision.discussion_id).bind(input.command.now).bind(next).execute(&mut **tx).await.map_err(map_store)?;
+    let assignments = load_assignments(tx, input.workspace_id, input.review_id).await?;
+    let required = review
+        .get::<Value, _>("policy_snapshot_json")
+        .get("requiredApprovals")
+        .and_then(Value::as_u64)
+        .ok_or(GovernanceError::Internal)? as usize;
+    let next_status = review_status(&assignments, required);
+    let resolved = (!matches!(next_status, ReviewStatus::Requested)).then_some(input.command.now);
+    sqlx::query("UPDATE reviews SET status=$3::review_status,resolved_at=$4,revision=revision+1 WHERE workspace_id=$1 AND id=$2").bind(input.workspace_id).bind(input.review_id).bind(review_status_text(next_status)).bind(resolved).execute(&mut **tx).await.map_err(map_store)?;
+    if !matches!(next_status, ReviewStatus::Requested) {
+        resolve_review_inbox(tx, input.workspace_id, input.review_id, input.command.now).await?;
+    }
+    let source = format!(
+        "review-decision:{}:{}:{}",
+        input.review_id, input.command.actor_id, next
+    );
+    let row=sqlx::query("INSERT INTO inbox_items(id,workspace_id,user_id,kind,source_key,target_json,created_at) VALUES($1,$2,$3,'REVIEW_DECIDED',$4,$5,$6) RETURNING id,kind,target_json,revision,created_at,read_at,resolved_at").bind(Uuid::now_v7()).bind(input.workspace_id).bind(review.get::<Uuid,_>("requested_by")).bind(source).bind(json!({"kind":"REVIEW","id":input.review_id})).bind(input.command.now).fetch_one(&mut **tx).await.map_err(map_store)?;
+    append_inbox_event(
+        tx,
+        input.workspace_id,
+        &inbox(&row)?,
+        "REVIEW_DECIDED",
+        input.command.now,
+    )
+    .await?;
+    Ok(())
+}
+
+async fn cancel_review(
+    tx: &mut Transaction<'_, Postgres>,
+    input: &ReviewCommand,
+    document: Uuid,
+) -> Result<(), GovernanceError> {
+    let review = review_row(tx, input.workspace_id, input.review_id, true).await?;
+    check_revision(review.get("revision"), input.expected_revision)?;
+    if review.get::<String, _>("status") != "REQUESTED" {
+        return Err(GovernanceError::ReviewStateInvalid);
+    }
+    if review.get::<Uuid, _>("requested_by") != input.command.actor_id {
+        require_access(
+            tx,
+            input.command.actor_id,
+            input.workspace_id,
+            document,
+            Access::Editor,
+            false,
+        )
+        .await
+        .map_err(|_| GovernanceError::ReviewNotEligible)?;
+    }
+    let _reason = input.reason.as_deref().ok_or(GovernanceError::Validation)?;
+    sqlx::query("UPDATE reviews SET status='CANCELLED',resolved_at=$3,revision=revision+1 WHERE workspace_id=$1 AND id=$2").bind(input.workspace_id).bind(input.review_id).bind(input.command.now).execute(&mut **tx).await.map_err(map_store)?;
+    resolve_review_inbox(tx, input.workspace_id, input.review_id, input.command.now).await
+}
+
+async fn eligible_reviewers(
+    tx: &mut Transaction<'_, Postgres>,
+    workspace: Uuid,
+    document: Uuid,
+    requester: Uuid,
+    rule: &ReviewerRule,
+) -> Result<Vec<Uuid>, GovernanceError> {
+    let candidates = match rule {
+        ReviewerRule::AnyEditor => sqlx::query_scalar::<_, Uuid>(
+            "SELECT user_id FROM memberships WHERE workspace_id=$1 AND status='ACTIVE' ORDER BY user_id",
+        )
+        .bind(workspace)
+        .fetch_all(&mut **tx)
+        .await
+        .map_err(map_store)?,
+        ReviewerRule::Users { user_ids } => user_ids.clone(),
+        ReviewerRule::Groups { group_ids } => sqlx::query_scalar::<_, Uuid>("SELECT DISTINCT gm.user_id FROM group_members gm JOIN memberships m ON m.workspace_id=gm.workspace_id AND m.user_id=gm.user_id AND m.status='ACTIVE' WHERE gm.workspace_id=$1 AND gm.group_id=ANY($2) ORDER BY gm.user_id")
+            .bind(workspace).bind(group_ids).fetch_all(&mut **tx).await.map_err(map_store)?,
+    };
+    let minimum = if matches!(rule, ReviewerRule::AnyEditor) {
+        Access::Editor
+    } else {
+        Access::Viewer
+    };
+    let mut eligible = Vec::new();
+    for candidate in candidates {
+        if candidate != requester
+            && require_access(tx, candidate, workspace, document, minimum, false)
+                .await
+                .is_ok()
+        {
+            eligible.push(candidate);
+        }
+    }
+    eligible.sort();
+    eligible.dedup();
+    Ok(eligible)
+}
+
+async fn review_row<'a>(
+    tx: &mut Transaction<'a, Postgres>,
+    workspace: Uuid,
+    id: Uuid,
+    lock: bool,
+) -> Result<PgRow, GovernanceError> {
+    let sql = if lock {
+        "SELECT id,document_id,draft_id,draft_revision,policy_snapshot_json,status::text,requested_by,requested_at,resolved_at,revision FROM reviews WHERE workspace_id=$1 AND id=$2 FOR UPDATE"
+    } else {
+        "SELECT id,document_id,draft_id,draft_revision,policy_snapshot_json,status::text,requested_by,requested_at,resolved_at,revision FROM reviews WHERE workspace_id=$1 AND id=$2"
+    };
+    sqlx::query(sql)
+        .bind(workspace)
+        .bind(id)
+        .fetch_optional(&mut **tx)
+        .await
+        .map_err(map_store)?
+        .ok_or(GovernanceError::ReviewNotFound)
+}
+
+async fn load_assignments(
+    tx: &mut Transaction<'_, Postgres>,
+    workspace: Uuid,
+    review: Uuid,
+) -> Result<Vec<ReviewAssignment>, GovernanceError> {
+    sqlx::query("SELECT reviewer_id,decision::text,discussion_id,decided_at,revision FROM review_assignments WHERE workspace_id=$1 AND review_id=$2 ORDER BY reviewer_id")
+        .bind(workspace).bind(review).fetch_all(&mut **tx).await.map_err(map_store)?
+        .iter().map(|row| Ok(ReviewAssignment { reviewer_id:row.get("reviewer_id"), decision:parse_review_decision(row.get("decision"))?, discussion_id:row.get("discussion_id"), decided_at:row.get("decided_at"), revision:row.get("revision") })).collect()
+}
+
+async fn load_review(
+    tx: &mut Transaction<'_, Postgres>,
+    workspace: Uuid,
+    row: &PgRow,
+) -> Result<Review, GovernanceError> {
+    let document = row.get("document_id");
+    let snapshot: Value = row.get("policy_snapshot_json");
+    let current = load_effective_policy(&mut **tx, workspace, document).await?;
+    let outdated = snapshot.get("policyRevision").and_then(Value::as_i64) != Some(current.revision)
+        || snapshot.get("sourceDocumentId")
+            != Some(
+                &serde_json::to_value(current.inherited_from_document_id)
+                    .map_err(|_| GovernanceError::Internal)?,
+            );
+    Ok(Review {
+        id: row.get("id"),
+        document_id: document,
+        draft_id: row.get("draft_id"),
+        draft_revision: row.get("draft_revision"),
+        requested_by: row.get("requested_by"),
+        policy_snapshot: snapshot,
+        policy_outdated: outdated,
+        status: parse_review_status(row.get("status"))?,
+        assignments: load_assignments(tx, workspace, row.get("id")).await?,
+        requested_at: row.get("requested_at"),
+        resolved_at: row.get("resolved_at"),
+        revision: row.get("revision"),
+    })
+}
+
+async fn resolve_review_inbox(
+    tx: &mut Transaction<'_, Postgres>,
+    workspace: Uuid,
+    review: Uuid,
+    now: DateTime<Utc>,
+) -> Result<(), GovernanceError> {
+    let rows=sqlx::query("UPDATE inbox_items SET resolved_at=$3,revision=revision+1 WHERE workspace_id=$1 AND source_key LIKE $2 AND resolved_at IS NULL RETURNING id,kind,target_json,revision,created_at,read_at,resolved_at").bind(workspace).bind(format!("review:{review}:%")).bind(now).fetch_all(&mut **tx).await.map_err(map_store)?;
+    for row in rows {
+        append_inbox_event(tx, workspace, &inbox(&row)?, "RESOLVED", now).await?;
+    }
+    Ok(())
+}
+
+fn parse_review_status(value: String) -> Result<ReviewStatus, GovernanceError> {
+    match value.as_str() {
+        "REQUESTED" => Ok(ReviewStatus::Requested),
+        "APPROVED" => Ok(ReviewStatus::Approved),
+        "CHANGES_REQUESTED" => Ok(ReviewStatus::ChangesRequested),
+        "CANCELLED" => Ok(ReviewStatus::Cancelled),
+        "INVALIDATED" => Ok(ReviewStatus::Invalidated),
+        _ => Err(GovernanceError::Internal),
+    }
+}
+fn review_status_text(value: ReviewStatus) -> &'static str {
+    match value {
+        ReviewStatus::Requested => "REQUESTED",
+        ReviewStatus::Approved => "APPROVED",
+        ReviewStatus::ChangesRequested => "CHANGES_REQUESTED",
+        ReviewStatus::Cancelled => "CANCELLED",
+        ReviewStatus::Invalidated => "INVALIDATED",
+    }
+}
+fn parse_review_decision(value: String) -> Result<ReviewDecision, GovernanceError> {
+    match value.as_str() {
+        "PENDING" => Ok(ReviewDecision::Pending),
+        "APPROVED" => Ok(ReviewDecision::Approved),
+        "CHANGES_REQUESTED" => Ok(ReviewDecision::ChangesRequested),
+        _ => Err(GovernanceError::Internal),
+    }
+}
+
+pub(super) async fn invalidate_reviews(
+    tx: &mut Transaction<'_, Postgres>,
+    workspace: Uuid,
+    documents: &[Uuid],
+    now: DateTime<Utc>,
+) -> Result<(), GovernanceError> {
+    let rows=sqlx::query("SELECT id,document_id,revision FROM reviews WHERE workspace_id=$1 AND document_id=ANY($2) AND status IN ('REQUESTED','APPROVED') ORDER BY id FOR UPDATE").bind(workspace).bind(documents).fetch_all(&mut **tx).await.map_err(map_store)?;
+    for row in rows {
+        let review: Uuid = row.get("id");
+        let revision:i64=sqlx::query_scalar("UPDATE reviews SET status='INVALIDATED',resolved_at=$3,revision=revision+1 WHERE workspace_id=$1 AND id=$2 RETURNING revision").bind(workspace).bind(review).bind(now).fetch_one(&mut **tx).await.map_err(map_store)?;
+        resolve_review_inbox(tx, workspace, review, now).await?;
+        append_event(tx,OutboxEvent{workspace_id:workspace,aggregate_kind:"Review",aggregate_id:review,sequence:revision+1,event_type:"ReviewChanged.v1",payload:json!({"reviewId":review,"documentId":row.get::<Uuid,_>("document_id"),"revision":revision,"action":"INVALIDATED"}),occurred_at:now}).await?;
+    }
+    Ok(())
 }
 
 async fn discussion_row<'a>(

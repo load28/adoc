@@ -189,6 +189,7 @@
 | PLAN-14 | `design/implementation/PERMISSION-PUBLISH-POLICY.md` | Permission Resolver·PublishPolicy 구현 계약 | 구현 기준 |
 | PLAN-17 | `design/implementation/PUBLISH-VERSION-PUBLIC-LINK.md` | Publish·Version·Public capability 구현 계약 | 구현 기준 |
 | PLAN-18 | `design/implementation/DISCUSSION-MESSAGE-INBOX.md` | Discussion·Message·Inbox 구현 계약 | 구현 기준 |
+| PLAN-19 | `design/implementation/REVIEW-APPROVAL.md` | revision-bound Review·Approval·Publish gate 구현 계약 | 구현 기준 |
 | PLAN-15 | `design/implementation/CONTENT-OPERATION-REDUCER.md` | Content·Region·Operation reducer 구현 계약 | 구현 기준 |
 | PLAN-16 | `design/implementation/DOCUMENT-TREE-DRAFT-LEASE.md` | Document Tree·Draft·Lease 구현 계약 | 구현 기준 |
 

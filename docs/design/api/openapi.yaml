@@ -373,7 +373,7 @@ paths:
     put:
       tags: [Governance]
       operationId: setPublishPolicy
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody: {$ref: '#/components/requestBodies/SetPublishPolicy'}
       responses:
         '200': {description: Updated, content: {application/json: {schema: {$ref: '#/components/schemas/PublishPolicy'}}}}
@@ -434,7 +434,7 @@ paths:
     post:
       tags: [Collaboration]
       operationId: requestReview
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       responses:
         '201': {description: Requested, content: {application/json: {schema: {$ref: '#/components/schemas/Review'}}}}
         default: {$ref: '#/components/responses/Problem'}
@@ -478,10 +478,10 @@ paths:
     post:
       tags: [Collaboration]
       operationId: submitReviewDecision
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/ReviewId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/ReviewId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody:
         required: true
-        content: {application/json: {schema: {type: object, required: [decision], properties: {decision: {type: string, enum: [APPROVE, REQUEST_CHANGES]}, discussionId: {$ref: '#/components/schemas/NullableId'}}}}}
+        content: {application/json: {schema: {$ref: '#/components/schemas/ReviewDecisionInput'}}}
       responses:
         '200': {description: Recorded, content: {application/json: {schema: {$ref: '#/components/schemas/Review'}}}}
         default: {$ref: '#/components/responses/Problem'}
@@ -601,7 +601,7 @@ paths:
     post:
       tags: [Collaboration]
       operationId: cancelReview
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/ReviewId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/ReviewId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody: {$ref: '#/components/requestBodies/Reason'}
       responses:
         '200': {description: Cancelled, content: {application/json: {schema: {$ref: '#/components/schemas/Review'}}}}
@@ -1061,7 +1061,9 @@ components:
     Message: {type: object, additionalProperties: false, required: [id, authorId, body, mentionUserIds, revision, createdAt], properties: {id: {$ref: '#/components/schemas/Id'}, authorId: {$ref: '#/components/schemas/Id'}, body: {$ref: '../contracts/document-content.schema.json'}, mentionUserIds: {type: array, uniqueItems: true, items: {$ref: '#/components/schemas/Id'}}, revision: {type: integer, minimum: 0}, createdAt: {type: string, format: date-time}, editedAt: {type: [string, 'null'], format: date-time}, deletedAt: {type: [string, 'null'], format: date-time}}}
     DiscussionPage: {type: object, additionalProperties: false, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/Discussion'}}, nextCursor: {type: [string, 'null']}}}
     DiscussionDetail: {type: object, additionalProperties: false, required: [discussion, messages], properties: {discussion: {$ref: '#/components/schemas/Discussion'}, messages: {type: array, items: {$ref: '#/components/schemas/Message'}}, nextCursor: {type: [string, 'null']}}}
-    Review: {type: object, required: [id, documentId, draftRevision, status, revision], properties: {id: {$ref: '#/components/schemas/Id'}, documentId: {$ref: '#/components/schemas/Id'}, draftRevision: {type: integer}, status: {type: string, enum: [REQUESTED, APPROVED, CHANGES_REQUESTED, CANCELLED, INVALIDATED]}, revision: {type: integer}}}
+    ReviewDecisionInput: {oneOf: [{type: object, additionalProperties: false, required: [decision], properties: {decision: {const: APPROVE}, discussionId: {type: 'null'}}}, {type: object, additionalProperties: false, required: [decision, discussionId], properties: {decision: {const: REQUEST_CHANGES}, discussionId: {$ref: '#/components/schemas/Id'}}}]}
+    ReviewAssignment: {type: object, additionalProperties: false, required: [reviewerId, decision, discussionId, decidedAt, revision], properties: {reviewerId: {$ref: '#/components/schemas/Id'}, decision: {type: string, enum: [PENDING, APPROVED, CHANGES_REQUESTED]}, discussionId: {$ref: '#/components/schemas/NullableId'}, decidedAt: {type: [string, 'null'], format: date-time}, revision: {type: integer, minimum: 0}}}
+    Review: {type: object, additionalProperties: false, required: [id, documentId, draftId, draftRevision, requestedBy, policySnapshot, policyOutdated, status, assignments, requestedAt, resolvedAt, revision], properties: {id: {$ref: '#/components/schemas/Id'}, documentId: {$ref: '#/components/schemas/Id'}, draftId: {$ref: '#/components/schemas/Id'}, draftRevision: {type: integer, minimum: 0}, requestedBy: {$ref: '#/components/schemas/Id'}, policySnapshot: {type: object}, policyOutdated: {type: boolean}, status: {type: string, enum: [REQUESTED, APPROVED, CHANGES_REQUESTED, CANCELLED, INVALIDATED]}, assignments: {type: array, items: {$ref: '#/components/schemas/ReviewAssignment'}}, requestedAt: {type: string, format: date-time}, resolvedAt: {type: [string, 'null'], format: date-time}, revision: {type: integer, minimum: 0}}}
     InboxItem: {type: object, additionalProperties: false, required: [id, kind, target, revision, createdAt, readAt, resolvedAt], properties: {id: {$ref: '#/components/schemas/Id'}, kind: {type: string, enum: [REVIEW_REQUESTED, REVIEW_DECIDED, MENTIONED, DISCUSSION_CHANGED, PERMISSION_CHANGED, AI_JOB_COMPLETED]}, target: {$ref: '#/components/schemas/ResourceTarget'}, revision: {type: integer, minimum: 0}, createdAt: {type: string, format: date-time}, readAt: {type: [string, 'null'], format: date-time}, resolvedAt: {type: [string, 'null'], format: date-time}}}
     InboxPage: {type: object, additionalProperties: false, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/InboxItem'}}, nextCursor: {type: [string, 'null']}}}
     AffectedCount: {type: object, additionalProperties: false, required: [count], properties: {count: {type: integer, minimum: 0}}}

@@ -836,6 +836,12 @@ pub enum GovernanceError {
     MessageStateInvalid,
     #[error("inbox item was not found")]
     InboxItemNotFound,
+    #[error("review was not found")]
+    ReviewNotFound,
+    #[error("review state is invalid")]
+    ReviewStateInvalid,
+    #[error("reviewer is not eligible")]
+    ReviewNotEligible,
     #[error("idempotency key was reused")]
     IdempotencyKeyReused,
     #[error("governance storage is unavailable")]

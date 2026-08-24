@@ -313,6 +313,12 @@
       "$ref": "#/$defs/OpenApi__DiscussionDetail"
     },
     {
+      "$ref": "#/$defs/OpenApi__ReviewDecisionInput"
+    },
+    {
+      "$ref": "#/$defs/OpenApi__ReviewAssignment"
+    },
+    {
       "$ref": "#/$defs/OpenApi__Review"
     },
     {
@@ -4400,13 +4406,94 @@
         }
       }
     },
+    "OpenApi__ReviewDecisionInput": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision"
+          ],
+          "properties": {
+            "decision": {
+              "const": "APPROVE"
+            },
+            "discussionId": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "discussionId"
+          ],
+          "properties": {
+            "decision": {
+              "const": "REQUEST_CHANGES"
+            },
+            "discussionId": {
+              "$ref": "#/$defs/OpenApi__Id"
+            }
+          }
+        }
+      ]
+    },
+    "OpenApi__ReviewAssignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reviewerId",
+        "decision",
+        "discussionId",
+        "decidedAt",
+        "revision"
+      ],
+      "properties": {
+        "reviewerId": {
+          "$ref": "#/$defs/OpenApi__Id"
+        },
+        "decision": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "APPROVED",
+            "CHANGES_REQUESTED"
+          ]
+        },
+        "discussionId": {
+          "$ref": "#/$defs/OpenApi__NullableId"
+        },
+        "decidedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
     "OpenApi__Review": {
       "type": "object",
+      "additionalProperties": false,
       "required": [
         "id",
         "documentId",
+        "draftId",
         "draftRevision",
+        "requestedBy",
+        "policySnapshot",
+        "policyOutdated",
         "status",
+        "assignments",
+        "requestedAt",
+        "resolvedAt",
         "revision"
       ],
       "properties": {
@@ -4416,8 +4503,21 @@
         "documentId": {
           "$ref": "#/$defs/OpenApi__Id"
         },
+        "draftId": {
+          "$ref": "#/$defs/OpenApi__Id"
+        },
         "draftRevision": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
+        },
+        "requestedBy": {
+          "$ref": "#/$defs/OpenApi__Id"
+        },
+        "policySnapshot": {
+          "type": "object"
+        },
+        "policyOutdated": {
+          "type": "boolean"
         },
         "status": {
           "type": "string",
@@ -4429,8 +4529,26 @@
             "INVALIDATED"
           ]
         },
+        "assignments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OpenApi__ReviewAssignment"
+          }
+        },
+        "requestedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "resolvedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
         "revision": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         }
       }
     },
@@ -8621,11 +8739,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -9276,11 +9400,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         }
       },
@@ -9662,30 +9792,21 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
-          "type": "object",
-          "required": [
-            "decision"
-          ],
-          "properties": {
-            "decision": {
-              "type": "string",
-              "enum": [
-                "APPROVE",
-                "REQUEST_CHANGES"
-              ]
-            },
-            "discussionId": {
-              "$ref": "#/$defs/OpenApi__NullableId"
-            }
-          }
+          "$ref": "#/$defs/OpenApi__ReviewDecisionInput"
         }
       },
       "required": [
@@ -10921,11 +11042,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {

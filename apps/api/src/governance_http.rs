@@ -838,6 +838,23 @@ impl From<GovernanceError> for Problem {
                 None,
                 None,
             ),
+            GovernanceError::ReviewNotFound => {
+                (StatusCode::NOT_FOUND, "REVIEW_NOT_FOUND", false, None, None)
+            }
+            GovernanceError::ReviewStateInvalid => (
+                StatusCode::CONFLICT,
+                "REVIEW_STATE_INVALID",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::ReviewNotEligible => (
+                StatusCode::FORBIDDEN,
+                "REVIEW_NOT_ELIGIBLE",
+                false,
+                None,
+                None,
+            ),
             GovernanceError::IdempotencyKeyReused => (
                 StatusCode::CONFLICT,
                 "IDEMPOTENCY_KEY_REUSED",

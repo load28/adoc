@@ -345,6 +345,12 @@ pub mod error {
 ///      "$ref": "#/$defs/OpenApi__DiscussionDetail"
 ///    },
 ///    {
+///      "$ref": "#/$defs/OpenApi__ReviewDecisionInput"
+///    },
+///    {
+///      "$ref": "#/$defs/OpenApi__ReviewAssignment"
+///    },
+///    {
 ///      "$ref": "#/$defs/OpenApi__Review"
 ///    },
 ///    {
@@ -1183,6 +1189,8 @@ pub enum AdocContractBundle {
     OpenApiMessage(OpenApiMessage),
     OpenApiDiscussionPage(OpenApiDiscussionPage),
     OpenApiDiscussionDetail(OpenApiDiscussionDetail),
+    OpenApiReviewDecisionInput(OpenApiReviewDecisionInput),
+    OpenApiReviewAssignment(OpenApiReviewAssignment),
     OpenApiReview(OpenApiReview),
     OpenApiInboxItem(OpenApiInboxItem),
     OpenApiInboxPage(OpenApiInboxPage),
@@ -1940,6 +1948,16 @@ impl ::std::convert::From<OpenApiDiscussionPage> for AdocContractBundle {
 impl ::std::convert::From<OpenApiDiscussionDetail> for AdocContractBundle {
     fn from(value: OpenApiDiscussionDetail) -> Self {
         Self::OpenApiDiscussionDetail(value)
+    }
+}
+impl ::std::convert::From<OpenApiReviewDecisionInput> for AdocContractBundle {
+    fn from(value: OpenApiReviewDecisionInput) -> Self {
+        Self::OpenApiReviewDecisionInput(value)
+    }
+}
+impl ::std::convert::From<OpenApiReviewAssignment> for AdocContractBundle {
+    fn from(value: OpenApiReviewAssignment) -> Self {
+        Self::OpenApiReviewAssignment(value)
     }
 }
 impl ::std::convert::From<OpenApiReview> for AdocContractBundle {
@@ -16118,24 +16136,62 @@ impl ::std::convert::TryFrom<::std::string::String> for OpenApiResourceTargetKin
 ///{
 ///  "type": "object",
 ///  "required": [
+///    "assignments",
 ///    "documentId",
+///    "draftId",
 ///    "draftRevision",
 ///    "id",
+///    "policyOutdated",
+///    "policySnapshot",
+///    "requestedAt",
+///    "requestedBy",
+///    "resolvedAt",
 ///    "revision",
 ///    "status"
 ///  ],
 ///  "properties": {
+///    "assignments": {
+///      "type": "array",
+///      "items": {
+///        "$ref": "#/$defs/OpenApi__ReviewAssignment"
+///      }
+///    },
 ///    "documentId": {
 ///      "$ref": "#/$defs/OpenApi__Id"
 ///    },
+///    "draftId": {
+///      "$ref": "#/$defs/OpenApi__Id"
+///    },
 ///    "draftRevision": {
-///      "type": "integer"
+///      "type": "integer",
+///      "minimum": 0.0
 ///    },
 ///    "id": {
 ///      "$ref": "#/$defs/OpenApi__Id"
 ///    },
+///    "policyOutdated": {
+///      "type": "boolean"
+///    },
+///    "policySnapshot": {
+///      "type": "object"
+///    },
+///    "requestedAt": {
+///      "type": "string",
+///      "format": "date-time"
+///    },
+///    "requestedBy": {
+///      "$ref": "#/$defs/OpenApi__Id"
+///    },
+///    "resolvedAt": {
+///      "type": [
+///        "string",
+///        "null"
+///      ],
+///      "format": "date-time"
+///    },
 ///    "revision": {
-///      "type": "integer"
+///      "type": "integer",
+///      "minimum": 0.0
 ///    },
 ///    "status": {
 ///      "type": "string",
@@ -16147,19 +16203,224 @@ impl ::std::convert::TryFrom<::std::string::String> for OpenApiResourceTargetKin
 ///        "INVALIDATED"
 ///      ]
 ///    }
-///  }
+///  },
+///  "additionalProperties": false
 ///}
 /// ```
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct OpenApiReview {
+    pub assignments: ::std::vec::Vec<OpenApiReviewAssignment>,
     #[serde(rename = "documentId")]
     pub document_id: OpenApiId,
+    #[serde(rename = "draftId")]
+    pub draft_id: OpenApiId,
     #[serde(rename = "draftRevision")]
-    pub draft_revision: i64,
+    pub draft_revision: u64,
     pub id: OpenApiId,
-    pub revision: i64,
+    #[serde(rename = "policyOutdated")]
+    pub policy_outdated: bool,
+    #[serde(rename = "policySnapshot")]
+    pub policy_snapshot: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+    #[serde(rename = "requestedAt")]
+    pub requested_at: ::chrono::DateTime<::chrono::offset::Utc>,
+    #[serde(rename = "requestedBy")]
+    pub requested_by: OpenApiId,
+    #[serde(rename = "resolvedAt")]
+    pub resolved_at: ::std::option::Option<::chrono::DateTime<::chrono::offset::Utc>>,
+    pub revision: u64,
     pub status: OpenApiReviewStatus,
+}
+///`OpenApiReviewAssignment`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "object",
+///  "required": [
+///    "decidedAt",
+///    "decision",
+///    "discussionId",
+///    "reviewerId",
+///    "revision"
+///  ],
+///  "properties": {
+///    "decidedAt": {
+///      "type": [
+///        "string",
+///        "null"
+///      ],
+///      "format": "date-time"
+///    },
+///    "decision": {
+///      "type": "string",
+///      "enum": [
+///        "PENDING",
+///        "APPROVED",
+///        "CHANGES_REQUESTED"
+///      ]
+///    },
+///    "discussionId": {
+///      "$ref": "#/$defs/OpenApi__NullableId"
+///    },
+///    "reviewerId": {
+///      "$ref": "#/$defs/OpenApi__Id"
+///    },
+///    "revision": {
+///      "type": "integer",
+///      "minimum": 0.0
+///    }
+///  },
+///  "additionalProperties": false
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct OpenApiReviewAssignment {
+    #[serde(rename = "decidedAt")]
+    pub decided_at: ::std::option::Option<::chrono::DateTime<::chrono::offset::Utc>>,
+    pub decision: OpenApiReviewAssignmentDecision,
+    #[serde(rename = "discussionId")]
+    pub discussion_id: OpenApiNullableId,
+    #[serde(rename = "reviewerId")]
+    pub reviewer_id: OpenApiId,
+    pub revision: u64,
+}
+///`OpenApiReviewAssignmentDecision`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "enum": [
+///    "PENDING",
+///    "APPROVED",
+///    "CHANGES_REQUESTED"
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum OpenApiReviewAssignmentDecision {
+    #[serde(rename = "PENDING")]
+    Pending,
+    #[serde(rename = "APPROVED")]
+    Approved,
+    #[serde(rename = "CHANGES_REQUESTED")]
+    ChangesRequested,
+}
+impl ::std::fmt::Display for OpenApiReviewAssignmentDecision {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Pending => f.write_str("PENDING"),
+            Self::Approved => f.write_str("APPROVED"),
+            Self::ChangesRequested => f.write_str("CHANGES_REQUESTED"),
+        }
+    }
+}
+impl ::std::str::FromStr for OpenApiReviewAssignmentDecision {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "PENDING" => Ok(Self::Pending),
+            "APPROVED" => Ok(Self::Approved),
+            "CHANGES_REQUESTED" => Ok(Self::ChangesRequested),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for OpenApiReviewAssignmentDecision {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for OpenApiReviewAssignmentDecision {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OpenApiReviewAssignmentDecision {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`OpenApiReviewDecisionInput`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "oneOf": [
+///    {
+///      "type": "object",
+///      "required": [
+///        "decision"
+///      ],
+///      "properties": {
+///        "decision": {
+///          "const": "APPROVE"
+///        },
+///        "discussionId": {
+///          "type": "null"
+///        }
+///      },
+///      "additionalProperties": false
+///    },
+///    {
+///      "type": "object",
+///      "required": [
+///        "decision",
+///        "discussionId"
+///      ],
+///      "properties": {
+///        "decision": {
+///          "const": "REQUEST_CHANGES"
+///        },
+///        "discussionId": {
+///          "$ref": "#/$defs/OpenApi__Id"
+///        }
+///      },
+///      "additionalProperties": false
+///    }
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(tag = "decision", deny_unknown_fields)]
+pub enum OpenApiReviewDecisionInput {
+    #[serde(rename = "APPROVE")]
+    Approve {
+        #[serde(rename = "discussionId", default)]
+        discussion_id: (),
+    },
+    #[serde(rename = "REQUEST_CHANGES")]
+    RequestChanges {
+        #[serde(rename = "discussionId")]
+        discussion_id: OpenApiId,
+    },
 }
 ///`OpenApiReviewStatus`
 ///
@@ -21466,7 +21727,8 @@ impl ::std::convert::From<OpenApiProblem> for OperationCancelAiJobResponse {
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
-///        "If-Match"
+///        "If-Match",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
@@ -21477,6 +21739,11 @@ impl ::std::convert::From<OpenApiProblem> for OperationCancelAiJobResponse {
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -21616,7 +21883,8 @@ impl<'de> ::serde::Deserialize<'de> for OperationCancelReviewRequestBodyReason {
 ///  "type": "object",
 ///  "required": [
 ///    "Idempotency-Key",
-///    "If-Match"
+///    "If-Match",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
@@ -21627,6 +21895,11 @@ impl<'de> ::serde::Deserialize<'de> for OperationCancelReviewRequestBodyReason {
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -21640,6 +21913,8 @@ pub struct OperationCancelReviewRequestHeader {
     pub idempotency_key: OperationCancelReviewRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationCancelReviewRequestHeaderIfMatch,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationCancelReviewRequestHeaderXCsrfToken,
 }
 ///`OperationCancelReviewRequestHeaderIdempotencyKey`
 ///
@@ -21778,6 +22053,82 @@ impl ::std::convert::TryFrom<::std::string::String> for OperationCancelReviewReq
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationCancelReviewRequestHeaderIfMatch {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationCancelReviewRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationCancelReviewRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationCancelReviewRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationCancelReviewRequestHeaderXCsrfToken> for ::std::string::String {
+    fn from(value: OperationCancelReviewRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationCancelReviewRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationCancelReviewRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationCancelReviewRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationCancelReviewRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationCancelReviewRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -43099,7 +43450,8 @@ impl ::std::convert::From<OpenApiProblem> for OperationReopenDiscussionResponse 
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
-///        "If-Match"
+///        "If-Match",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
@@ -43110,6 +43462,11 @@ impl ::std::convert::From<OpenApiProblem> for OperationReopenDiscussionResponse 
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -43150,7 +43507,8 @@ pub struct OperationRequestReviewRequest {
 ///  "type": "object",
 ///  "required": [
 ///    "Idempotency-Key",
-///    "If-Match"
+///    "If-Match",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
@@ -43161,6 +43519,11 @@ pub struct OperationRequestReviewRequest {
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -43174,6 +43537,8 @@ pub struct OperationRequestReviewRequestHeader {
     pub idempotency_key: OperationRequestReviewRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationRequestReviewRequestHeaderIfMatch,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationRequestReviewRequestHeaderXCsrfToken,
 }
 ///`OperationRequestReviewRequestHeaderIdempotencyKey`
 ///
@@ -43314,6 +43679,82 @@ impl ::std::convert::TryFrom<::std::string::String> for OperationRequestReviewRe
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationRequestReviewRequestHeaderIfMatch {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationRequestReviewRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationRequestReviewRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationRequestReviewRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationRequestReviewRequestHeaderXCsrfToken> for ::std::string::String {
+    fn from(value: OperationRequestReviewRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationRequestReviewRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationRequestReviewRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationRequestReviewRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationRequestReviewRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationRequestReviewRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -46716,7 +47157,8 @@ impl ::std::convert::From<OpenApiProblem> for OperationSetDocumentPermissionResp
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
-///        "If-Match"
+///        "If-Match",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
@@ -46727,6 +47169,11 @@ impl ::std::convert::From<OpenApiProblem> for OperationSetDocumentPermissionResp
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -46882,7 +47329,8 @@ impl ::std::convert::TryFrom<::std::string::String> for OperationSetPublishPolic
 ///  "type": "object",
 ///  "required": [
 ///    "Idempotency-Key",
-///    "If-Match"
+///    "If-Match",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
@@ -46893,6 +47341,11 @@ impl ::std::convert::TryFrom<::std::string::String> for OperationSetPublishPolic
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -46906,6 +47359,8 @@ pub struct OperationSetPublishPolicyRequestHeader {
     pub idempotency_key: OperationSetPublishPolicyRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationSetPublishPolicyRequestHeaderIfMatch,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationSetPublishPolicyRequestHeaderXCsrfToken,
 }
 ///`OperationSetPublishPolicyRequestHeaderIdempotencyKey`
 ///
@@ -47059,6 +47514,84 @@ impl<'de> ::serde::Deserialize<'de> for OperationSetPublishPolicyRequestHeaderIf
             })
     }
 }
+///`OperationSetPublishPolicyRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationSetPublishPolicyRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationSetPublishPolicyRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationSetPublishPolicyRequestHeaderXCsrfToken>
+    for ::std::string::String
+{
+    fn from(value: OperationSetPublishPolicyRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationSetPublishPolicyRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationSetPublishPolicyRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationSetPublishPolicyRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationSetPublishPolicyRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationSetPublishPolicyRequestHeaderXCsrfToken {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
 ///`OperationSetPublishPolicyRequestPath`
 ///
 /// <details><summary>JSON schema</summary>
@@ -47165,28 +47698,14 @@ impl ::std::convert::From<OpenApiProblem> for OperationSetPublishPolicyResponse 
 ///  ],
 ///  "properties": {
 ///    "body": {
-///      "type": "object",
-///      "required": [
-///        "decision"
-///      ],
-///      "properties": {
-///        "decision": {
-///          "type": "string",
-///          "enum": [
-///            "APPROVE",
-///            "REQUEST_CHANGES"
-///          ]
-///        },
-///        "discussionId": {
-///          "$ref": "#/$defs/OpenApi__NullableId"
-///        }
-///      }
+///      "$ref": "#/$defs/OpenApi__ReviewDecisionInput"
 ///    },
 ///    "header": {
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
-///        "If-Match"
+///        "If-Match",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
@@ -47197,6 +47716,11 @@ impl ::std::convert::From<OpenApiProblem> for OperationSetPublishPolicyResponse 
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -47225,120 +47749,9 @@ impl ::std::convert::From<OpenApiProblem> for OperationSetPublishPolicyResponse 
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct OperationSubmitReviewDecisionRequest {
-    pub body: OperationSubmitReviewDecisionRequestBody,
+    pub body: OpenApiReviewDecisionInput,
     pub header: OperationSubmitReviewDecisionRequestHeader,
     pub path: OperationSubmitReviewDecisionRequestPath,
-}
-///`OperationSubmitReviewDecisionRequestBody`
-///
-/// <details><summary>JSON schema</summary>
-///
-/// ```json
-///{
-///  "type": "object",
-///  "required": [
-///    "decision"
-///  ],
-///  "properties": {
-///    "decision": {
-///      "type": "string",
-///      "enum": [
-///        "APPROVE",
-///        "REQUEST_CHANGES"
-///      ]
-///    },
-///    "discussionId": {
-///      "$ref": "#/$defs/OpenApi__NullableId"
-///    }
-///  }
-///}
-/// ```
-/// </details>
-#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-pub struct OperationSubmitReviewDecisionRequestBody {
-    pub decision: OperationSubmitReviewDecisionRequestBodyDecision,
-    #[serde(
-        rename = "discussionId",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub discussion_id: ::std::option::Option<OpenApiNullableId>,
-}
-///`OperationSubmitReviewDecisionRequestBodyDecision`
-///
-/// <details><summary>JSON schema</summary>
-///
-/// ```json
-///{
-///  "type": "string",
-///  "enum": [
-///    "APPROVE",
-///    "REQUEST_CHANGES"
-///  ]
-///}
-/// ```
-/// </details>
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum OperationSubmitReviewDecisionRequestBodyDecision {
-    #[serde(rename = "APPROVE")]
-    Approve,
-    #[serde(rename = "REQUEST_CHANGES")]
-    RequestChanges,
-}
-impl ::std::fmt::Display for OperationSubmitReviewDecisionRequestBodyDecision {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Approve => f.write_str("APPROVE"),
-            Self::RequestChanges => f.write_str("REQUEST_CHANGES"),
-        }
-    }
-}
-impl ::std::str::FromStr for OperationSubmitReviewDecisionRequestBodyDecision {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "APPROVE" => Ok(Self::Approve),
-            "REQUEST_CHANGES" => Ok(Self::RequestChanges),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for OperationSubmitReviewDecisionRequestBodyDecision {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String>
-    for OperationSubmitReviewDecisionRequestBodyDecision
-{
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String>
-    for OperationSubmitReviewDecisionRequestBodyDecision
-{
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
 }
 ///`OperationSubmitReviewDecisionRequestHeader`
 ///
@@ -47349,7 +47762,8 @@ impl ::std::convert::TryFrom<::std::string::String>
 ///  "type": "object",
 ///  "required": [
 ///    "Idempotency-Key",
-///    "If-Match"
+///    "If-Match",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
@@ -47360,6 +47774,11 @@ impl ::std::convert::TryFrom<::std::string::String>
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -47373,6 +47792,8 @@ pub struct OperationSubmitReviewDecisionRequestHeader {
     pub idempotency_key: OperationSubmitReviewDecisionRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationSubmitReviewDecisionRequestHeaderIfMatch,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationSubmitReviewDecisionRequestHeaderXCsrfToken,
 }
 ///`OperationSubmitReviewDecisionRequestHeaderIdempotencyKey`
 ///
@@ -47517,6 +47938,84 @@ impl ::std::convert::TryFrom<::std::string::String>
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationSubmitReviewDecisionRequestHeaderIfMatch {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationSubmitReviewDecisionRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationSubmitReviewDecisionRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationSubmitReviewDecisionRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationSubmitReviewDecisionRequestHeaderXCsrfToken>
+    for ::std::string::String
+{
+    fn from(value: OperationSubmitReviewDecisionRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationSubmitReviewDecisionRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationSubmitReviewDecisionRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationSubmitReviewDecisionRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationSubmitReviewDecisionRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationSubmitReviewDecisionRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,

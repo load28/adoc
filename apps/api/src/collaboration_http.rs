@@ -6,7 +6,7 @@ use adoc_adapters::{
 };
 use adoc_application::collaboration::{
     CollaborationService, CreateDiscussionInput, InboxAction, InboxFilter, ReadAllInput,
-    RichMessage, TopicInput, UpdateDiscussionInput,
+    ReviewCancelInput, ReviewDecisionInput, RichMessage, TopicInput, UpdateDiscussionInput,
 };
 use axum::{
     Json, Router,
@@ -85,6 +85,22 @@ pub(crate) fn collaboration_routes() -> Router<HealthState> {
         .route(
             "/workspaces/{workspace_id}/inbox/{item_id}/resolve",
             post(resolve_item),
+        )
+        .route(
+            "/workspaces/{workspace_id}/documents/{document_id}/reviews",
+            post(request_review),
+        )
+        .route(
+            "/workspaces/{workspace_id}/reviews/{review_id}",
+            get(get_review),
+        )
+        .route(
+            "/workspaces/{workspace_id}/reviews/{review_id}/decisions",
+            post(submit_review_decision),
+        )
+        .route(
+            "/workspaces/{workspace_id}/reviews/{review_id}/cancel",
+            post(cancel_review),
         )
 }
 
@@ -414,6 +430,86 @@ async fn resolve_item(
             .await
             .map_err(Problem::from)?,
     ))
+}
+async fn request_review(
+    State(s): State<HealthState>,
+    headers: HeaderMap,
+    auth: Authenticated,
+    Path((w, d)): Path<(Uuid, Uuid)>,
+) -> Result<Response, Problem> {
+    command(&s, &headers, &auth)?;
+    let value = s
+        .collaboration
+        .service
+        .request_review(
+            auth.principal.user.id,
+            w,
+            d,
+            expected_revision(&headers)?,
+            idempotency_key(&headers)?,
+        )
+        .await
+        .map_err(Problem::from)?;
+    Ok((StatusCode::CREATED, Json(value)).into_response())
+}
+async fn get_review(
+    State(s): State<HealthState>,
+    auth: Authenticated,
+    Path((w, r)): Path<(Uuid, Uuid)>,
+) -> Result<Json<serde_json::Value>, Problem> {
+    json(
+        s.collaboration
+            .service
+            .get_review(auth.principal.user.id, w, r)
+            .await
+            .map_err(Problem::from)?,
+    )
+}
+async fn submit_review_decision(
+    State(s): State<HealthState>,
+    headers: HeaderMap,
+    auth: Authenticated,
+    Path((w, r)): Path<(Uuid, Uuid)>,
+    Json(input): Json<ReviewDecisionInput>,
+) -> Result<Json<serde_json::Value>, Problem> {
+    command(&s, &headers, &auth)?;
+    json(
+        s.collaboration
+            .service
+            .submit_review_decision(
+                auth.principal.user.id,
+                w,
+                r,
+                expected_revision(&headers)?,
+                idempotency_key(&headers)?,
+                input,
+            )
+            .await
+            .map_err(Problem::from)?,
+    )
+}
+async fn cancel_review(
+    State(s): State<HealthState>,
+    headers: HeaderMap,
+    auth: Authenticated,
+    Path((w, r)): Path<(Uuid, Uuid)>,
+    Json(input): Json<ReviewCancelInput>,
+) -> Result<Json<serde_json::Value>, Problem> {
+    command(&s, &headers, &auth)?;
+    json(
+        s.collaboration
+            .service
+            .cancel_review(
+                auth.principal.user.id,
+                w,
+                r,
+                expected_revision(&headers)?,
+                idempotency_key(&headers)?,
+                input,
+            )
+            .await
+            .map_err(Problem::from)?,
+    )
 }
 fn command(s: &HealthState, h: &HeaderMap, a: &Authenticated) -> Result<(), Problem> {
     validate_command(&s.identity, h, a)

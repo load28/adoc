@@ -2,7 +2,7 @@ use adoc_application::{
     document::{Draft, ValidatedContent, canonical_hash},
     governance::{GovernanceError, PublishMode},
     identity::TokenHash,
-    permission::Access,
+    permission::{Access, PublishPolicy},
     publishing::{
         CreatePublicLinkCommand, DocumentDiff, PublicDocument, PublicLink, PublishCommand,
         PublishedVersion, PublishingRepository, RestoreVersionCommand, RevokePublicLinkCommand,
@@ -153,9 +153,20 @@ impl PublishingRepository for PostgresPublishingRepository {
             validate_publish_lease(&mut tx, &input).await?;
             let policy =
                 load_effective_policy(&mut *tx, input.workspace_id, input.document_id).await?;
-            if policy.mode != PublishMode::Direct {
-                return Err(GovernanceError::PublishReviewRequired);
-            }
+            let review_snapshot = match policy.mode {
+                PublishMode::Direct => json!({}),
+                PublishMode::ReviewRequired => {
+                    approved_review_snapshot(
+                        &mut tx,
+                        input.workspace_id,
+                        input.document_id,
+                        draft_id,
+                        draft_revision,
+                        &policy,
+                    )
+                    .await?
+                }
+            };
             let content = ValidatedContent::parse(draft_row.get("content_json"))
                 .map_err(|_| GovernanceError::OperationPreconditionFailed)?
                 .into_value();
@@ -172,8 +183,8 @@ impl PublishingRepository for PostgresPublishingRepository {
             .map_err(map_store)?;
             sqlx::query("INSERT INTO published_versions(id,workspace_id,document_id,number,content_json,schema_version,content_fingerprint,based_on_version_id,source_draft_revision,publisher_id,summary,published_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)")
                 .bind(input.version_id).bind(input.workspace_id).bind(input.document_id).bind(number).bind(&content).bind(draft_row.get::<i32,_>("schema_version")).bind(&fingerprint).bind(base_version_id).bind(draft_revision).bind(input.command.actor_id).bind(&input.summary).bind(input.command.now).execute(&mut *tx).await.map_err(map_store)?;
-            sqlx::query("INSERT INTO version_context(version_id,review_snapshot_json,discussion_ids,source_revision) VALUES($1,'{}'::jsonb,'{}'::uuid[],$2)")
-                .bind(input.version_id).bind(draft_revision).execute(&mut *tx).await.map_err(map_store)?;
+            sqlx::query("INSERT INTO version_context(version_id,review_snapshot_json,discussion_ids,source_revision) VALUES($1,$2,'{}'::uuid[],$3)")
+                .bind(input.version_id).bind(&review_snapshot).bind(draft_revision).execute(&mut *tx).await.map_err(map_store)?;
             let document_revision:i64=sqlx::query_scalar("UPDATE documents SET current_version_id=$3,revision=revision+1,updated_at=$4 WHERE workspace_id=$1 AND id=$2 RETURNING revision")
                 .bind(input.workspace_id).bind(input.document_id).bind(input.version_id).bind(input.command.now).fetch_one(&mut *tx).await.map_err(map_store)?;
             sqlx::query("DELETE FROM drafts WHERE workspace_id=$1 AND document_id=$2")
@@ -368,6 +379,47 @@ impl PublishingRepository for PostgresPublishingRepository {
             })
         })
     }
+}
+
+async fn approved_review_snapshot(
+    tx: &mut Transaction<'_, Postgres>,
+    workspace: Uuid,
+    document: Uuid,
+    draft: Uuid,
+    draft_revision: i64,
+    policy: &PublishPolicy,
+) -> Result<Value, GovernanceError> {
+    let row=sqlx::query("SELECT id,policy_snapshot_json,revision FROM reviews WHERE workspace_id=$1 AND document_id=$2 AND draft_id=$3 AND draft_revision=$4 AND status='APPROVED' FOR UPDATE").bind(workspace).bind(document).bind(draft).bind(draft_revision).fetch_optional(&mut **tx).await.map_err(map_store)?.ok_or(GovernanceError::PublishReviewRequired)?;
+    let snapshot: Value = row.get("policy_snapshot_json");
+    let source = serde_json::to_value(policy.inherited_from_document_id)
+        .map_err(|_| GovernanceError::Internal)?;
+    if snapshot.get("policyRevision").and_then(Value::as_i64) != Some(policy.revision)
+        || snapshot.get("sourceDocumentId") != Some(&source)
+    {
+        return Err(GovernanceError::PublishReviewRequired);
+    }
+    let required = snapshot
+        .get("requiredApprovals")
+        .and_then(Value::as_u64)
+        .ok_or(GovernanceError::Internal)? as usize;
+    let approvals=sqlx::query("SELECT reviewer_id,revision,decided_at FROM review_assignments WHERE workspace_id=$1 AND review_id=$2 AND decision='APPROVED' ORDER BY reviewer_id FOR UPDATE").bind(workspace).bind(row.get::<Uuid,_>("id")).fetch_all(&mut **tx).await.map_err(map_store)?;
+    let mut approved = Vec::new();
+    for assignment in approvals {
+        let reviewer: Uuid = assignment.get("reviewer_id");
+        if require_access(tx, reviewer, workspace, document, Access::Viewer, false)
+            .await
+            .is_err()
+        {
+            return Err(GovernanceError::PublishReviewRequired);
+        }
+        approved.push(json!({"reviewerId":reviewer,"assignmentRevision":assignment.get::<i64,_>("revision"),"decidedAt":assignment.get::<Option<DateTime<Utc>>,_>("decided_at")}));
+    }
+    if approved.len() < required {
+        return Err(GovernanceError::PublishReviewRequired);
+    }
+    Ok(
+        json!({"reviewId":row.get::<Uuid,_>("id"),"reviewRevision":row.get::<i64,_>("revision"),"policy":snapshot,"approvals":approved}),
+    )
 }
 
 const VERSION_SELECT: &str = "SELECT pv.id,pv.document_id,pv.number,pv.content_json,pv.schema_version,pv.content_fingerprint,pv.based_on_version_id,pv.source_draft_revision,pv.publisher_id,pv.summary,pv.published_at,vc.review_snapshot_json,vc.discussion_ids FROM published_versions pv JOIN version_context vc ON vc.version_id=pv.id";

@@ -21,6 +21,7 @@ use uuid::Uuid;
 
 use super::{
     PostgresStore,
+    collaboration::invalidate_reviews,
     governance::{
         OutboxEvent, append_event, begin_workspace, check_revision, complete_workspace, map_store,
     },
@@ -639,8 +640,13 @@ impl DocumentRepository for PostgresDocumentRepository {
             };
             sqlx::query("UPDATE drafts SET content_json=$3,schema_version=1,revision=$4,updated_by=$5,updated_at=$6 WHERE workspace_id=$1 AND document_id=$2")
                 .bind(input.workspace_id).bind(input.document_id).bind(reduced.content).bind(result.revision).bind(input.actor_id).bind(input.command.now).execute(&mut *tx).await.map_err(map_store)?;
-            sqlx::query("UPDATE reviews SET status='INVALIDATED',revision=revision+1 WHERE workspace_id=$1 AND document_id=$2 AND status IN ('REQUESTED','APPROVED')")
-                .bind(input.workspace_id).bind(input.document_id).execute(&mut *tx).await.map_err(map_store)?;
+            invalidate_reviews(
+                &mut tx,
+                input.workspace_id,
+                &[input.document_id],
+                input.command.now,
+            )
+            .await?;
             append_event(&mut tx, OutboxEvent { workspace_id:input.workspace_id, aggregate_kind:"Draft", aggregate_id:draft_row.get("id"), sequence:result.revision+1, event_type:"DraftChanged.v1", payload:json!({"documentId":input.document_id,"draftId":draft_row.get::<Uuid,_>("id"),"revision":result.revision,"operationIds":result.applied_operation_ids}), occurred_at:input.command.now }).await?;
             complete_workspace(&mut tx, input.workspace_id, &input.command, 200, &result).await?;
             tx.commit().await.map_err(map_store)?;
@@ -871,7 +877,7 @@ async fn close_subtree_leases_and_reviews(
 ) -> Result<(), GovernanceError> {
     let ids=sqlx::query_scalar::<_,Uuid>("WITH RECURSIVE subtree AS (SELECT id FROM documents WHERE workspace_id=$1 AND id=$2 UNION ALL SELECT d.id FROM documents d JOIN subtree s ON d.parent_id=s.id WHERE d.workspace_id=$1) SELECT id FROM subtree ORDER BY id FOR UPDATE").bind(workspace).bind(root).fetch_all(&mut **tx).await.map_err(map_store)?;
     sqlx::query("UPDATE edit_leases SET released_at=$2,expires_at=$2,revision=revision+1 WHERE document_id=ANY($1) AND released_at IS NULL").bind(&ids).bind(now).execute(&mut **tx).await.map_err(map_store)?;
-    sqlx::query("UPDATE reviews SET status='INVALIDATED',revision=revision+1 WHERE document_id=ANY($1) AND status IN ('REQUESTED','APPROVED')").bind(&ids).execute(&mut **tx).await.map_err(map_store)?;
+    invalidate_reviews(tx, workspace, &ids, now).await?;
     Ok(())
 }
 

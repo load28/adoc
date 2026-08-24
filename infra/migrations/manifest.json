@@ -32,6 +32,14 @@
     {
       "file": "0008_discussion_message_inbox.sql",
       "sha256": "b8f1bc81cde796f664c32d8f22d175fb225de5a8b6053b395e75e89c6e27c6e0"
+    },
+    {
+      "file": "0009_review_approval.sql",
+      "sha256": "62239604a7f33bb9e42b363d5a4cda85758831527b7432a0ef94d155566163e1"
+    },
+    {
+      "file": "0010_review_draft_lifecycle.sql",
+      "sha256": "a30940e86b3565291a2831806ac68fdb3afe6d12f367685d34e7ee38bf49f931"
     }
   ]
 }

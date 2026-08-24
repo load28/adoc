@@ -50,6 +50,23 @@ pub struct UpdateDiscussionInput {
 pub struct ReadAllInput {
     pub before: DateTime<Utc>,
 }
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ReviewDecisionInputKind {
+    Approve,
+    RequestChanges,
+}
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ReviewDecisionInput {
+    pub decision: ReviewDecisionInputKind,
+    pub discussion_id: Option<Uuid>,
+}
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ReviewCancelInput {
+    pub reason: String,
+}
 
 #[derive(Clone, Debug)]
 pub struct DiscussionCommand {
@@ -103,6 +120,23 @@ pub enum InboxAction {
     ReadAll,
     Resolve,
 }
+#[derive(Clone, Debug)]
+pub struct ReviewCommand {
+    pub workspace_id: Uuid,
+    pub document_id: Option<Uuid>,
+    pub review_id: Uuid,
+    pub expected_revision: i64,
+    pub decision: Option<ReviewDecisionInput>,
+    pub reason: Option<String>,
+    pub command: Command,
+    pub action: ReviewAction,
+}
+#[derive(Clone, Copy, Debug)]
+pub enum ReviewAction {
+    Request,
+    Decide,
+    Cancel,
+}
 
 pub trait CollaborationRepository: Send + Sync {
     fn list_discussions<'a>(
@@ -138,6 +172,16 @@ pub trait CollaborationRepository: Send + Sync {
         &'a self,
         input: InboxCommand,
     ) -> BoxFuture<'a, Result<Value, GovernanceError>>;
+    fn get_review<'a>(
+        &'a self,
+        actor: Uuid,
+        workspace: Uuid,
+        review: Uuid,
+    ) -> BoxFuture<'a, Result<Review, GovernanceError>>;
+    fn mutate_review<'a>(
+        &'a self,
+        input: ReviewCommand,
+    ) -> BoxFuture<'a, Result<Review, GovernanceError>>;
 }
 
 pub struct CollaborationService {
@@ -502,6 +546,100 @@ impl CollaborationService {
                 before,
                 command,
                 action,
+            })
+            .await
+    }
+    pub async fn get_review(
+        &self,
+        actor: Uuid,
+        workspace: Uuid,
+        review: Uuid,
+    ) -> Result<Review, GovernanceError> {
+        self.repository.get_review(actor, workspace, review).await
+    }
+    pub async fn request_review(
+        &self,
+        actor: Uuid,
+        workspace: Uuid,
+        document: Uuid,
+        draft_revision: i64,
+        key: &str,
+    ) -> Result<Review, GovernanceError> {
+        let now = self.clock.now();
+        let command = command(
+            actor,
+            "requestReview",
+            key,
+            &serde_json::json!({"documentId":document,"draftRevision":draft_revision}),
+            now,
+        )?;
+        self.repository
+            .mutate_review(ReviewCommand {
+                workspace_id: workspace,
+                document_id: Some(document),
+                review_id: self.uuid(now)?,
+                expected_revision: draft_revision,
+                decision: None,
+                reason: None,
+                command,
+                action: ReviewAction::Request,
+            })
+            .await
+    }
+    pub async fn submit_review_decision(
+        &self,
+        actor: Uuid,
+        workspace: Uuid,
+        review: Uuid,
+        review_revision: i64,
+        key: &str,
+        input: ReviewDecisionInput,
+    ) -> Result<Review, GovernanceError> {
+        if matches!(input.decision, ReviewDecisionInputKind::RequestChanges)
+            != input.discussion_id.is_some()
+        {
+            return Err(GovernanceError::Validation);
+        }
+        let now = self.clock.now();
+        let command = command(actor, "submitReviewDecision", key, &input, now)?;
+        self.repository
+            .mutate_review(ReviewCommand {
+                workspace_id: workspace,
+                document_id: None,
+                review_id: review,
+                expected_revision: review_revision,
+                decision: Some(input),
+                reason: None,
+                command,
+                action: ReviewAction::Decide,
+            })
+            .await
+    }
+    pub async fn cancel_review(
+        &self,
+        actor: Uuid,
+        workspace: Uuid,
+        review: Uuid,
+        review_revision: i64,
+        key: &str,
+        input: ReviewCancelInput,
+    ) -> Result<Review, GovernanceError> {
+        let reason = input.reason.trim();
+        if reason.is_empty() || reason.chars().count() > 1000 {
+            return Err(GovernanceError::Validation);
+        }
+        let now = self.clock.now();
+        let command = command(actor, "cancelReview", key, &input, now)?;
+        self.repository
+            .mutate_review(ReviewCommand {
+                workspace_id: workspace,
+                document_id: None,
+                review_id: review,
+                expected_revision: review_revision,
+                decision: None,
+                reason: Some(reason.to_owned()),
+                command,
+                action: ReviewAction::Cancel,
             })
             .await
     }

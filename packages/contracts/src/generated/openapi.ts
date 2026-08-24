@@ -1537,12 +1537,39 @@ export interface components {
             messages: components["schemas"]["Message"][];
             nextCursor?: string | null;
         };
+        ReviewDecisionInput: {
+            /** @constant */
+            decision: "APPROVE";
+            discussionId?: null;
+        } | {
+            /** @constant */
+            decision: "REQUEST_CHANGES";
+            discussionId: components["schemas"]["Id"];
+        };
+        ReviewAssignment: {
+            reviewerId: components["schemas"]["Id"];
+            /** @enum {string} */
+            decision: "PENDING" | "APPROVED" | "CHANGES_REQUESTED";
+            discussionId: components["schemas"]["NullableId"];
+            /** Format: date-time */
+            decidedAt: string | null;
+            revision: number;
+        };
         Review: {
             id: components["schemas"]["Id"];
             documentId: components["schemas"]["Id"];
+            draftId: components["schemas"]["Id"];
             draftRevision: number;
+            requestedBy: components["schemas"]["Id"];
+            policySnapshot: Record<string, never>;
+            policyOutdated: boolean;
             /** @enum {string} */
             status: "REQUESTED" | "APPROVED" | "CHANGES_REQUESTED" | "CANCELLED" | "INVALIDATED";
+            assignments: components["schemas"]["ReviewAssignment"][];
+            /** Format: date-time */
+            requestedAt: string;
+            /** Format: date-time */
+            resolvedAt: string | null;
             revision: number;
         };
         InboxItem: {
@@ -3612,6 +3639,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -3821,6 +3849,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -3955,6 +3984,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -3964,11 +3994,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    /** @enum {string} */
-                    decision: "APPROVE" | "REQUEST_CHANGES";
-                    discussionId?: components["schemas"]["NullableId"];
-                };
+                "application/json": components["schemas"]["ReviewDecisionInput"];
             };
         };
         responses: {
@@ -4356,6 +4382,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];

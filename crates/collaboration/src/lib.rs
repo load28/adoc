@@ -102,6 +102,69 @@ pub enum InboxFilter {
     Resolved,
 }
 
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ReviewStatus {
+    Requested,
+    Approved,
+    ChangesRequested,
+    Cancelled,
+    Invalidated,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ReviewDecision {
+    Pending,
+    Approved,
+    ChangesRequested,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReviewAssignment {
+    pub reviewer_id: Uuid,
+    pub decision: ReviewDecision,
+    pub discussion_id: Option<Uuid>,
+    pub decided_at: Option<DateTime<Utc>>,
+    pub revision: i64,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Review {
+    pub id: Uuid,
+    pub document_id: Uuid,
+    pub draft_id: Uuid,
+    pub draft_revision: i64,
+    pub requested_by: Uuid,
+    pub policy_snapshot: Value,
+    pub policy_outdated: bool,
+    pub status: ReviewStatus,
+    pub assignments: Vec<ReviewAssignment>,
+    pub requested_at: DateTime<Utc>,
+    pub resolved_at: Option<DateTime<Utc>>,
+    pub revision: i64,
+}
+
+pub fn review_status(assignments: &[ReviewAssignment], required: usize) -> ReviewStatus {
+    if assignments
+        .iter()
+        .any(|assignment| assignment.decision == ReviewDecision::ChangesRequested)
+    {
+        ReviewStatus::ChangesRequested
+    } else if assignments
+        .iter()
+        .filter(|assignment| assignment.decision == ReviewDecision::Approved)
+        .count()
+        >= required
+    {
+        ReviewStatus::Approved
+    } else {
+        ReviewStatus::Requested
+    }
+}
+
 pub fn normalized_title(value: &str) -> Option<String> {
     let value = value.trim();
     (1..=500)
@@ -115,4 +178,53 @@ pub fn may_edit_message(
     now: DateTime<Utc>,
 ) -> bool {
     author == actor && now >= created_at && now <= created_at + chrono::Duration::minutes(15)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn assignment(decision: ReviewDecision) -> ReviewAssignment {
+        ReviewAssignment {
+            reviewer_id: Uuid::now_v7(),
+            decision,
+            discussion_id: None,
+            decided_at: None,
+            revision: 0,
+        }
+    }
+
+    #[test]
+    fn review_threshold_prioritizes_changes_and_counts_distinct_assignments() {
+        assert_eq!(
+            review_status(
+                &[
+                    assignment(ReviewDecision::Approved),
+                    assignment(ReviewDecision::Pending)
+                ],
+                2
+            ),
+            ReviewStatus::Requested
+        );
+        assert_eq!(
+            review_status(
+                &[
+                    assignment(ReviewDecision::Approved),
+                    assignment(ReviewDecision::Approved)
+                ],
+                2
+            ),
+            ReviewStatus::Approved
+        );
+        assert_eq!(
+            review_status(
+                &[
+                    assignment(ReviewDecision::Approved),
+                    assignment(ReviewDecision::ChangesRequested)
+                ],
+                1
+            ),
+            ReviewStatus::ChangesRequested
+        );
+    }
 }

@@ -87,6 +87,7 @@ docker compose -p "$project" --profile test run --rm test-runner \
   --test document_core \
   --test publishing_version \
   --test collaboration_inbox \
+  --test review_approval \
   -- --ignored --nocapture
 docker compose -p "$project" --profile backup run --rm backup >/dev/null
 docker compose -p "$project" --profile backup run --rm --entrypoint sh backup -c \

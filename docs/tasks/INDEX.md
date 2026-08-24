@@ -23,7 +23,8 @@
 | TASK-017 | Document Tree·Draft·Lease 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-017](TASK-017-document-tree-draft-lease.md) |
 | TASK-018 | Publish·Version·Public Link 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-018](TASK-018-publish-version-public-link.md) |
 | TASK-019 | Discussion·Message·Inbox 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-019](TASK-019-discussion-message-inbox.md) |
+| TASK-020 | Review·Approval 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-020](TASK-020-review-approval.md) |
 
 ## 다음 태스크 번호
 
-**TASK-020**
+**TASK-021**
