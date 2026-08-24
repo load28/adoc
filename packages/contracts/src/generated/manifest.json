@@ -7,11 +7,11 @@
     "typify": "0.7.0"
   },
   "sources": {
-    "docs/design/api/openapi.yaml": "9b439d6f8c230283d191a12d4e4d2c8ae314a3f0723782ef47ac81156b415ec4",
+    "docs/design/api/openapi.yaml": "b0ae539d8077b143677029fecb16db964c9a0655065b2962f232895335f7c6dc",
     "docs/design/api/asyncapi.yaml": "56010b252cc20f760995d1f4ad5f9f9977604b8822dfebc26f8593b80bf99d08",
     "docs/design/contracts/ai-contracts.schema.json": "b2a2b5c20d34fa7652350a0061e00ed8c3574d719e3fd073d80a3c62dfc43901",
     "docs/design/contracts/document-content.schema.json": "bb8eec6392aaa24c16740cfe5e823add8cb2bb3a925db2def1c15237ed0d0c7c",
-    "docs/design/contracts/document-operation.schema.json": "39b5e691284a5e1fc61293bfb8d58219cb1a857529b8d3f247a5418bbe2c1209",
+    "docs/design/contracts/document-operation.schema.json": "2fc8309585ea8b9190fe0f5eb605fee632c785dfdc1b3e5ad20145f7e232b8ff",
     "docs/design/contracts/event-payloads.schema.json": "cf35625c2a57cbc94a68203f76ca48a120e24515c068c0c63614779ad512e063"
   },
   "counts": {

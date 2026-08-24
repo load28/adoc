@@ -409,14 +409,14 @@ async fn lease_command(
         .await
         .map_err(Problem::from)
 }
-fn client(headers: &HeaderMap) -> Result<Uuid, Problem> {
+pub(crate) fn client(headers: &HeaderMap) -> Result<Uuid, Problem> {
     headers
         .get("x-client-instance")
         .and_then(|value| value.to_str().ok())
         .and_then(|value| Uuid::parse_str(value).ok())
         .ok_or_else(|| Problem::from(adoc_application::governance::GovernanceError::Validation))
 }
-fn lease_token(headers: &HeaderMap) -> Result<&str, Problem> {
+pub(crate) fn lease_token(headers: &HeaderMap) -> Result<&str, Problem> {
     headers
         .get("x-edit-lease")
         .and_then(|value| value.to_str().ok())

@@ -1271,6 +1271,7 @@ mod tests {
         let target = crate::ReferenceTarget {
             kind: "DOCUMENT".to_owned(),
             id: Uuid::from_u128(21).to_string(),
+            region: None,
         };
         let changed = apply_operations(ReducerInput {
             content: empty_content(),

@@ -10,7 +10,7 @@ mod version;
 
 pub use content::{ValidatedContent, canonical_hash, normalize_content};
 pub use model::{
-    Affinity, AttrPatch, DocumentOperation, OperationError, OperationErrorCode,
+    Affinity, AttrPatch, DocumentOperation, OperationBase, OperationError, OperationErrorCode,
     OperationPrecondition, OperationScope, ReducerInput, ReducerResult, ReferenceEffect,
     ReferenceSnapshot, ReferenceTarget, RegionResolution, RegionResolutionStatus, SetMarksMode,
     TextAnchor,

@@ -662,7 +662,7 @@ paths:
     post:
       tags: [Knowledge]
       operationId: createReference
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/LeaseToken'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/LeaseToken'}, {$ref: '#/components/parameters/ClientInstance'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody: {$ref: '#/components/requestBodies/CreateReference'}
       responses:
         '201': {description: Reference, content: {application/json: {schema: {$ref: '#/components/schemas/Reference'}}}}
@@ -671,7 +671,7 @@ paths:
     delete:
       tags: [Knowledge]
       operationId: deleteReference
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/ReferenceId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/LeaseToken'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/ReferenceId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/LeaseToken'}, {$ref: '#/components/parameters/ClientInstance'}, {$ref: '#/components/parameters/CsrfToken'}]
       responses:
         '204': {description: Deleted}
         default: {$ref: '#/components/responses/Problem'}
@@ -686,7 +686,7 @@ paths:
     post:
       tags: [Knowledge]
       operationId: createVocabularyConcept
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody: {$ref: '#/components/requestBodies/WriteVocabularyConcept'}
       responses:
         '201': {description: Concept, content: {application/json: {schema: {$ref: '#/components/schemas/VocabularyConcept'}}}}
@@ -702,7 +702,7 @@ paths:
     put:
       tags: [Knowledge]
       operationId: updateVocabularyConcept
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/ConceptId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/ConceptId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody: {$ref: '#/components/requestBodies/WriteVocabularyConcept'}
       responses:
         '200': {description: Updated, content: {application/json: {schema: {$ref: '#/components/schemas/VocabularyConcept'}}}}
@@ -711,8 +711,8 @@ paths:
     post:
       tags: [Knowledge]
       operationId: deprecateVocabularyConcept
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/ConceptId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {$ref: '#/components/requestBodies/Reason'}
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/ConceptId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
+      requestBody: {$ref: '#/components/requestBodies/DeprecateVocabularyConcept'}
       responses:
         '200': {description: Deprecated, content: {application/json: {schema: {$ref: '#/components/schemas/VocabularyConcept'}}}}
         default: {$ref: '#/components/responses/Problem'}
@@ -1004,6 +1004,9 @@ components:
     WriteVocabularyConcept:
       required: true
       content: {application/json: {schema: {type: object, additionalProperties: false, required: [canonicalTerm, definition, terms], properties: {canonicalTerm: {type: string, minLength: 1, maxLength: 200}, definition: {type: string, minLength: 1, maxLength: 5000}, terms: {type: array, minItems: 1, maxItems: 100, items: {$ref: '#/components/schemas/VocabularyTerm'}}}}}}
+    DeprecateVocabularyConcept:
+      required: true
+      content: {application/json: {schema: {type: object, additionalProperties: false, required: [reason], properties: {reason: {type: string, minLength: 1, maxLength: 1000}, replacementConceptId: {$ref: '#/components/schemas/NullableId'}}}}}
     CompleteUpload:
       required: true
       content: {application/json: {schema: {type: object, additionalProperties: false, required: [checksumSha256, sizeBytes], properties: {checksumSha256: {type: string, pattern: '^[a-f0-9]{64}$'}, sizeBytes: {type: integer, minimum: 0}}}}}
@@ -1070,10 +1073,10 @@ components:
     ResourceTarget: {type: object, additionalProperties: false, required: [kind, id], properties: {kind: {type: string, enum: [WORKSPACE, DOCUMENT, DISCUSSION, REVIEW, AI_JOB, FILE]}, id: {$ref: '#/components/schemas/Id'}}}
     SearchPage: {type: object, required: [items, indexWatermark], properties: {items: {type: array, items: {type: object, required: [source, score], properties: {source: {$ref: '#/components/schemas/Source'}, score: {type: number}}}}, nextCursor: {type: [string, 'null']}, indexWatermark: {type: integer}}}
     Source: {type: object, required: [kind, stableId, authority, snapshotHash], properties: {kind: {type: string}, stableId: {$ref: '#/components/schemas/Id'}, documentId: {$ref: '#/components/schemas/NullableId'}, regionId: {$ref: '#/components/schemas/NullableId'}, authority: {type: string}, snapshotHash: {type: string}}}
-    Reference: {type: object, additionalProperties: false, required: [id, sourceDocumentId, sourceRegion, target, snapshot], properties: {id: {$ref: '#/components/schemas/Id'}, sourceDocumentId: {$ref: '#/components/schemas/Id'}, sourceRegion: {$ref: '../contracts/document-operation.schema.json#/$defs/region'}, target: {$ref: '../contracts/document-operation.schema.json#/$defs/referenceTarget'}, snapshot: {type: object, additionalProperties: false, required: [title, snapshotHash], properties: {title: {type: string}, snapshotHash: {type: string, pattern: '^[a-f0-9]{64}$'}}}}}
+    Reference: {type: object, additionalProperties: false, required: [id, sourceDocumentId, sourceRegion, target, snapshot, createdAt], properties: {id: {$ref: '#/components/schemas/Id'}, sourceDocumentId: {$ref: '#/components/schemas/Id'}, sourceRegion: {$ref: '../contracts/document-operation.schema.json#/$defs/region'}, target: {$ref: '../contracts/document-operation.schema.json#/$defs/referenceTarget'}, snapshot: {type: object, additionalProperties: false, required: [title, snapshotHash], properties: {title: {type: string}, snapshotHash: {type: string, pattern: '^[a-f0-9]{64}$'}}}, createdAt: {type: string, format: date-time}}}
     ReferencePage: {type: object, additionalProperties: false, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/Reference'}}, nextCursor: {type: [string, 'null']}}}
     VocabularyTerm: {type: object, additionalProperties: false, required: [term, kind], properties: {term: {type: string, minLength: 1, maxLength: 200}, kind: {type: string, enum: [CANONICAL, SYNONYM, PROHIBITED]}}}
-    VocabularyConcept: {type: object, additionalProperties: false, required: [id, canonicalTerm, definition, terms, status, revision], properties: {id: {$ref: '#/components/schemas/Id'}, canonicalTerm: {type: string}, definition: {type: string}, terms: {type: array, items: {$ref: '#/components/schemas/VocabularyTerm'}}, status: {type: string, enum: [ACTIVE, DEPRECATED]}, revision: {type: integer, minimum: 0}}}
+    VocabularyConcept: {type: object, additionalProperties: false, required: [id, canonicalTerm, definition, terms, status, replacementConceptId, revision], properties: {id: {$ref: '#/components/schemas/Id'}, canonicalTerm: {type: string}, definition: {type: string}, terms: {type: array, items: {$ref: '#/components/schemas/VocabularyTerm'}}, status: {type: string, enum: [ACTIVE, DEPRECATED]}, replacementConceptId: {$ref: '#/components/schemas/NullableId'}, revision: {type: integer, minimum: 0}}}
     VocabularyPage: {type: object, additionalProperties: false, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/VocabularyConcept'}}, nextCursor: {type: [string, 'null']}}}
     CreateAIJob: {type: object, additionalProperties: false, required: [kind, target, expectedRevision, externalWebEnabled], properties: {kind: {type: string, enum: [COMPOSE, REWRITE, REVIEW, DISCUSSION_APPLY, CONFLICT_MERGE, KNOWLEDGE_QUERY]}, target: {$ref: '../contracts/ai-contracts.schema.json#/$defs/target'}, expectedRevision: {type: integer, minimum: 0}, externalWebEnabled: {type: boolean}, instruction: {type: string, maxLength: 10000}, includeSourceIds: {type: array, uniqueItems: true, maxItems: 200, items: {$ref: '#/components/schemas/Id'}}, excludeSourceIds: {type: array, uniqueItems: true, maxItems: 200, items: {$ref: '#/components/schemas/Id'}}}}
     AIJob: {type: object, additionalProperties: false, required: [id, kind, status, sequence, revision], properties: {id: {$ref: '#/components/schemas/Id'}, kind: {type: string, enum: [COMPOSE, REWRITE, REVIEW, DISCUSSION_APPLY, CONFLICT_MERGE, KNOWLEDGE_QUERY]}, status: {type: string, enum: [QUEUED, RUNNING, CANCEL_REQUESTED, SUCCEEDED, FAILED, CANCELLED, TIMED_OUT]}, sequence: {type: integer}, revision: {type: integer}, result: {oneOf: [{$ref: '../contracts/ai-contracts.schema.json#/$defs/result'}, {type: 'null'}]}, errorCode: {type: [string, 'null']}}}

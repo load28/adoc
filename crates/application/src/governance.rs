@@ -842,6 +842,16 @@ pub enum GovernanceError {
     ReviewStateInvalid,
     #[error("reviewer is not eligible")]
     ReviewNotEligible,
+    #[error("reference was not found")]
+    ReferenceNotFound,
+    #[error("reference target is invalid")]
+    ReferenceTargetInvalid,
+    #[error("vocabulary concept was not found")]
+    VocabularyNotFound,
+    #[error("vocabulary term conflicts")]
+    VocabularyTermConflict,
+    #[error("vocabulary state is invalid")]
+    VocabularyStateInvalid,
     #[error("idempotency key was reused")]
     IdempotencyKeyReused,
     #[error("governance storage is unavailable")]

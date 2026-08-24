@@ -40,6 +40,18 @@
     {
       "file": "0010_review_draft_lifecycle.sql",
       "sha256": "a30940e86b3565291a2831806ac68fdb3afe6d12f367685d34e7ee38bf49f931"
+    },
+    {
+      "file": "0011_reference_vocabulary.sql",
+      "sha256": "97889fb4b916dcbfc278ba75aefa175e149cb56641a3d521f7c224c7755f9456"
+    },
+    {
+      "file": "0012_reference_soft_delete.sql",
+      "sha256": "29a12365328ffdb2b73b816f327cace0796b19cb627d1087cf25bd5d702ae752"
+    },
+    {
+      "file": "0013_vocabulary_change_reason.sql",
+      "sha256": "524990b4998ba881a0d574bafa00a41b0d6e0ed92dc043fd57d80a3a727ac9e7"
     }
   ]
 }

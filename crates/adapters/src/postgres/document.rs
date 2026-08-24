@@ -5,8 +5,9 @@ use adoc_application::{
         Document, DocumentChange, DocumentDetail, DocumentPage, DocumentRepository, DocumentStatus,
         DocumentTree, DocumentTreeNode, Draft, DraftCreate, DraftMutation, EditLeaseView,
         LeaseAcquire, LeaseMutation, MoveCommit, MovePreviewRequest, MutationResult, NewDocument,
-        OperationError, OperationErrorCode, ReducerInput, StoredImpactPreview, TreeRank,
-        ValidatedContent, apply_operations, canonical_hash,
+        OperationError, OperationErrorCode, ReducerInput, ReferenceEffect, ReferenceSnapshot,
+        ReferenceTarget, RegionResolutionStatus, StoredImpactPreview, TreeRank, ValidatedContent,
+        apply_operations, canonical_hash, reanchor_region,
     },
     governance::GovernanceError,
     identity::TokenHash,
@@ -622,16 +623,24 @@ impl DocumentRepository for PostgresDocumentRepository {
             .await?;
             let current_revision: i64 = draft_row.get("revision");
             check_revision(current_revision, input.expected_draft_revision)?;
+            let references =
+                load_references(&mut tx, input.workspace_id, input.document_id).await?;
             let reduced = apply_operations(ReducerInput {
                 content: draft_row.get("content_json"),
                 base_revision: current_revision,
                 operations: input.operations,
-                references: Vec::new(),
+                references,
             })
             .map_err(map_reducer)?;
-            if !reduced.reference_effects.is_empty() {
-                return Err(GovernanceError::DependencyUnavailable);
-            }
+            apply_reference_effects(
+                &mut tx,
+                input.actor_id,
+                input.workspace_id,
+                input.document_id,
+                &reduced.reference_effects,
+                input.command.now,
+            )
+            .await?;
             let result = MutationResult {
                 revision: current_revision + 1,
                 content_fingerprint: reduced.content_fingerprint,
@@ -879,6 +888,162 @@ async fn close_subtree_leases_and_reviews(
     sqlx::query("UPDATE edit_leases SET released_at=$2,expires_at=$2,revision=revision+1 WHERE document_id=ANY($1) AND released_at IS NULL").bind(&ids).bind(now).execute(&mut **tx).await.map_err(map_store)?;
     invalidate_reviews(tx, workspace, &ids, now).await?;
     Ok(())
+}
+
+async fn load_references(
+    tx: &mut Transaction<'_, Postgres>,
+    workspace: Uuid,
+    document: Uuid,
+) -> Result<Vec<ReferenceSnapshot>, GovernanceError> {
+    let rows = sqlx::query("SELECT id,source_region_json,target_kind,target_id,target_region_json FROM references_graph WHERE workspace_id=$1 AND source_kind='DOCUMENT' AND source_id=$2 AND deleted_at IS NULL ORDER BY id FOR UPDATE")
+        .bind(workspace).bind(document).fetch_all(&mut **tx).await.map_err(map_store)?;
+    rows.into_iter()
+        .map(|row| {
+            Ok(ReferenceSnapshot {
+                reference_id: row.get("id"),
+                source_region: serde_json::from_value(row.get("source_region_json"))
+                    .map_err(|_| GovernanceError::Internal)?,
+                target: ReferenceTarget {
+                    kind: row.get("target_kind"),
+                    id: row.get("target_id"),
+                    region: row
+                        .get::<Option<Value>, _>("target_region_json")
+                        .map(|value| {
+                            serde_json::from_value(value).map_err(|_| GovernanceError::Internal)
+                        })
+                        .transpose()?,
+                },
+            })
+        })
+        .collect()
+}
+
+async fn apply_reference_effects(
+    tx: &mut Transaction<'_, Postgres>,
+    actor: Uuid,
+    workspace: Uuid,
+    document: Uuid,
+    effects: &[ReferenceEffect],
+    now: DateTime<Utc>,
+) -> Result<(), GovernanceError> {
+    for effect in effects {
+        match effect {
+            ReferenceEffect::Add { reference } => {
+                let title =
+                    validate_reference_target(tx, actor, workspace, &reference.target).await?;
+                let snapshot_hash =
+                    canonical_hash(&json!({"title":title,"target":reference.target}));
+                sqlx::query("INSERT INTO references_graph(id,workspace_id,source_kind,source_id,target_kind,target_id,target_region_json,source_region_json,snapshot_json,created_by,created_at) VALUES($1,$2,'DOCUMENT',$3,$4,$5,$6,$7,$8,$9,$10)")
+                    .bind(reference.reference_id).bind(workspace).bind(document)
+                    .bind(&reference.target.kind).bind(&reference.target.id)
+                    .bind(reference.target.region.as_ref().map(|value| serde_json::to_value(value).map_err(|_| GovernanceError::Internal)).transpose()?)
+                    .bind(serde_json::to_value(&reference.source_region).map_err(|_| GovernanceError::Internal)?)
+                    .bind(json!({"title":title,"snapshotHash":snapshot_hash})).bind(actor).bind(now)
+                    .execute(&mut **tx).await.map_err(map_reference_store)?;
+                append_event(tx, OutboxEvent { workspace_id:workspace, aggregate_kind:"Reference", aggregate_id:reference.reference_id, sequence:1, event_type:"ReferenceChanged.v1", payload:json!({"referenceId":reference.reference_id,"sourceDocumentId":document,"action":"ADDED"}), occurred_at:now }).await?;
+            }
+            ReferenceEffect::Remove { reference } => {
+                let affected = sqlx::query("UPDATE references_graph SET deleted_at=$4 WHERE workspace_id=$1 AND source_kind='DOCUMENT' AND source_id=$2 AND id=$3 AND deleted_at IS NULL")
+                    .bind(workspace).bind(document).bind(reference.reference_id).bind(now).execute(&mut **tx).await.map_err(map_store)?.rows_affected();
+                if affected == 0 {
+                    return Err(GovernanceError::ReferenceNotFound);
+                }
+                append_event(tx, OutboxEvent { workspace_id:workspace, aggregate_kind:"Reference", aggregate_id:reference.reference_id, sequence:2, event_type:"ReferenceChanged.v1", payload:json!({"referenceId":reference.reference_id,"sourceDocumentId":document,"action":"REMOVED"}), occurred_at:now }).await?;
+            }
+        }
+    }
+    Ok(())
+}
+
+async fn validate_reference_target(
+    tx: &mut Transaction<'_, Postgres>,
+    actor: Uuid,
+    workspace: Uuid,
+    target: &ReferenceTarget,
+) -> Result<String, GovernanceError> {
+    match target.kind.as_str() {
+        "DOCUMENT" | "REGION" => {
+            let target_id =
+                Uuid::parse_str(&target.id).map_err(|_| GovernanceError::ReferenceTargetInvalid)?;
+            require_access(tx, actor, workspace, target_id, Access::Viewer, false)
+                .await
+                .map_err(|_| GovernanceError::ReferenceTargetInvalid)?;
+            require_effective_active(tx, workspace, target_id)
+                .await
+                .map_err(|_| GovernanceError::ReferenceTargetInvalid)?;
+            let row=sqlx::query("SELECT d.title,COALESCE(dr.content_json,pv.content_json) AS content_json FROM documents d LEFT JOIN drafts dr ON dr.workspace_id=d.workspace_id AND dr.document_id=d.id LEFT JOIN published_versions pv ON pv.workspace_id=d.workspace_id AND pv.id=d.current_version_id WHERE d.workspace_id=$1 AND d.id=$2 FOR SHARE OF d")
+                .bind(workspace).bind(target_id).fetch_one(&mut **tx).await.map_err(map_store)?;
+            if target.kind == "REGION" {
+                let region = target
+                    .region
+                    .as_ref()
+                    .ok_or(GovernanceError::ReferenceTargetInvalid)?;
+                let content: Option<Value> = row.get("content_json");
+                let resolution = content
+                    .as_ref()
+                    .and_then(|value| reanchor_region(value.clone(), region).ok())
+                    .ok_or(GovernanceError::ReferenceTargetInvalid)?;
+                if !matches!(
+                    resolution.status,
+                    RegionResolutionStatus::Resolved | RegionResolutionStatus::Moved
+                ) {
+                    return Err(GovernanceError::ReferenceTargetInvalid);
+                }
+            } else if target.region.is_some() {
+                return Err(GovernanceError::ReferenceTargetInvalid);
+            }
+            Ok(row.get("title"))
+        }
+        "DISCUSSION" => {
+            let target_id =
+                Uuid::parse_str(&target.id).map_err(|_| GovernanceError::ReferenceTargetInvalid)?;
+            let row=sqlx::query("SELECT document_id,title FROM discussions WHERE workspace_id=$1 AND id=$2 FOR SHARE")
+                .bind(workspace).bind(target_id).fetch_optional(&mut **tx).await.map_err(map_store)?.ok_or(GovernanceError::ReferenceTargetInvalid)?;
+            require_access(
+                tx,
+                actor,
+                workspace,
+                row.get("document_id"),
+                Access::Viewer,
+                false,
+            )
+            .await
+            .map_err(|_| GovernanceError::ReferenceTargetInvalid)?;
+            Ok(row.get("title"))
+        }
+        "VOCABULARY" => {
+            let target_id =
+                Uuid::parse_str(&target.id).map_err(|_| GovernanceError::ReferenceTargetInvalid)?;
+            let title=sqlx::query_scalar("SELECT canonical_term FROM vocabulary_concepts WHERE workspace_id=$1 AND id=$2 FOR SHARE")
+                .bind(workspace).bind(target_id).fetch_optional(&mut **tx).await.map_err(map_store)?.ok_or(GovernanceError::ReferenceTargetInvalid)?;
+            Ok(title)
+        }
+        "EXTERNAL" => {
+            let url = reqwest::Url::parse(&target.id)
+                .map_err(|_| GovernanceError::ReferenceTargetInvalid)?;
+            if url.scheme() != "https"
+                || !url.username().is_empty()
+                || url.password().is_some()
+                || url.fragment().is_some()
+                || target.region.is_some()
+            {
+                return Err(GovernanceError::ReferenceTargetInvalid);
+            }
+            Ok(url.host_str().unwrap_or("External link").to_owned())
+        }
+        _ => Err(GovernanceError::ReferenceTargetInvalid),
+    }
+}
+
+fn map_reference_store(error: sqlx::Error) -> GovernanceError {
+    if error
+        .as_database_error()
+        .is_some_and(|value| value.is_unique_violation())
+    {
+        GovernanceError::Validation
+    } else {
+        map_store(error)
+    }
 }
 
 async fn load_draft(

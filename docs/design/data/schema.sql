@@ -205,6 +205,7 @@ CREATE TABLE documents (
   purge_after timestamptz,
   created_by uuid NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
+  deleted_at timestamptz,
   updated_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (id),
   UNIQUE (workspace_id, id),
@@ -507,18 +508,21 @@ FOR EACH ROW EXECUTE FUNCTION reject_review_decision_revision_mutation();
 CREATE TABLE references_graph (
   id uuid PRIMARY KEY,
   workspace_id uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
-  source_kind text NOT NULL,
+  source_kind text NOT NULL CHECK (source_kind = 'DOCUMENT'),
   source_id uuid NOT NULL,
   target_kind text NOT NULL,
   target_id text NOT NULL,
-  source_region_json jsonb,
+  target_region_json jsonb,
+  source_region_json jsonb NOT NULL,
   snapshot_json jsonb NOT NULL,
   created_by uuid NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
+  FOREIGN KEY (workspace_id, source_id) REFERENCES documents(workspace_id, id) ON DELETE CASCADE,
   FOREIGN KEY (workspace_id, created_by) REFERENCES memberships(workspace_id, user_id),
-  UNIQUE (workspace_id, source_kind, source_id, target_kind, target_id)
+  CHECK ((target_kind = 'REGION') = (target_region_json IS NOT NULL))
 );
-CREATE INDEX references_target_idx ON references_graph (workspace_id, target_kind, target_id);
+CREATE INDEX references_target_idx ON references_graph (workspace_id, target_kind, target_id, created_at DESC, id DESC)
+  WHERE deleted_at IS NULL;
 
 CREATE TABLE vocabulary_concepts (
   id uuid NOT NULL,
@@ -526,25 +530,50 @@ CREATE TABLE vocabulary_concepts (
   canonical_term text NOT NULL CHECK (char_length(canonical_term) BETWEEN 1 AND 200),
   definition text NOT NULL CHECK (char_length(definition) BETWEEN 1 AND 5000),
   status vocabulary_status NOT NULL DEFAULT 'ACTIVE',
+  replacement_concept_id uuid,
   revision bigint NOT NULL DEFAULT 0 CHECK (revision >= 0),
   created_by uuid NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (id),
   UNIQUE (workspace_id, id),
-  FOREIGN KEY (workspace_id, created_by) REFERENCES memberships(workspace_id, user_id)
+  FOREIGN KEY (workspace_id, created_by) REFERENCES memberships(workspace_id, user_id),
+  FOREIGN KEY (workspace_id, replacement_concept_id) REFERENCES vocabulary_concepts(workspace_id, id),
+  CHECK (status <> 'ACTIVE' OR replacement_concept_id IS NULL)
 );
 
 CREATE TABLE vocabulary_terms (
   workspace_id uuid NOT NULL,
   concept_id uuid NOT NULL,
   term text NOT NULL,
-  normalized_term text GENERATED ALWAYS AS (lower(btrim(term))) STORED,
+  normalized_term text NOT NULL,
   kind text NOT NULL CHECK (kind IN ('CANONICAL', 'SYNONYM', 'PROHIBITED')),
   PRIMARY KEY (concept_id, normalized_term),
   FOREIGN KEY (workspace_id, concept_id) REFERENCES vocabulary_concepts(workspace_id, id) ON DELETE CASCADE
 );
 CREATE UNIQUE INDEX vocabulary_terms_workspace_unique_idx ON vocabulary_terms (workspace_id, normalized_term);
+
+CREATE TABLE vocabulary_concept_revisions (
+  workspace_id uuid NOT NULL,
+  concept_id uuid NOT NULL,
+  revision bigint NOT NULL CHECK (revision > 0),
+  canonical_term text NOT NULL,
+  definition text NOT NULL,
+  status vocabulary_status NOT NULL,
+  replacement_concept_id uuid,
+  terms_json jsonb NOT NULL,
+  change_reason text,
+  changed_by uuid NOT NULL,
+  changed_at timestamptz NOT NULL,
+  PRIMARY KEY (concept_id, revision),
+  FOREIGN KEY (workspace_id, concept_id) REFERENCES vocabulary_concepts(workspace_id, id) ON DELETE CASCADE,
+  FOREIGN KEY (workspace_id, changed_by) REFERENCES memberships(workspace_id, user_id)
+);
+
+CREATE OR REPLACE FUNCTION reject_vocabulary_revision_mutation() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN RAISE EXCEPTION 'vocabulary concept revisions are immutable'; END $$;
+CREATE TRIGGER vocabulary_concept_revisions_immutable BEFORE UPDATE OR DELETE ON vocabulary_concept_revisions
+FOR EACH ROW EXECUTE FUNCTION reject_vocabulary_revision_mutation();
 
 CREATE TABLE ai_jobs (
   id uuid NOT NULL,

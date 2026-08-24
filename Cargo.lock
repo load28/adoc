@@ -67,6 +67,7 @@ dependencies = [
  "subtle",
  "thiserror",
  "tokio",
+ "url",
  "uuid",
 ]
 
@@ -171,6 +172,11 @@ name = "adoc-knowledge"
 version = "0.1.0"
 dependencies = [
  "adoc-kernel",
+ "chrono",
+ "serde",
+ "serde_json",
+ "unicode-normalization",
+ "uuid",
 ]
 
 [[package]]

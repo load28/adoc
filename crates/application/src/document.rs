@@ -2,7 +2,9 @@ use std::sync::Arc;
 
 pub use adoc_document::{
     Document, DocumentOperation, DocumentStatus, Draft, OperationError, OperationErrorCode,
-    ReducerInput, TreeRank, ValidatedContent, apply_operations, canonical_hash,
+    OperationScope, ReducerInput, ReferenceEffect, ReferenceSnapshot, ReferenceTarget,
+    RegionResolutionStatus, TreeRank, ValidatedContent, apply_operations, canonical_hash,
+    reanchor_region,
 };
 use adoc_ports::BoxFuture;
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};

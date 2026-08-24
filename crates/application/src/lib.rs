@@ -6,5 +6,6 @@ pub mod collaboration;
 pub mod document;
 pub mod governance;
 pub mod identity;
+pub mod knowledge;
 pub mod permission;
 pub mod publishing;

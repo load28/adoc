@@ -76,6 +76,8 @@ pub enum SetMarksMode {
 pub struct ReferenceTarget {
     pub kind: String,
     pub id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub region: Option<OperationScope>,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]

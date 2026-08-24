@@ -505,6 +505,20 @@ export type DocumentOperation_AddReference = DocumentOperation_Base & {
   target: DocumentOperation_ReferenceTarget;
   [k: string]: unknown;
 };
+export type DocumentOperation_ReferenceTarget =
+  | {
+      kind: "REGION";
+      id: DocumentOperation_Id;
+      region: DocumentOperation_Region;
+    }
+  | {
+      kind: "DOCUMENT" | "DISCUSSION" | "VOCABULARY";
+      id: DocumentOperation_Id;
+    }
+  | {
+      kind: "EXTERNAL";
+      id: string;
+    };
 export type DocumentOperation_RemoveReference = DocumentOperation_Base & {
   kind: "REMOVE_REFERENCE";
   referenceId: DocumentOperation_Id;
@@ -1635,10 +1649,6 @@ export interface DocumentContent_File {
   assetId: DocumentContent_Id;
   caption?: string | null;
 }
-export interface DocumentOperation_ReferenceTarget {
-  kind: "DOCUMENT" | "REGION" | "DISCUSSION" | "VOCABULARY" | "EXTERNAL";
-  id: string;
-}
 export interface AiContracts_Finding {
   findingId: AiContracts_Id;
   ruleId: string;
@@ -2033,6 +2043,7 @@ export interface OpenApi__Reference {
     title: string;
     snapshotHash: string;
   };
+  createdAt: string;
 }
 export interface OpenApi__ReferencePage {
   items: OpenApi__Reference[];
@@ -2048,6 +2059,7 @@ export interface OpenApi__VocabularyConcept {
   definition: string;
   terms: OpenApi__VocabularyTerm[];
   status: "ACTIVE" | "DEPRECATED";
+  replacementConceptId: OpenApi__NullableId;
   revision: number;
 }
 export interface OpenApi__VocabularyPage {
@@ -2979,6 +2991,8 @@ export interface Operation__CreateReferenceRequest {
     "If-Match": string;
     "Idempotency-Key": string;
     "X-Edit-Lease": string;
+    "X-Client-Instance": OpenApi__Id;
+    "X-CSRF-Token": string;
   };
   body: {
     sourceRegion: DocumentOperation_Region;
@@ -2995,6 +3009,8 @@ export interface Operation__DeleteReferenceRequest {
     "If-Match": string;
     "Idempotency-Key": string;
     "X-Edit-Lease": string;
+    "X-Client-Instance": OpenApi__Id;
+    "X-CSRF-Token": string;
   };
 }
 export interface Operation__ListVocabularyRequest {
@@ -3011,6 +3027,7 @@ export interface Operation__CreateVocabularyConceptRequest {
   };
   header: {
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     canonicalTerm: string;
@@ -3036,6 +3053,7 @@ export interface Operation__UpdateVocabularyConceptRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     canonicalTerm: string;
@@ -3055,9 +3073,11 @@ export interface Operation__DeprecateVocabularyConceptRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     reason: string;
+    replacementConceptId?: OpenApi__NullableId;
   };
 }
 export interface Operation__ListAIJobsRequest {

@@ -11,3 +11,8 @@ layer = "domain"
 
 [dependencies]
 adoc-kernel.workspace = true
+chrono = { version = "0.4.42", features = ["serde"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+unicode-normalization = "0.1.25"
+uuid = { version = "1.25.0", features = ["serde"] }

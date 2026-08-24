@@ -1622,6 +1622,8 @@ export interface components {
                 title: string;
                 snapshotHash: string;
             };
+            /** Format: date-time */
+            createdAt: string;
         };
         ReferencePage: {
             items: components["schemas"]["Reference"][];
@@ -1639,6 +1641,7 @@ export interface components {
             terms: components["schemas"]["VocabularyTerm"][];
             /** @enum {string} */
             status: "ACTIVE" | "DEPRECATED";
+            replacementConceptId: components["schemas"]["NullableId"];
             revision: number;
         };
         VocabularyPage: {
@@ -2108,8 +2111,18 @@ export interface components {
             action: "REMOVE";
         };
         referenceTarget: {
+            /** @constant */
+            kind: "REGION";
+            id: components["schemas"]["id"];
+            region: components["schemas"]["region"];
+        } | {
             /** @enum {unknown} */
-            kind: "DOCUMENT" | "REGION" | "DISCUSSION" | "VOCABULARY" | "EXTERNAL";
+            kind: "DOCUMENT" | "DISCUSSION" | "VOCABULARY";
+            id: components["schemas"]["id"];
+        } | {
+            /** @constant */
+            kind: "EXTERNAL";
+            /** Format: uri */
             id: string;
         };
         insertBlock: components["schemas"]["base"] & {
@@ -2290,8 +2303,18 @@ export interface components {
                     action: "REMOVE";
                 };
                 referenceTarget: {
+                    /** @constant */
+                    kind: "REGION";
+                    id: components["schemas"]["id"];
+                    region: components["schemas"]["region"];
+                } | {
                     /** @enum {unknown} */
-                    kind: "DOCUMENT" | "REGION" | "DISCUSSION" | "VOCABULARY" | "EXTERNAL";
+                    kind: "DOCUMENT" | "DISCUSSION" | "VOCABULARY";
+                    id: components["schemas"]["id"];
+                } | {
+                    /** @constant */
+                    kind: "EXTERNAL";
+                    /** Format: uri */
                     id: string;
                 };
             };
@@ -2515,6 +2538,14 @@ export interface components {
                     canonicalTerm: string;
                     definition: string;
                     terms: components["schemas"]["VocabularyTerm"][];
+                };
+            };
+        };
+        DeprecateVocabularyConcept: {
+            content: {
+                "application/json": {
+                    reason: string;
+                    replacementConceptId?: components["schemas"]["NullableId"];
                 };
             };
         };
@@ -4569,6 +4600,8 @@ export interface operations {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
                 "X-Edit-Lease": components["parameters"]["LeaseToken"];
+                "X-Client-Instance": components["parameters"]["ClientInstance"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -4597,6 +4630,8 @@ export interface operations {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
                 "X-Edit-Lease": components["parameters"]["LeaseToken"];
+                "X-Client-Instance": components["parameters"]["ClientInstance"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -4647,6 +4682,7 @@ export interface operations {
             query?: never;
             header: {
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -4697,6 +4733,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -4724,6 +4761,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -4731,7 +4769,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: components["requestBodies"]["Reason"];
+        requestBody: components["requestBodies"]["DeprecateVocabularyConcept"];
         responses: {
             /** @description Deprecated */
             200: {

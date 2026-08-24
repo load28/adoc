@@ -2651,27 +2651,67 @@
       ]
     },
     "DocumentOperation__referenceTarget": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "kind",
-        "id"
-      ],
-      "properties": {
-        "kind": {
-          "enum": [
-            "DOCUMENT",
-            "REGION",
-            "DISCUSSION",
-            "VOCABULARY",
-            "EXTERNAL"
-          ]
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "id",
+            "region"
+          ],
+          "properties": {
+            "kind": {
+              "const": "REGION"
+            },
+            "id": {
+              "$ref": "#/$defs/DocumentOperation__id"
+            },
+            "region": {
+              "$ref": "#/$defs/DocumentOperation__region"
+            }
+          }
         },
-        "id": {
-          "type": "string",
-          "maxLength": 2048
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "id"
+          ],
+          "properties": {
+            "kind": {
+              "enum": [
+                "DOCUMENT",
+                "DISCUSSION",
+                "VOCABULARY"
+              ]
+            },
+            "id": {
+              "$ref": "#/$defs/DocumentOperation__id"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "id"
+          ],
+          "properties": {
+            "kind": {
+              "const": "EXTERNAL"
+            },
+            "id": {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 2048,
+              "pattern": "^https://"
+            }
+          }
         }
-      }
+      ]
     },
     "EventPayloads": {
       "title": "EventEnvelope",
@@ -4737,7 +4777,8 @@
         "sourceDocumentId",
         "sourceRegion",
         "target",
-        "snapshot"
+        "snapshot",
+        "createdAt"
       ],
       "properties": {
         "id": {
@@ -4768,6 +4809,10 @@
               "pattern": "^[a-f0-9]{64}$"
             }
           }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
@@ -4824,6 +4869,7 @@
         "definition",
         "terms",
         "status",
+        "replacementConceptId",
         "revision"
       ],
       "properties": {
@@ -4848,6 +4894,9 @@
             "ACTIVE",
             "DEPRECATED"
           ]
+        },
+        "replacementConceptId": {
+          "$ref": "#/$defs/OpenApi__NullableId"
         },
         "revision": {
           "type": "integer",
@@ -11625,12 +11674,22 @@
             },
             "X-Edit-Lease": {
               "type": "string"
+            },
+            "X-Client-Instance": {
+              "$ref": "#/$defs/OpenApi__Id"
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
             "Idempotency-Key",
-            "X-Edit-Lease"
+            "X-Edit-Lease",
+            "X-Client-Instance",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -11731,12 +11790,22 @@
             },
             "X-Edit-Lease": {
               "type": "string"
+            },
+            "X-Client-Instance": {
+              "$ref": "#/$defs/OpenApi__Id"
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
             "Idempotency-Key",
-            "X-Edit-Lease"
+            "X-Edit-Lease",
+            "X-Client-Instance",
+            "X-CSRF-Token"
           ]
         }
       },
@@ -11868,10 +11937,16 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -12039,11 +12114,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -12150,11 +12231,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -12167,7 +12254,10 @@
             "reason": {
               "type": "string",
               "minLength": 1,
-              "maxLength": 500
+              "maxLength": 1000
+            },
+            "replacementConceptId": {
+              "$ref": "#/$defs/OpenApi__NullableId"
             }
           }
         }

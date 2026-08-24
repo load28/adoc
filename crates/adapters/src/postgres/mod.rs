@@ -4,6 +4,7 @@ mod error;
 mod governance;
 mod idempotency;
 mod identity;
+mod knowledge;
 mod outbox;
 mod permission;
 mod publishing;
@@ -18,6 +19,7 @@ pub use idempotency::{
     StoredResponse, complete_idempotency, reserve_idempotency,
 };
 pub use identity::PostgresIdentityRepository;
+pub use knowledge::PostgresKnowledgeRepository;
 pub use outbox::{OutboxAppendError, OutboxEventInput, append_outbox_event};
 pub use permission::PostgresPermissionRepository;
 pub use publishing::PostgresPublishingRepository;

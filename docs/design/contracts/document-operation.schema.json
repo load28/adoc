@@ -48,6 +48,12 @@
     "addReference": { "allOf": [{ "$ref": "#/$defs/base" }, { "type": "object", "required": ["kind", "referenceId", "sourceRegion", "target"], "properties": { "kind": { "const": "ADD_REFERENCE" }, "referenceId": { "$ref": "#/$defs/id" }, "sourceRegion": { "$ref": "#/$defs/region" }, "target": { "$ref": "#/$defs/referenceTarget" } } }], "unevaluatedProperties": false },
     "removeReference": { "allOf": [{ "$ref": "#/$defs/base" }, { "type": "object", "required": ["kind", "referenceId", "sourceRegion", "target"], "properties": { "kind": { "const": "REMOVE_REFERENCE" }, "referenceId": { "$ref": "#/$defs/id" }, "sourceRegion": { "$ref": "#/$defs/region" }, "target": { "$ref": "#/$defs/referenceTarget" } } }], "unevaluatedProperties": false },
     "attrPatch": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["action", "value"], "properties": { "action": { "const": "SET" }, "value": { "type": ["string", "number", "integer", "boolean", "null"] } } }, { "type": "object", "additionalProperties": false, "required": ["action"], "properties": { "action": { "const": "REMOVE" } } }] },
-    "referenceTarget": { "type": "object", "additionalProperties": false, "required": ["kind", "id"], "properties": { "kind": { "enum": ["DOCUMENT", "REGION", "DISCUSSION", "VOCABULARY", "EXTERNAL"] }, "id": { "type": "string", "maxLength": 2048 } } }
+    "referenceTarget": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind", "id", "region"], "properties": { "kind": { "const": "REGION" }, "id": { "$ref": "#/$defs/id" }, "region": { "$ref": "#/$defs/region" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "id"], "properties": { "kind": { "enum": ["DOCUMENT", "DISCUSSION", "VOCABULARY"] }, "id": { "$ref": "#/$defs/id" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "id"], "properties": { "kind": { "const": "EXTERNAL" }, "id": { "type": "string", "format": "uri", "maxLength": 2048, "pattern": "^https://" } } }
+      ]
+    }
   }
 }
