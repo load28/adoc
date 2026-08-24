@@ -16,6 +16,7 @@ const allowed = new Set([
   "MPL-2.0",
   "Unicode-3.0",
   "Unlicense",
+  "Zlib",
 ]);
 
 const metadata = JSON.parse(
@@ -27,7 +28,9 @@ const metadata = JSON.parse(
 
 const rejected = metadata.packages.filter((pkg) => {
   if (!pkg.license) return true;
-  const choices = pkg.license.split(/\s+OR\s+/u).map((value) => value.replace(/[()]/gu, "").trim());
+  const choices = pkg.license
+    .split(/\s+OR\s+|\//u)
+    .map((value) => value.replace(/[()]/gu, "").trim());
   return !choices.some((choice) => allowed.has(choice));
 });
 

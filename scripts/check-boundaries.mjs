@@ -6,14 +6,19 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const rustAllowed = new Map([
+  ["contracts", new Set()],
   ["kernel", new Set()],
   ["domain", new Set(["kernel"])],
   ["ports", new Set(["kernel"])],
   ["application", new Set(["kernel", "domain", "ports"])],
   ["adapters", new Set(["application", "ports"])],
   ["telemetry", new Set()],
-  ["test-support", new Set(["kernel", "domain", "ports", "application", "adapters", "telemetry"])],
-  ["app", new Set(["application", "adapters", "telemetry"])],
+  [
+    "test-support",
+    new Set(["contracts", "kernel", "domain", "ports", "application", "adapters", "telemetry"]),
+  ],
+  ["app", new Set(["contracts", "application", "adapters", "telemetry"])],
+  ["tool", new Set(["contracts"])],
 ]);
 
 const jsAllowed = new Map([

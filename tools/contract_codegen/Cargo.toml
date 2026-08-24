@@ -1,0 +1,19 @@
+[package]
+name = "adoc-contract-codegen"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.adoc]
+layer = "tool"
+
+[dependencies]
+anyhow = "1.0.102"
+prettyplease = "0.2.37"
+schemars = "0.8.22"
+serde_json = "1.0.149"
+syn = "2.0.117"
+tempfile = "3.27.0"
+typify = "0.7.0"

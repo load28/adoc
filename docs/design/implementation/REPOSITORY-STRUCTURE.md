@@ -11,6 +11,7 @@
 │  └─ worker/              # async worker binary
 ├─ crates/
 │  ├─ kernel/
+│  ├─ contracts/            # generated Rust transport types·validator
 │  ├─ identity/ governance/ document/ collaboration/
 │  ├─ knowledge/ writing_intelligence/ operations/
 │  ├─ application/ ports/ adapters/
@@ -22,6 +23,8 @@
 │  └─ i18n/                # ko/en ICU resources
 ├─ infra/
 │  ├─ docker/ migrations/ opensearch/ observability/
+├─ tools/
+│  └─ contract_codegen/     # canonical contract → Rust·TypeScript source
 ├─ docs/
 └─ Cargo.toml, package.json, workspace config
 ```
@@ -31,6 +34,8 @@
 - `crates/*domain*`은 adapters·transport를 import하지 않는다.
 - `apps`는 wiring만 하고 domain rule을 소유하지 않는다.
 - `packages/contracts`는 생성물이며 수동 편집하지 않는다.
+- `crates/contracts`는 transport 전용 생성물이며 domain crate가 import하지 않는다.
+- `tools/contract_codegen`만 정본 schema를 generated source로 변환한다.
 - `ui-domain`은 design system을 재정의하지 않고 public Atlaskit을 직접 조합한다.
 - SQL은 owner adapter에, migration은 `infra/migrations`에 둔다.
 

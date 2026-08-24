@@ -9,7 +9,8 @@
       "!**/dist",
       "!**/coverage",
       "!**/docs",
-      "!**/src/routeTree.gen.ts"
+      "!**/src/routeTree.gen.ts",
+      "!**/src/generated"
     ]
   },
   "formatter": {

@@ -11,7 +11,8 @@
 | TASK-005 | 모노레포·툴체인 기반 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-005](TASK-005-bootstrap-monorepo-toolchain.md) |
 | TASK-006 | Bun 패키지 매니저 채택 | 설계 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-006](TASK-006-adopt-bun-package-manager.md) |
 | TASK-007 | asdf 로컬 툴체인 표준화 | 설계 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-007](TASK-007-adopt-asdf-local-toolchain.md) |
+| TASK-008 | Rust·TypeScript 계약 생성 기반 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-008](TASK-008-generate-cross-language-contracts.md) |
 
 ## 다음 태스크 번호
 
-**TASK-008**
+**TASK-009**

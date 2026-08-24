@@ -15,6 +15,10 @@ packages/{contracts,editor-schema,ui-domain,i18n}
 infra/{docker,migrations,opensearch}
 ```
 
+`crates/contracts`는 OpenAPI·AsyncAPI·JSON Schema에서 생성한 Rust transport type과 validator를
+소유한다. domain crate는 이를 import하지 않고 API transport와 application mapping 경계에서만
+사용한다. `tools/contract_codegen`이 Rust·TypeScript 생성물을 함께 만든다.
+
 `packages/ui-domain`은 design system이 아니라 Atlaskit을 조합한 domain UI다.
 
 ## 의존 방향

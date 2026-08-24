@@ -1,5 +1,5 @@
 [workspace]
-members = ["apps/api", "apps/worker", "crates/*"]
+members = ["apps/api", "apps/worker", "crates/*", "tools/*"]
 resolver = "3"
 
 [workspace.package]
@@ -13,6 +13,7 @@ publish = false
 adoc-adapters = { path = "crates/adapters" }
 adoc-application = { path = "crates/application" }
 adoc-collaboration = { path = "crates/collaboration" }
+adoc-contracts = { path = "crates/contracts" }
 adoc-document = { path = "crates/document" }
 adoc-governance = { path = "crates/governance" }
 adoc-identity = { path = "crates/identity" }

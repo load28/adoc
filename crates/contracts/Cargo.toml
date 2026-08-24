@@ -1,0 +1,19 @@
+[package]
+name = "adoc-contracts"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.adoc]
+layer = "contracts"
+
+[dependencies]
+anyhow = "1.0.102"
+chrono = { version = "0.4.44", features = ["serde"] }
+jsonschema = { version = "0.51.0", default-features = false }
+regress = "0.11.1"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+uuid = { version = "1.16.0", features = ["serde"] }

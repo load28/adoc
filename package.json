@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "build": "cargo build --workspace --all-targets && bun run --sequential --workspaces --if-present build",
-    "check": "bun run check:toolchains && bun run format:check && bun run lint && bun run typecheck && bun run test && bun run build && bun run check:security && bun run check:licenses",
+    "check": "bun run check:toolchains && bun run contracts:check && bun run format:check && bun run lint && bun run typecheck && bun run test && bun run build && bun run check:security && bun run check:licenses",
     "check:boundaries": "node scripts/check-boundaries.mjs",
     "check:boundaries:self-test": "node scripts/check-boundaries.mjs --self-test",
     "check:cargo-licenses": "node scripts/check-cargo-licenses.mjs",
@@ -22,15 +22,22 @@
     "check:licenses": "bun run check:cargo-licenses && bun run check:js-licenses",
     "check:security": "node scripts/check-secrets.mjs",
     "check:toolchains": "node scripts/check-toolchains.mjs",
+    "contracts:check": "cargo run --quiet -p adoc-contract-codegen -- --check && bun run packages/contracts/scripts/generate.mjs --self-test && node scripts/check-contracts.mjs && bun run --cwd packages/contracts test",
+    "contracts:generate": "cargo run --quiet -p adoc-contract-codegen",
     "ci": "bun run check",
-    "format": "biome format --write .",
-    "format:check": "biome format .",
+    "format": "cargo fmt --all && biome format --write .",
+    "format:check": "cargo fmt --all -- --check && biome format .",
     "lint": "bun run check:boundaries && biome lint . && cargo clippy --workspace --all-targets --all-features -- -D warnings",
     "test": "cargo test --workspace --all-targets && bun run check:boundaries:self-test && bun run --sequential --workspaces --if-present test",
     "typecheck": "bun run --sequential --workspaces --if-present typecheck"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.10",
-    "license-checker-rseidelsohn": "5.0.1"
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "json-schema-to-typescript": "15.0.4",
+    "license-checker-rseidelsohn": "5.0.1",
+    "openapi-typescript": "7.13.0",
+    "yaml": "2.9.0"
   }
 }
