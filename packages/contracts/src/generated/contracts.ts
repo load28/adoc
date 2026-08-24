@@ -839,13 +839,19 @@ export type Operation__MoveDocumentResponse =
       status: "default";
       body: OpenApi__Problem;
     };
-export type Operation__GetDocumentPermissionsResponse = {
-  status: "200";
-  body: OpenApi__PermissionView;
-};
+export type Operation__GetDocumentPermissionsResponse =
+  | {
+      status: "200";
+      body: OpenApi__PermissionView;
+    }
+  | {
+      status: "default";
+      body: OpenApi__Problem;
+    };
 export type Operation__SetDocumentPermissionResponse =
   | {
       status: "200";
+      body: OpenApi__PermissionGrant;
     }
   | {
       status: "default";
@@ -1751,20 +1757,15 @@ export interface OpenApi__PermissionGrant {
   revision: number;
 }
 export interface OpenApi__PermissionView {
-  effective: {
-    access: OpenApi__Access;
-    manage: boolean;
-    sourceDocumentId: OpenApi__Id;
-    [k: string]: unknown;
-  };
+  effective: OpenApi__EffectivePermission;
   explicitGrants: OpenApi__PermissionGrant[];
   revision: number;
-  [k: string]: unknown;
 }
 export interface OpenApi__EffectivePermission {
   access: OpenApi__Access;
   manage: boolean;
   sourceDocumentId: OpenApi__NullableId;
+  evidenceGrantIds: OpenApi__Id[];
 }
 export interface OpenApi__PermissionExplanation {
   effective: OpenApi__EffectivePermission;

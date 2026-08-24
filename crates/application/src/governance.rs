@@ -756,6 +756,20 @@ pub enum GovernanceError {
     GroupMemberInvalid,
     #[error("group member was not found")]
     GroupMemberNotFound,
+    #[error("document was not found")]
+    DocumentNotFound,
+    #[error("document permission is denied")]
+    PermissionDenied,
+    #[error("permission subject is invalid")]
+    PermissionSubjectInvalid,
+    #[error("manage permission requires editor access")]
+    PermissionManageRequiresEditor,
+    #[error("permission grant conflicts")]
+    PermissionGrantConflict,
+    #[error("permission change would remove the last manager")]
+    PermissionLastManager,
+    #[error("publish policy is invalid")]
+    PublishPolicyInvalid,
     #[error("idempotency key was reused")]
     IdempotencyKeyReused,
     #[error("governance storage is unavailable")]

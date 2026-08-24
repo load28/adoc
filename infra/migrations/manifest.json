@@ -16,6 +16,10 @@
     {
       "file": "0004_invitation_capability_key.sql",
       "sha256": "6ba9591bc19c6cbdcb484a01ba0ec4d415a291f74cf632a0cf88df9df057078e"
+    },
+    {
+      "file": "0005_permission_policy_revisions.sql",
+      "sha256": "1831e7824efeb2ae3c4a8cb699d4717358becef94827688e395c8afde8488e59"
     }
   ]
 }

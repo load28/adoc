@@ -721,7 +721,7 @@ async fn lock_workspace(
     .ok_or(GovernanceError::WorkspaceNotFound)?;
     workspace(&row)
 }
-fn check_revision(current: i64, expected: i64) -> Result<(), GovernanceError> {
+pub(super) fn check_revision(current: i64, expected: i64) -> Result<(), GovernanceError> {
     if current == expected {
         Ok(())
     } else {
@@ -781,7 +781,7 @@ async fn load_group(
     })
 }
 
-async fn begin_workspace<T: DeserializeOwned>(
+pub(super) async fn begin_workspace<T: DeserializeOwned>(
     tx: &mut Transaction<'_, Postgres>,
     workspace: Uuid,
     command: &adoc_application::governance::Command,
@@ -799,7 +799,7 @@ async fn begin_workspace<T: DeserializeOwned>(
         .map(|value| serde_json::from_value(value).map_err(|_| GovernanceError::Internal))
         .transpose()
 }
-async fn complete_workspace<T: Serialize>(
+pub(super) async fn complete_workspace<T: Serialize>(
     tx: &mut Transaction<'_, Postgres>,
     workspace: Uuid,
     command: &adoc_application::governance::Command,
@@ -844,17 +844,17 @@ async fn complete_user<T: Serialize>(
     }
 }
 
-struct OutboxEvent<'a> {
-    workspace_id: Uuid,
-    aggregate_kind: &'a str,
-    aggregate_id: Uuid,
-    sequence: i64,
-    event_type: &'a str,
-    payload: Value,
-    occurred_at: DateTime<Utc>,
+pub(super) struct OutboxEvent<'a> {
+    pub(super) workspace_id: Uuid,
+    pub(super) aggregate_kind: &'a str,
+    pub(super) aggregate_id: Uuid,
+    pub(super) sequence: i64,
+    pub(super) event_type: &'a str,
+    pub(super) payload: Value,
+    pub(super) occurred_at: DateTime<Utc>,
 }
 
-async fn append_event(
+pub(super) async fn append_event(
     tx: &mut Transaction<'_, Postgres>,
     event: OutboxEvent<'_>,
 ) -> Result<(), GovernanceError> {
@@ -974,7 +974,7 @@ fn publish_mode(mode: PublishMode) -> &'static str {
         PublishMode::ReviewRequired => "REVIEW_REQUIRED",
     }
 }
-fn map_store(_: sqlx::Error) -> GovernanceError {
+pub(super) fn map_store(_: sqlx::Error) -> GovernanceError {
     GovernanceError::StorageUnavailable
 }
 fn constraint(error: &sqlx::Error) -> Option<&str> {

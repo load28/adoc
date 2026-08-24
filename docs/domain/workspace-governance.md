@@ -79,8 +79,9 @@ EffectivePermission
 - `CONTRIBUTOR`: Viewer + Draft 읽기 + Discussion 생성·참여
 - `EDITOR`: Contributor + Draft 생성·편집 + AI 문서 작업 + 정책에 따른 Publish
 
-`Manage Permission`, `Request Review`, `Approve`, `Publish`를 access 계층과 어떻게 결합할지는
-보안 상세 설계에서 확정한다. 코드가 임의 조합을 먼저 만들 수 없다.
+`Request Review`는 CONTRIBUTOR, `Publish` command 진입은 EDITOR, `Manage Permission`은
+EDITOR+명시적 Manage가 필요하다. reviewer는 결정 시점에 최소 CONTRIBUTOR여야 하며 reviewer rule을
+추가로 만족해야 한다. Workspace Admin·Owner도 이 Document capability를 우회하지 않는다.
 
 ## 6. Tree 이동
 
@@ -106,3 +107,6 @@ Document 이동은 단순 navigation 변경이 아니다. 새 조상에서 Permi
 - Group deny가 없으면 Group access 중 가장 높은 수준을 사용한다.
 - `Manage`는 최소 `EDITOR` access를 요구한다.
 - Workspace Admin도 Document 내용 access를 우회하지 않는다.
+- Permission point와 scope는 하나의 precedence compiler를 사용하며 같은 snapshot에서 동일한
+  Document 결과를 반환한다.
+- Grant 변경 뒤 영향 subtree의 모든 Document에는 active effective manager가 최소 한 명 존재해야 한다.

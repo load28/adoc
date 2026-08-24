@@ -34,3 +34,10 @@ command는 cache를 쓰지 않고 current revision을 읽는다.
 
 command는 authorization 뒤 target row lock과 policy revision을 transaction 안에서 재검사한다.
 긴 AI Job은 시작과 결과 적용 시 모두 권한·revision을 확인한다.
+
+## Document action capability
+
+VIEWER는 Published read, CONTRIBUTOR는 Draft read·Discussion·Review 요청, EDITOR는 edit·AI proposal
+적용·Publish command 진입을 허용한다. Permission·PublishPolicy 변경과 다른 subject의 permission
+설명은 EDITOR access와 명시적 Manage를 모두 요구한다. reviewer는 reviewer rule 외에도 결정 시점의
+effective CONTRIBUTOR 이상을 요구한다. Workspace role은 이 capability를 우회하지 않는다.

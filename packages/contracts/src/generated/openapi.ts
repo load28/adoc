@@ -1349,11 +1349,7 @@ export interface components {
             revision: number;
         };
         PermissionView: {
-            effective: {
-                access: components["schemas"]["Access"];
-                manage: boolean;
-                sourceDocumentId: components["schemas"]["Id"];
-            };
+            effective: components["schemas"]["EffectivePermission"];
             explicitGrants: components["schemas"]["PermissionGrant"][];
             revision: number;
         };
@@ -1361,6 +1357,7 @@ export interface components {
             access: components["schemas"]["Access"];
             manage: boolean;
             sourceDocumentId: components["schemas"]["NullableId"];
+            evidenceGrantIds: components["schemas"]["Id"][];
         };
         PermissionExplanation: {
             effective: components["schemas"]["EffectivePermission"];
@@ -3441,6 +3438,7 @@ export interface operations {
                     "application/json": components["schemas"]["PermissionView"];
                 };
             };
+            default: components["responses"]["Problem"];
         };
     };
     setDocumentPermission: {
@@ -3468,7 +3466,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PermissionGrant"];
+                };
             };
             default: components["responses"]["Problem"];
         };

@@ -3,6 +3,7 @@ mod governance;
 mod idempotency;
 mod identity;
 mod outbox;
+mod permission;
 mod store;
 mod transaction;
 
@@ -13,5 +14,6 @@ pub use idempotency::{
 };
 pub use identity::PostgresIdentityRepository;
 pub use outbox::{OutboxAppendError, OutboxEventInput, append_outbox_event};
+pub use permission::PostgresPermissionRepository;
 pub use store::{DatabaseSettings, PostgresPreflight, PostgresStore};
 pub use transaction::PgUnitOfWork;

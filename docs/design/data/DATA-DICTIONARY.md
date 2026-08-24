@@ -26,6 +26,8 @@ UUIDv7 string이고 document 안에서 unique다. text mark는 allowlisted kind�
 
 `subject_kind`: USER|GROUP. `access`: NO_ACCESS|VIEWER|CONTRIBUTOR|EDITOR. `manage`는 boolean.
 Effective result는 저장하지 않고 resolver output cache만 둘 수 있다.
+`documents.permission_revision`과 `policy_revision`은 해당 Document command의 optimistic concurrency,
+`workspace_access_revisions`는 cache·projection 무효화 stamp다. 둘을 서로 대체하지 않는다.
 
 ## Snapshot
 

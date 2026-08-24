@@ -186,6 +186,7 @@
 | PLAN-11 | `design/implementation/CONTAINER-RUNTIME.md` | image·Compose·health·secret·volume·backup 실행 계약 | 구현 기준 |
 | PLAN-12 | `design/implementation/IDENTITY-SESSION.md` | Google OIDC·opaque session·CSRF·preference 구현 계약 | 구현 기준 |
 | PLAN-13 | `design/implementation/WORKSPACE-MEMBERSHIP-GROUP.md` | Workspace·Membership·Invitation·Group 구현 계약 | 구현 기준 |
+| PLAN-14 | `design/implementation/PERMISSION-PUBLISH-POLICY.md` | Permission Resolver·PublishPolicy 구현 계약 | 구현 기준 |
 
 ## 7. 작성 순서
 

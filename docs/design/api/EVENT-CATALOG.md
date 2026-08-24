@@ -8,6 +8,7 @@
 | MembershipChanged | Governance | permission cache, Inbox, lease cleanup | userId, before, after |
 | GroupChanged | Governance | permission cache·projection | groupId, member delta |
 | PermissionChanged | Governance | Search permission projection, SSE | documentId, affected root, revision |
+| PublishPolicyChanged | Governance | Review policy cache, SSE | documentId, revision, effective policy |
 | DocumentMoved | Document | Search, Reference display, SSE | documentId, before/after parent |
 | DraftChanged | Document | Review invalidator, SSE | documentId, revision, operation IDs |
 | LeaseChanged | Document | SSE | documentId, holder, expiry |

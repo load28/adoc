@@ -3425,6 +3425,7 @@
     },
     "OpenApi__PermissionView": {
       "type": "object",
+      "additionalProperties": false,
       "required": [
         "effective",
         "explicitGrants",
@@ -3432,23 +3433,7 @@
       ],
       "properties": {
         "effective": {
-          "type": "object",
-          "required": [
-            "access",
-            "manage",
-            "sourceDocumentId"
-          ],
-          "properties": {
-            "access": {
-              "$ref": "#/$defs/OpenApi__Access"
-            },
-            "manage": {
-              "type": "boolean"
-            },
-            "sourceDocumentId": {
-              "$ref": "#/$defs/OpenApi__Id"
-            }
-          }
+          "$ref": "#/$defs/OpenApi__EffectivePermission"
         },
         "explicitGrants": {
           "type": "array",
@@ -3457,7 +3442,8 @@
           }
         },
         "revision": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         }
       }
     },
@@ -3467,7 +3453,8 @@
       "required": [
         "access",
         "manage",
-        "sourceDocumentId"
+        "sourceDocumentId",
+        "evidenceGrantIds"
       ],
       "properties": {
         "access": {
@@ -3478,6 +3465,12 @@
         },
         "sourceDocumentId": {
           "$ref": "#/$defs/OpenApi__NullableId"
+        },
+        "evidenceGrantIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OpenApi__Id"
+          }
         }
       }
     },
@@ -7977,6 +7970,22 @@
               "$ref": "#/$defs/OpenApi__PermissionView"
             }
           }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "body"
+          ],
+          "properties": {
+            "status": {
+              "const": "default"
+            },
+            "body": {
+              "$ref": "#/$defs/OpenApi__Problem"
+            }
+          }
         }
       ]
     },
@@ -8039,11 +8048,15 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "status"
+            "status",
+            "body"
           ],
           "properties": {
             "status": {
               "const": "200"
+            },
+            "body": {
+              "$ref": "#/$defs/OpenApi__PermissionGrant"
             }
           }
         },

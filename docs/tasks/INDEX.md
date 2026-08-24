@@ -18,7 +18,8 @@
 | TASK-012 | Docker Compose 실행 기반 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-012](TASK-012-docker-compose-harness.md) |
 | TASK-013 | Identity·Session 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-013](TASK-013-identity-session.md) |
 | TASK-014 | Workspace·Membership·Group 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-014](TASK-014-workspace-membership-group.md) |
+| TASK-015 | Permission·PublishPolicy 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-015](TASK-015-permission-publish-policy.md) |
 
 ## 다음 태스크 번호
 
-**TASK-015**
+**TASK-016**

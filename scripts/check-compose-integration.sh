@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-project=adoc-task014
+project=adoc-task015
 response_file=$(mktemp)
 export ADOC_API_PORT=18081
 export ADOC_WEB_PORT=18080
@@ -51,6 +51,8 @@ docker compose -p "$project" exec -T postgres psql --username postgres --dbname 
 docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
   <infra/migrations/0004_invitation_capability_key.sql >/dev/null
 docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
+  <infra/migrations/0005_permission_policy_revisions.sql >/dev/null
+docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
   --tuples-only --no-align --command \
   "SELECT count(*) FROM information_schema.columns WHERE table_name='sessions' AND column_name IN ('hash_key_id','idle_expires_at','absolute_expires_at')" \
   | grep -qx 3
@@ -58,11 +60,17 @@ docker compose -p "$project" exec -T postgres psql --username postgres --dbname 
   --tuples-only --no-align --command \
   "SELECT count(*) FROM information_schema.columns WHERE table_name='invitations' AND column_name='token_key_id'" \
   | grep -qx 1
+docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
+  --tuples-only --no-align --command \
+  "SELECT count(*) FROM information_schema.columns WHERE table_name='documents' AND column_name IN ('permission_revision','policy_revision')" \
+  | grep -qx 2
 docker compose -p "$project" --profile test build test-runner
 docker compose -p "$project" --profile test run --rm test-runner \
   cargo test --locked -p adoc-adapters --test identity_session -- --ignored --nocapture
 docker compose -p "$project" --profile test run --rm test-runner \
   cargo test --locked -p adoc-adapters --test workspace_governance -- --ignored --nocapture
+docker compose -p "$project" --profile test run --rm test-runner \
+  cargo test --locked -p adoc-adapters --test permission_policy -- --ignored --nocapture
 docker compose -p "$project" --profile backup run --rm backup >/dev/null
 docker compose -p "$project" --profile backup run --rm --entrypoint sh backup -c \
   'test -s /backup/latest/manifest.json && cd /backup/latest && sha256sum -c checksums.sha256'

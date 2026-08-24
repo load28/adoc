@@ -29,7 +29,8 @@ subject는 active Membership만 허용하도록 deferred constraint trigger로 �
 
 | Table | 핵심 column | constraint·index |
 |---|---|---|
-| documents | id, workspace_id, parent_id, rank, title, status, current_version_id, revision, trashed_at, purge_after | parent/rank index |
+| documents | id, workspace_id, parent_id, rank, title, status, current_version_id, revision, permission_revision, policy_revision, trashed_at, purge_after | tree identity·local policy concurrency |
+| workspace_access_revisions | workspace_id, permission_revision, policy_revision, updated_at | cache·projection stamp |
 | drafts | id, workspace_id, document_id, base_version_id, content_json, schema_version, revision, updated_by | unique active document |
 | edit_leases | document_id, holder_user_id, token_hash, expires_at, revision | PK document_id |
 | published_versions | id, workspace_id, document_id, number, content_json, schema_version, publisher_id, published_at, summary | unique document+number |

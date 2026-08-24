@@ -331,6 +331,7 @@ paths:
       parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}]
       responses:
         '200': {description: OK, content: {application/json: {schema: {$ref: '#/components/schemas/PermissionView'}}}}
+        default: {$ref: '#/components/responses/Problem'}
   /workspaces/{workspaceId}/documents/{documentId}/permissions/{grantId}:
     put:
       tags: [Governance]
@@ -340,7 +341,7 @@ paths:
         required: true
         content: {application/json: {schema: {$ref: '#/components/schemas/PermissionGrantInput'}}}
       responses:
-        '200': {description: Updated}
+        '200': {description: Updated, content: {application/json: {schema: {$ref: '#/components/schemas/PermissionGrant'}}}}
         default: {$ref: '#/components/responses/Problem'}
     delete:
       tags: [Governance]
@@ -1036,8 +1037,8 @@ components:
     Access: {type: string, enum: [NO_ACCESS, VIEWER, CONTRIBUTOR, EDITOR]}
     PermissionGrantInput: {type: object, additionalProperties: false, required: [subjectKind, subjectId, access, manage], properties: {subjectKind: {type: string, enum: [USER, GROUP]}, subjectId: {$ref: '#/components/schemas/Id'}, access: {$ref: '#/components/schemas/Access'}, manage: {type: boolean}}}
     PermissionGrant: {type: object, additionalProperties: false, required: [id, subjectKind, subjectId, access, manage, revision], properties: {id: {$ref: '#/components/schemas/Id'}, subjectKind: {type: string, enum: [USER, GROUP]}, subjectId: {$ref: '#/components/schemas/Id'}, access: {$ref: '#/components/schemas/Access'}, manage: {type: boolean}, revision: {type: integer, minimum: 0}}}
-    PermissionView: {type: object, required: [effective, explicitGrants, revision], properties: {effective: {type: object, required: [access, manage, sourceDocumentId], properties: {access: {$ref: '#/components/schemas/Access'}, manage: {type: boolean}, sourceDocumentId: {$ref: '#/components/schemas/Id'}}}, explicitGrants: {type: array, items: {$ref: '#/components/schemas/PermissionGrant'}}, revision: {type: integer}}}
-    EffectivePermission: {type: object, additionalProperties: false, required: [access, manage, sourceDocumentId], properties: {access: {$ref: '#/components/schemas/Access'}, manage: {type: boolean}, sourceDocumentId: {$ref: '#/components/schemas/NullableId'}}}
+    PermissionView: {type: object, additionalProperties: false, required: [effective, explicitGrants, revision], properties: {effective: {$ref: '#/components/schemas/EffectivePermission'}, explicitGrants: {type: array, items: {$ref: '#/components/schemas/PermissionGrant'}}, revision: {type: integer, minimum: 0}}}
+    EffectivePermission: {type: object, additionalProperties: false, required: [access, manage, sourceDocumentId, evidenceGrantIds], properties: {access: {$ref: '#/components/schemas/Access'}, manage: {type: boolean}, sourceDocumentId: {$ref: '#/components/schemas/NullableId'}, evidenceGrantIds: {type: array, items: {$ref: '#/components/schemas/Id'}}}}
     PermissionExplanation: {type: object, additionalProperties: false, required: [effective, steps, fingerprint], properties: {effective: {$ref: '#/components/schemas/EffectivePermission'}, steps: {type: array, items: {type: object, additionalProperties: false, required: [documentId, decision], properties: {documentId: {$ref: '#/components/schemas/Id'}, decision: {type: string, enum: [NO_GRANT, USER_GRANT, GROUP_DENY, GROUP_MAX, INHERITED]}}}}, fingerprint: {type: string, pattern: '^[a-f0-9]{64}$'}}}
     ReviewerRule: {oneOf: [{type: object, additionalProperties: false, required: [kind], properties: {kind: {const: ANY_EDITOR}}}, {type: object, additionalProperties: false, required: [kind, userIds], properties: {kind: {const: USERS}, userIds: {type: array, minItems: 1, items: {$ref: '#/components/schemas/Id'}}}}, {type: object, additionalProperties: false, required: [kind, groupIds], properties: {kind: {const: GROUPS}, groupIds: {type: array, minItems: 1, items: {$ref: '#/components/schemas/Id'}}}}]}
     PublishPolicy: {type: object, additionalProperties: false, required: [documentId, mode, requiredApprovals, reviewerRule, inheritedFromDocumentId, revision], properties: {documentId: {$ref: '#/components/schemas/Id'}, mode: {type: string, enum: [DIRECT, REVIEW_REQUIRED]}, requiredApprovals: {type: integer, minimum: 0, maximum: 20}, reviewerRule: {$ref: '#/components/schemas/ReviewerRule'}, inheritedFromDocumentId: {$ref: '#/components/schemas/NullableId'}, revision: {type: integer, minimum: 0}}}

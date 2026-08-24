@@ -12679,12 +12679,19 @@ pub struct OpenApiEditLease {
 ///  "type": "object",
 ///  "required": [
 ///    "access",
+///    "evidenceGrantIds",
 ///    "manage",
 ///    "sourceDocumentId"
 ///  ],
 ///  "properties": {
 ///    "access": {
 ///      "$ref": "#/$defs/OpenApi__Access"
+///    },
+///    "evidenceGrantIds": {
+///      "type": "array",
+///      "items": {
+///        "$ref": "#/$defs/OpenApi__Id"
+///      }
 ///    },
 ///    "manage": {
 ///      "type": "boolean"
@@ -12701,6 +12708,8 @@ pub struct OpenApiEditLease {
 #[serde(deny_unknown_fields)]
 pub struct OpenApiEffectivePermission {
     pub access: OpenApiAccess,
+    #[serde(rename = "evidenceGrantIds")]
+    pub evidence_grant_ids: ::std::vec::Vec<OpenApiId>,
     pub manage: bool,
     #[serde(rename = "sourceDocumentId")]
     pub source_document_id: OpenApiNullableId,
@@ -14549,23 +14558,7 @@ impl ::std::convert::TryFrom<::std::string::String> for OpenApiPermissionGrantSu
 ///  ],
 ///  "properties": {
 ///    "effective": {
-///      "type": "object",
-///      "required": [
-///        "access",
-///        "manage",
-///        "sourceDocumentId"
-///      ],
-///      "properties": {
-///        "access": {
-///          "$ref": "#/$defs/OpenApi__Access"
-///        },
-///        "manage": {
-///          "type": "boolean"
-///        },
-///        "sourceDocumentId": {
-///          "$ref": "#/$defs/OpenApi__Id"
-///        }
-///      }
+///      "$ref": "#/$defs/OpenApi__EffectivePermission"
 ///    },
 ///    "explicitGrants": {
 ///      "type": "array",
@@ -14574,51 +14567,21 @@ impl ::std::convert::TryFrom<::std::string::String> for OpenApiPermissionGrantSu
 ///      }
 ///    },
 ///    "revision": {
-///      "type": "integer"
+///      "type": "integer",
+///      "minimum": 0.0
 ///    }
-///  }
+///  },
+///  "additionalProperties": false
 ///}
 /// ```
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct OpenApiPermissionView {
-    pub effective: OpenApiPermissionViewEffective,
+    pub effective: OpenApiEffectivePermission,
     #[serde(rename = "explicitGrants")]
     pub explicit_grants: ::std::vec::Vec<OpenApiPermissionGrant>,
-    pub revision: i64,
-}
-///`OpenApiPermissionViewEffective`
-///
-/// <details><summary>JSON schema</summary>
-///
-/// ```json
-///{
-///  "type": "object",
-///  "required": [
-///    "access",
-///    "manage",
-///    "sourceDocumentId"
-///  ],
-///  "properties": {
-///    "access": {
-///      "$ref": "#/$defs/OpenApi__Access"
-///    },
-///    "manage": {
-///      "type": "boolean"
-///    },
-///    "sourceDocumentId": {
-///      "$ref": "#/$defs/OpenApi__Id"
-///    }
-///  }
-///}
-/// ```
-/// </details>
-#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-pub struct OpenApiPermissionViewEffective {
-    pub access: OpenApiAccess,
-    pub manage: bool,
-    #[serde(rename = "sourceDocumentId")]
-    pub source_document_id: OpenApiId,
+    pub revision: u64,
 }
 ///`OpenApiProblem`
 ///
@@ -30073,6 +30036,22 @@ pub struct OperationGetDocumentPermissionsRequestPath {
 ///        }
 ///      },
 ///      "additionalProperties": false
+///    },
+///    {
+///      "type": "object",
+///      "required": [
+///        "body",
+///        "status"
+///      ],
+///      "properties": {
+///        "body": {
+///          "$ref": "#/$defs/OpenApi__Problem"
+///        },
+///        "status": {
+///          "const": "default"
+///        }
+///      },
+///      "additionalProperties": false
 ///    }
 ///  ]
 ///}
@@ -30083,10 +30062,17 @@ pub struct OperationGetDocumentPermissionsRequestPath {
 pub enum OperationGetDocumentPermissionsResponse {
     #[serde(rename = "200")]
     X200(OpenApiPermissionView),
+    #[serde(rename = "default")]
+    Default(OpenApiProblem),
 }
 impl ::std::convert::From<OpenApiPermissionView> for OperationGetDocumentPermissionsResponse {
     fn from(value: OpenApiPermissionView) -> Self {
         Self::X200(value)
+    }
+}
+impl ::std::convert::From<OpenApiProblem> for OperationGetDocumentPermissionsResponse {
+    fn from(value: OpenApiProblem) -> Self {
+        Self::Default(value)
     }
 }
 ///`OperationGetDocumentRequest`
@@ -43199,9 +43185,13 @@ pub struct OperationSetDocumentPermissionRequestPath {
 ///    {
 ///      "type": "object",
 ///      "required": [
+///        "body",
 ///        "status"
 ///      ],
 ///      "properties": {
+///        "body": {
+///          "$ref": "#/$defs/OpenApi__PermissionGrant"
+///        },
 ///        "status": {
 ///          "const": "200"
 ///        }
@@ -43232,9 +43222,14 @@ pub struct OperationSetDocumentPermissionRequestPath {
 #[serde(tag = "status", content = "body")]
 pub enum OperationSetDocumentPermissionResponse {
     #[serde(rename = "200")]
-    X200,
+    X200(OpenApiPermissionGrant),
     #[serde(rename = "default")]
     Default(OpenApiProblem),
+}
+impl ::std::convert::From<OpenApiPermissionGrant> for OperationSetDocumentPermissionResponse {
+    fn from(value: OpenApiPermissionGrant) -> Self {
+        Self::X200(value)
+    }
 }
 impl ::std::convert::From<OpenApiProblem> for OperationSetDocumentPermissionResponse {
     fn from(value: OpenApiProblem) -> Self {

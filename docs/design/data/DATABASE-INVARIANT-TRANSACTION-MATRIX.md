@@ -44,6 +44,7 @@ application이 검증하고 DB constraint가 가능한 부분을 재검증한다
 | DBI-028 | Audit Event는 불변 | DB | append-only trigger | `IMMUTABLE_RESOURCE` |
 | DBI-029 | aggregate event sequence는 유일·단조 증가 | DB+Application | aggregate lock+unique | `EVENT_SEQUENCE_CONFLICT` |
 | DBI-030 | 같은 idempotency key는 같은 request hash만 재사용 | Application+DB | primary key+hash compare | `IDEMPOTENCY_KEY_REUSED` |
+| DBI-031 | access cache stamp는 Membership·Group·Grant·tree·policy 변화마다 단조 증가 | DB | revision row+trigger | `EVENT_SEQUENCE_CONFLICT` |
 
 ## Command transaction
 
