@@ -1,0 +1,15 @@
+[package]
+name = "adoc-api"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.adoc]
+layer = "app"
+
+[dependencies]
+adoc-adapters.workspace = true
+adoc-application.workspace = true
+adoc-telemetry.workspace = true

@@ -1,10 +1,10 @@
 # TASK-005: 모노레포·툴체인 기반 구현
 
-- **상태**: 진행 중
+- **상태**: 완료
 - **유형**: 구현
 - **구현 패키지**: IMP-01
 - **시작일**: 2026-08-25
-- **완료일**: —
+- **완료일**: 2026-08-25
 - **커밋**: —
 
 ## 목적
@@ -102,19 +102,45 @@ Rust·Axum·Tokio·Tower 모노레포와 main 직접 작업은 DEC-012·015 및 
 
 ## 이슈 및 해결
 
-없음.
+### 이슈 1: 로컬 toolchain 설치 정본이 없었음
+
+- **증상**: 고정한 Rust 1.90.0 검증 과정에서 도구별 installer가 사용됐고 로컬 PATH와 실제
+  선택 버전을 한 곳에서 재현할 수 없었다.
+- **조사**: asdf plugin·현재 버전, `rust-toolchain.toml`, Bun·Node 버전과 CI setup을 대조했다.
+- **근본 원인**: 기존 설계는 버전 pinning을 요구했지만 로컬 version manager를 지정하지 않았다.
+- **구조적 해결**: TASK-007·DEC-036·ADR-010으로 asdf를 정본화하고 `.tool-versions`, manifest,
+  toolchain file, CI와 실제 runtime을 `check-toolchains.mjs`에서 함께 검증한다.
+
+### 이슈 2: 생성 전 Route Tree로 TypeScript 검사가 실패함
+
+- **증상**: 최초 typecheck에서 TanStack Router의 `routeTree.gen.ts`가 없어 route 타입을 해석하지
+  못했다.
+- **조사**: TanStack Start 공식 file-based route 생성 순서와 Vite build 결과를 확인했다.
+- **근본 원인**: 생성물이 필요한 검사를 generator보다 먼저 실행했다.
+- **구조적 해결**: 공식 Vite plugin으로 Route Tree를 생성해 저장하고 이후 typecheck·build에서
+  생성물 일관성을 검증한다. 생성 파일의 수동 편집은 금지한다.
+
+### 이슈 3: 라이선스 검사 정책에 private root와 실제 SPDX가 섞임
+
+- **증상**: 초기 검사에서 배포하지 않는 private workspace와 허용 목록에 없던 permissive SPDX
+  항목 때문에 실패했다.
+- **조사**: 전체 JavaScript dependency graph의 선언 license와 Cargo package license를 확인했다.
+- **근본 원인**: 배포 대상과 private workspace를 구분하지 않았고 실제 transitive license
+  inventory 없이 allowlist를 시작했다.
+- **구조적 해결**: private package를 배포 검사에서 제외하고 실제 의존 graph의 permissive SPDX만
+  명시적으로 허용한다. 새 license는 자동으로 실패해 검토를 요구한다.
 
 ## 검증
 
-- [ ] Rust workspace 전체 format·lint·build·test 통과
-- [ ] TypeScript workspace 전체 format·lint·typecheck·build·test 통과
-- [ ] web·API·worker 최소 artifact가 clean bootstrap에서 생성됨
-- [ ] forbidden Rust dependency fixture가 검사에서 거부됨
-- [ ] forbidden TypeScript dependency fixture가 검사에서 거부됨
-- [ ] dependency cycle 검사 통과
-- [ ] lockfile 변경 없는 재실행과 CI 명령 일치 확인
-- [ ] repository boundary·license·secret scan 통과
-- [ ] `git diff --check` 통과
+- [x] Rust workspace 전체 format·lint·build·test 통과
+- [x] TypeScript workspace 전체 format·lint·typecheck·build·test 통과
+- [x] web·API·worker 최소 artifact가 clean bootstrap에서 생성됨
+- [x] forbidden Rust dependency fixture가 검사에서 거부됨
+- [x] forbidden TypeScript dependency fixture가 검사에서 거부됨
+- [x] dependency cycle 검사 통과
+- [x] lockfile 변경 없는 재실행과 CI 명령 일치 확인
+- [x] repository boundary·license·secret scan 통과
+- [x] `git diff --check` 통과
 
 ## 완료 조건
 
@@ -133,7 +159,15 @@ Rust·Axum·Tokio·Tower 모노레포와 main 직접 작업은 DEC-012·015 및 
   영향 문서를 먼저 갱신했다. 로컬 Bun 1.3.13을 확인했다.
 - 2026-08-25: 사용자가 로컬 설치를 asdf로 통일해 TASK-007에서 DEC-036·ADR-010과 영향
   문서를 먼저 갱신했다.
+- 2026-08-25: asdf로 Rust 1.90.0을 설치하고 Rust·Bun·Node 버전을 `.tool-versions`와 자동
+  검증으로 고정했다.
+- 2026-08-25: Cargo 15개 package, Bun 5개 workspace와 web·API·worker bootstrap을 구성했다.
+- 2026-08-25: Rust·JavaScript forbidden edge와 cycle 검사, format·lint·typecheck·test,
+  secret·license 검사와 GitHub Actions CI를 연결했다.
+- 2026-08-25: 별도 임시 디렉터리에서 `bun ci`부터 SSR·CSR build까지 clean bootstrap을
+  재실행해 lockfile과 전체 gate를 검증했다.
 
 ## 결과
 
-구현 진행 중.
+IMP-01의 clean bootstrap과 forbidden edge gate를 통과했다. 다음 구현 package는 IMP-02이며
+별도 TASK에서 계약 생성 기반을 구현한다.

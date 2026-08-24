@@ -1,0 +1,30 @@
+[workspace]
+members = ["apps/api", "apps/worker", "crates/*"]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.90"
+license = "Apache-2.0"
+publish = false
+
+[workspace.dependencies]
+adoc-adapters = { path = "crates/adapters" }
+adoc-application = { path = "crates/application" }
+adoc-collaboration = { path = "crates/collaboration" }
+adoc-document = { path = "crates/document" }
+adoc-governance = { path = "crates/governance" }
+adoc-identity = { path = "crates/identity" }
+adoc-kernel = { path = "crates/kernel" }
+adoc-knowledge = { path = "crates/knowledge" }
+adoc-operations = { path = "crates/operations" }
+adoc-ports = { path = "crates/ports" }
+adoc-telemetry = { path = "crates/telemetry" }
+adoc-test-support = { path = "crates/test_support" }
+adoc-writing-intelligence = { path = "crates/writing_intelligence" }
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+strip = "symbols"

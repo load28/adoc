@@ -1,0 +1,6 @@
+[install]
+exact = true
+linker = "isolated"
+
+[install.lockfile]
+save = true

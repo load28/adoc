@@ -1,0 +1,36 @@
+{
+  "name": "adoc",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "packageManager": "bun@1.3.13",
+  "engines": {
+    "bun": "1.3.13",
+    "node": "24.15.0"
+  },
+  "workspaces": [
+    "apps/web",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "cargo build --workspace --all-targets && bun run --sequential --workspaces --if-present build",
+    "check": "bun run check:toolchains && bun run format:check && bun run lint && bun run typecheck && bun run test && bun run build && bun run check:security && bun run check:licenses",
+    "check:boundaries": "node scripts/check-boundaries.mjs",
+    "check:boundaries:self-test": "node scripts/check-boundaries.mjs --self-test",
+    "check:cargo-licenses": "node scripts/check-cargo-licenses.mjs",
+    "check:js-licenses": "license-checker-rseidelsohn --start . --summary --excludePrivatePackages --onlyAllow '0BSD;Apache-2.0;BlueOak-1.0.0;BSD-2-Clause;BSD-3-Clause;CC-BY-3.0;CC-BY-4.0;CC0-1.0;ISC;MIT;MIT-0;MPL-2.0;Python-2.0;Unicode-3.0;Unlicense'",
+    "check:licenses": "bun run check:cargo-licenses && bun run check:js-licenses",
+    "check:security": "node scripts/check-secrets.mjs",
+    "check:toolchains": "node scripts/check-toolchains.mjs",
+    "ci": "bun run check",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "bun run check:boundaries && biome lint . && cargo clippy --workspace --all-targets --all-features -- -D warnings",
+    "test": "cargo test --workspace --all-targets && bun run check:boundaries:self-test && bun run --sequential --workspaces --if-present test",
+    "typecheck": "bun run --sequential --workspaces --if-present typecheck"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.10",
+    "license-checker-rseidelsohn": "5.0.1"
+  }
+}

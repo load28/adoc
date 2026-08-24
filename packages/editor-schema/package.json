@@ -1,0 +1,13 @@
+{
+  "name": "@adoc/editor-schema",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "adoc": {
+    "layer": "editor-schema"
+  },
+  "dependencies": {
+    "@adoc/contracts": "workspace:*"
+  }
+}

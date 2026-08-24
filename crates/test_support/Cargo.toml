@@ -1,0 +1,24 @@
+[package]
+name = "adoc-test-support"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.adoc]
+layer = "test-support"
+
+[dependencies]
+adoc-adapters.workspace = true
+adoc-application.workspace = true
+adoc-collaboration.workspace = true
+adoc-document.workspace = true
+adoc-governance.workspace = true
+adoc-identity.workspace = true
+adoc-kernel.workspace = true
+adoc-knowledge.workspace = true
+adoc-operations.workspace = true
+adoc-ports.workspace = true
+adoc-telemetry.workspace = true
+adoc-writing-intelligence.workspace = true

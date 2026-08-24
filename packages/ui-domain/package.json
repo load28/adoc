@@ -1,0 +1,15 @@
+{
+  "name": "@adoc/ui-domain",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "adoc": {
+    "layer": "ui-domain"
+  },
+  "dependencies": {
+    "@adoc/contracts": "workspace:*",
+    "@adoc/editor-schema": "workspace:*",
+    "@adoc/i18n": "workspace:*"
+  }
+}

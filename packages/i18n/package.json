@@ -1,0 +1,10 @@
+{
+  "name": "@adoc/i18n",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "adoc": {
+    "layer": "i18n"
+  }
+}

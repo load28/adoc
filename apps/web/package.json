@@ -1,0 +1,35 @@
+{
+  "name": "@adoc/web",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "adoc": {
+    "layer": "web"
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite dev",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@adoc/contracts": "workspace:*",
+    "@adoc/editor-schema": "workspace:*",
+    "@adoc/i18n": "workspace:*",
+    "@adoc/ui-domain": "workspace:*",
+    "@tanstack/react-router": "1.170.18",
+    "@tanstack/react-start": "1.168.30",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.0",
+    "@types/node": "24.13.3",
+    "@types/react": "18.2.79",
+    "@types/react-dom": "18.2.25",
+    "@vitejs/plugin-react": "6.1.0",
+    "typescript": "6.0.3",
+    "vite": "8.2.2"
+  }
+}
