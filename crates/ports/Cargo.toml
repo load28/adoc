@@ -11,3 +11,4 @@ layer = "ports"
 
 [dependencies]
 adoc-kernel.workspace = true
+thiserror = "2.0.20"

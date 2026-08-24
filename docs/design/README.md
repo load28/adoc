@@ -16,6 +16,7 @@
 | Knowledge·AI | UX-08, SPEC-11~14·19, CONTRACT-03, DATA-09 | 동결 |
 | File·Audit·Retention | SPEC-15~19, DATA-04·07~08, PRIV-01 | 동결 |
 | 운영·검증·구현 | OPS-01~07, TEST-07~09, PLAN-01~09 | 동결 |
+| PostgreSQL 기반 | DATA-05·07~08, ARCH-06, PLAN-10 | 구현 기준 |
 
 ## 구현 사용 규칙
 

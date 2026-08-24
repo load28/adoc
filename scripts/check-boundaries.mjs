@@ -82,7 +82,7 @@ function validateLayers(nodes, allowed, label) {
 
 function loadRustGraph() {
   const metadata = JSON.parse(
-    execFileSync("cargo", ["metadata", "--format-version", "1", "--locked"], {
+    execFileSync("cargo", ["metadata", "--format-version", "1", "--locked", "--no-deps"], {
       cwd: root,
       encoding: "utf8",
     }),
@@ -91,13 +91,13 @@ function loadRustGraph() {
   const packages = new Map(
     metadata.packages.filter((pkg) => workspaceIds.has(pkg.id)).map((pkg) => [pkg.id, pkg]),
   );
+  const packageNames = new Set([...packages.values()].map((pkg) => pkg.name));
   const nodes = new Map();
 
   for (const pkg of packages.values()) {
-    const resolved = metadata.resolve.nodes.find((node) => node.id === pkg.id);
-    const dependencies = (resolved?.deps ?? [])
-      .map((dependency) => packages.get(dependency.pkg)?.name)
-      .filter(Boolean);
+    const dependencies = pkg.dependencies
+      .filter((dependency) => dependency.path && packageNames.has(dependency.name))
+      .map((dependency) => dependency.name);
     nodes.set(pkg.name, {
       name: pkg.name,
       layer: pkg.metadata?.adoc?.layer,
