@@ -15,6 +15,7 @@ mod file_http;
 mod governance_http;
 mod identity_http;
 mod knowledge_http;
+mod operations_http;
 mod permission_http;
 mod publishing_http;
 
@@ -24,6 +25,7 @@ use file_http::{FileRuntime, file_routes, public_file_routes};
 use governance_http::{GovernanceRuntime, governance_routes};
 use identity_http::{IdentityRuntime, identity_routes};
 use knowledge_http::{KnowledgeRuntime, knowledge_routes};
+use operations_http::{OperationsRuntime, operations_routes};
 use permission_http::{PermissionRuntime, permission_routes};
 use publishing_http::{PublishingRuntime, public_routes, publishing_routes};
 
@@ -106,6 +108,7 @@ struct HealthState {
     collaboration: CollaborationRuntime,
     knowledge: KnowledgeRuntime,
     files: FileRuntime,
+    operations: OperationsRuntime,
 }
 
 async fn serve() -> Result<(), Box<dyn std::error::Error>> {
@@ -131,6 +134,7 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     let collaboration = CollaborationRuntime::new(&store);
     let knowledge = KnowledgeRuntime::new(&store, document.service.clone());
     let files = FileRuntime::new(&config, &store)?;
+    let operations = OperationsRuntime::new(&config, &store)?;
     let state = HealthState {
         store,
         release_sha: Arc::from(config.common.release_sha.as_str()),
@@ -142,6 +146,7 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
         collaboration,
         knowledge,
         files,
+        operations,
     };
     let app = Router::new()
         .route("/health/live", get(live))
@@ -155,7 +160,8 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
                 .merge(publishing_routes())
                 .merge(collaboration_routes())
                 .merge(knowledge_routes())
-                .merge(file_routes()),
+                .merge(file_routes())
+                .merge(operations_routes()),
         )
         .merge(public_routes())
         .merge(public_file_routes())

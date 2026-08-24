@@ -106,6 +106,13 @@ impl PostgresStore {
         })
     }
 
+    pub async fn current_user(&self) -> Result<String, PersistenceError> {
+        sqlx::query_scalar("SELECT current_user::text")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(map_sqlx)
+    }
+
     #[must_use]
     pub fn pool(&self) -> &PgPool {
         &self.pool

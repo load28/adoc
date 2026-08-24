@@ -1,10 +1,11 @@
 use adoc_application::{
-    governance::GovernanceError,
+    governance::{Command, GovernanceError},
     knowledge::{
         KnowledgeRepository, NormalizedVocabularyInput, Reference, ReferenceDisplaySnapshot,
         ReferencePage, VocabularyAction, VocabularyCommand, VocabularyConcept, VocabularyPage,
         VocabularyStatus, VocabularyTerm, VocabularyTermKind,
     },
+    operations::{AuditAction, AuditEventInput, AuditTarget, AuditTargetKind},
     permission::{Access, compile_permission_scope},
 };
 use adoc_ports::BoxFuture;
@@ -13,7 +14,7 @@ use sqlx::{PgPool, Postgres, Row, Transaction, postgres::PgRow};
 use uuid::Uuid;
 
 use super::{
-    PostgresStore,
+    PostgresStore, append_audit_event,
     document::{require_access, require_effective_active},
     governance::{
         OutboxEvent, append_event, begin_workspace, check_revision, complete_workspace, map_store,
@@ -150,6 +151,18 @@ impl KnowledgeRepository for PostgresKnowledgeRepository {
             }
             let result = get_concept(&mut tx, input.workspace_id, input.concept_id, false).await?;
             append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"VocabularyConcept",aggregate_id:input.concept_id,sequence:result.revision+1,event_type:"VocabularyChanged.v1",payload:json!({"conceptId":input.concept_id,"revision":result.revision,"action":action_text(input.action)}),occurred_at:input.command.now}).await?;
+            audit_vocabulary(
+                &mut tx,
+                &input.command,
+                input.workspace_id,
+                match input.action {
+                    VocabularyAction::Create => AuditAction::VocabularyCreated,
+                    VocabularyAction::Update => AuditAction::VocabularyUpdated,
+                    VocabularyAction::Deprecate => AuditAction::VocabularyDeprecated,
+                },
+                input.concept_id,
+            )
+            .await?;
             complete_workspace(
                 &mut tx,
                 input.workspace_id,
@@ -166,6 +179,31 @@ impl KnowledgeRepository for PostgresKnowledgeRepository {
             Ok(result)
         })
     }
+}
+
+async fn audit_vocabulary(
+    tx: &mut Transaction<'_, Postgres>,
+    command: &Command,
+    workspace: Uuid,
+    action: AuditAction,
+    id: Uuid,
+) -> Result<(), GovernanceError> {
+    append_audit_event(
+        tx,
+        AuditEventInput::user(
+            workspace,
+            command.actor_id,
+            action,
+            AuditTarget {
+                kind: AuditTargetKind::Vocabulary,
+                id,
+            },
+            command.now,
+            &command.idempotency_key,
+        ),
+    )
+    .await?;
+    Ok(())
 }
 
 async fn require_member(

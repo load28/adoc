@@ -60,6 +60,10 @@
     {
       "file": "0015_file_upload_sessions.sql",
       "sha256": "c8a47b7d48b647b9b28a8c87ec2b86ecbc3ca28eef3e730be4c150acd5f4c2cd"
+    },
+    {
+      "file": "0016_audit_retention_lifecycle.sql",
+      "sha256": "df8276df947ad3aee5c73569b19370e6b09b165b29bebd1c981aa2cdceb7c4da"
     }
   ]
 }

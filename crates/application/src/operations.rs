@@ -15,6 +15,304 @@ use crate::{
     identity::{Clock, KeyRing, TokenHash},
 };
 
+#[derive(Clone, Debug)]
+pub struct AuditEventInput {
+    pub workspace_id: Uuid,
+    pub actor: AuditActor,
+    pub action: AuditAction,
+    pub target: AuditTarget,
+    pub before: Option<AuditFields>,
+    pub after: Option<AuditFields>,
+    pub metadata: AuditFields,
+    pub occurred_at: DateTime<Utc>,
+    pub correlation_id: String,
+}
+
+impl AuditEventInput {
+    #[must_use]
+    pub fn user(
+        workspace_id: Uuid,
+        actor_id: Uuid,
+        action: AuditAction,
+        target: AuditTarget,
+        occurred_at: DateTime<Utc>,
+        correlation_id: impl Into<String>,
+    ) -> Self {
+        Self {
+            workspace_id,
+            actor: AuditActor::user(actor_id),
+            action,
+            target,
+            before: None,
+            after: None,
+            metadata: AuditFields::new(),
+            occurred_at,
+            correlation_id: correlation_id.into(),
+        }
+    }
+
+    #[must_use]
+    pub fn system(
+        workspace_id: Uuid,
+        action: AuditAction,
+        target: AuditTarget,
+        occurred_at: DateTime<Utc>,
+        correlation_id: impl Into<String>,
+    ) -> Self {
+        let mut value = Self::user(
+            workspace_id,
+            Uuid::nil(),
+            action,
+            target,
+            occurred_at,
+            correlation_id,
+        );
+        value.actor = AuditActor::system();
+        value
+    }
+
+    #[must_use]
+    pub fn is_valid(&self) -> bool {
+        self.actor.is_valid()
+            && (8..=128).contains(&self.correlation_id.len())
+            && fields_valid(self.before.as_ref())
+            && fields_valid(self.after.as_ref())
+            && fields_valid(Some(&self.metadata))
+    }
+}
+
+fn fields_valid(fields: Option<&AuditFields>) -> bool {
+    fields.is_none_or(|values| {
+        values.len() <= 32
+            && values.iter().all(|(key, value)| {
+                !key.is_empty()
+                    && key.len() <= 64
+                    && !matches!(
+                        key.as_str(),
+                        "title"
+                            | "content"
+                            | "email"
+                            | "filename"
+                            | "fileName"
+                            | "token"
+                            | "checksum"
+                    )
+                    && match value {
+                        AuditValue::String(value) => value.len() <= 500,
+                        AuditValue::Integer(_) | AuditValue::Boolean(_) | AuditValue::Null => true,
+                    }
+            })
+    })
+}
+
+pub trait AuditRepository: Send + Sync {
+    fn list<'a>(
+        &'a self,
+        actor: Uuid,
+        workspace: Uuid,
+        cursor: Option<String>,
+    ) -> BoxFuture<'a, Result<AuditPage, GovernanceError>>;
+}
+
+pub struct AuditService {
+    repository: Arc<dyn AuditRepository>,
+}
+
+impl AuditService {
+    pub fn new(repository: Arc<dyn AuditRepository>) -> Self {
+        Self { repository }
+    }
+
+    pub async fn list(
+        &self,
+        actor: Uuid,
+        workspace: Uuid,
+        cursor: Option<String>,
+    ) -> Result<AuditPage, GovernanceError> {
+        self.repository.list(actor, workspace, cursor).await
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PurgeJobReference {
+    pub job_id: Uuid,
+    pub status: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct DocumentPurgeCommand {
+    pub workspace_id: Uuid,
+    pub document_id: Uuid,
+    pub expected_revision: i64,
+    pub reason: String,
+    pub command: Command,
+}
+
+#[derive(Clone, Debug)]
+pub enum PurgeAdvance {
+    Continue(PurgeRun),
+    DeleteObjects(Vec<PurgeObject>),
+    Completed,
+}
+
+pub trait RetentionRepository: Send + Sync {
+    fn request_document<'a>(
+        &'a self,
+        input: DocumentPurgeCommand,
+    ) -> BoxFuture<'a, Result<PurgeJobReference, GovernanceError>>;
+    fn claim_due<'a>(
+        &'a self,
+        now: DateTime<Utc>,
+        worker: &'a str,
+        limit: i64,
+    ) -> BoxFuture<'a, Result<Vec<PurgeRun>, GovernanceError>>;
+    fn advance<'a>(
+        &'a self,
+        run: &'a PurgeRun,
+        worker: &'a str,
+        now: DateTime<Utc>,
+    ) -> BoxFuture<'a, Result<PurgeAdvance, GovernanceError>>;
+    fn finish_object<'a>(
+        &'a self,
+        object: &'a PurgeObject,
+        success: bool,
+        error_code: Option<&'a str>,
+        now: DateTime<Utc>,
+    ) -> BoxFuture<'a, Result<(), GovernanceError>>;
+    fn fail<'a>(
+        &'a self,
+        run_id: Uuid,
+        worker: &'a str,
+        error_code: &'a str,
+        now: DateTime<Utc>,
+    ) -> BoxFuture<'a, Result<(), GovernanceError>>;
+}
+
+pub struct RetentionService {
+    repository: Arc<dyn RetentionRepository>,
+    storage: Arc<dyn ObjectStorage>,
+    clock: Arc<dyn Clock>,
+    worker_id: Arc<str>,
+}
+
+impl RetentionService {
+    pub fn new(
+        repository: Arc<dyn RetentionRepository>,
+        storage: Arc<dyn ObjectStorage>,
+        clock: Arc<dyn Clock>,
+        worker_id: Arc<str>,
+    ) -> Self {
+        Self {
+            repository,
+            storage,
+            clock,
+            worker_id,
+        }
+    }
+
+    pub async fn request_document(
+        &self,
+        input: DocumentPurgeCommand,
+    ) -> Result<PurgeJobReference, GovernanceError> {
+        if input.reason.trim().is_empty() || input.reason.len() > 1000 {
+            return Err(GovernanceError::Validation);
+        }
+        self.repository.request_document(input).await
+    }
+
+    pub async fn request_document_purge(
+        &self,
+        actor: Uuid,
+        workspace: Uuid,
+        document: Uuid,
+        expected_revision: i64,
+        reason: String,
+        idempotency_key: &str,
+    ) -> Result<PurgeJobReference, GovernanceError> {
+        if !(16..=128).contains(&idempotency_key.len()) {
+            return Err(GovernanceError::Validation);
+        }
+        let now = self.clock.now();
+        let mut digest = Sha256::new();
+        digest.update(workspace.as_bytes());
+        digest.update(document.as_bytes());
+        digest.update(expected_revision.to_be_bytes());
+        digest.update(reason.as_bytes());
+        let command = Command {
+            actor_id: actor,
+            operation_id: "purgeDocument",
+            idempotency_key: idempotency_key.to_owned(),
+            request_hash: hex::encode(digest.finalize()),
+            now,
+            expires_at: now + Duration::hours(24),
+        };
+        self.request_document(DocumentPurgeCommand {
+            workspace_id: workspace,
+            document_id: document,
+            expected_revision,
+            reason,
+            command,
+        })
+        .await
+    }
+
+    pub async fn run_once(&self, limit: i64) -> Result<usize, GovernanceError> {
+        let now = self.clock.now();
+        let runs = self
+            .repository
+            .claim_due(now, &self.worker_id, limit)
+            .await?;
+        let mut completed = 0;
+        for mut run in runs {
+            let result = async {
+                for _ in 0..8 {
+                    match self.repository.advance(&run, &self.worker_id, now).await? {
+                        PurgeAdvance::Continue(next) => run = next,
+                        PurgeAdvance::DeleteObjects(objects) => {
+                            for object in objects {
+                                let result = self.storage.delete(&object.storage_key).await;
+                                self.repository
+                                    .finish_object(
+                                        &object,
+                                        result.is_ok(),
+                                        result.as_ref().err().map(|_| "OBJECT_DELETE_FAILED"),
+                                        now,
+                                    )
+                                    .await?;
+                                if result.is_err() {
+                                    return Err(GovernanceError::DependencyUnavailable);
+                                }
+                            }
+                        }
+                        PurgeAdvance::Completed => return Ok(()),
+                    }
+                }
+                Err(GovernanceError::Internal)
+            }
+            .await;
+            match result {
+                Ok(()) => completed += 1,
+                Err(error) => {
+                    self.repository
+                        .fail(run.id, &self.worker_id, purge_error_code(&error), now)
+                        .await?;
+                }
+            }
+        }
+        Ok(completed)
+    }
+}
+
+fn purge_error_code(error: &GovernanceError) -> &'static str {
+    match error {
+        GovernanceError::DependencyUnavailable => "DEPENDENCY_UNAVAILABLE",
+        GovernanceError::DocumentStateInvalid => "DOCUMENT_STATE_INVALID",
+        GovernanceError::WorkspaceStateInvalid => "WORKSPACE_STATE_INVALID",
+        _ => "PURGE_STEP_FAILED",
+    }
+}
+
 pub type ByteStream = Pin<Box<dyn Stream<Item = Result<Bytes, StorageError>> + Send>>;
 #[derive(Clone, Debug)]
 pub struct ObjectMetadata {

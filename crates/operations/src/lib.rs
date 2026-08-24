@@ -2,9 +2,200 @@
 
 //! File, audit, and retention bounded context.
 
+use std::collections::BTreeMap;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum AuditActorKind {
+    User,
+    System,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AuditActor {
+    pub kind: AuditActorKind,
+    pub user_id: Option<Uuid>,
+}
+
+impl AuditActor {
+    #[must_use]
+    pub fn user(user_id: Uuid) -> Self {
+        Self {
+            kind: AuditActorKind::User,
+            user_id: Some(user_id),
+        }
+    }
+
+    #[must_use]
+    pub fn system() -> Self {
+        Self {
+            kind: AuditActorKind::System,
+            user_id: None,
+        }
+    }
+
+    #[must_use]
+    pub fn is_valid(&self) -> bool {
+        matches!(self.kind, AuditActorKind::User) == self.user_id.is_some()
+    }
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum AuditAction {
+    WorkspaceCreated,
+    WorkspaceUpdated,
+    WorkspaceDeletionScheduled,
+    WorkspaceRestored,
+    WorkspacePurged,
+    MemberInvited,
+    MemberAdded,
+    MemberRoleChanged,
+    MemberRemoved,
+    GroupCreated,
+    GroupUpdated,
+    GroupDeleted,
+    GroupMemberAdded,
+    GroupMemberRemoved,
+    PermissionChanged,
+    PublishPolicyChanged,
+    DocumentCreated,
+    DocumentRenamed,
+    DocumentMoved,
+    DocumentTrashed,
+    DocumentRestored,
+    DocumentPurged,
+    DraftCreated,
+    VersionPublished,
+    PublicLinkCreated,
+    PublicLinkRevoked,
+    DiscussionCreated,
+    DiscussionClosed,
+    DiscussionReopened,
+    ReviewRequested,
+    ReviewApproved,
+    ReviewChangesRequested,
+    VocabularyCreated,
+    VocabularyUpdated,
+    VocabularyDeprecated,
+    FileDeleted,
+    AiProposalApplied,
+    SecurityActionRecorded,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum AuditTargetKind {
+    Workspace,
+    Membership,
+    Invitation,
+    Group,
+    Permission,
+    PublishPolicy,
+    Document,
+    Draft,
+    Version,
+    PublicLink,
+    Discussion,
+    Review,
+    Vocabulary,
+    File,
+    AiProposal,
+    Security,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AuditTarget {
+    pub kind: AuditTargetKind,
+    pub id: Uuid,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(untagged)]
+pub enum AuditValue {
+    String(String),
+    Integer(i64),
+    Boolean(bool),
+    Null,
+}
+
+pub type AuditFields = BTreeMap<String, AuditValue>;
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AuditEvent {
+    pub id: Uuid,
+    pub sequence: i64,
+    pub actor: AuditActor,
+    pub action: AuditAction,
+    pub target: AuditTarget,
+    pub before: Option<AuditFields>,
+    pub after: Option<AuditFields>,
+    pub metadata: AuditFields,
+    pub correlation_id: String,
+    pub occurred_at: DateTime<Utc>,
+    pub redacted_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AuditPage {
+    pub items: Vec<AuditEvent>,
+    pub next_cursor: Option<String>,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PurgeTargetKind {
+    Document,
+    Workspace,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PurgeStatus {
+    Pending,
+    Running,
+    Retry,
+    Completed,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PurgeStep {
+    Pending,
+    AccessRevoked,
+    ObjectsCaptured,
+    DomainPurged,
+    ObjectsPurged,
+    AuditRedacted,
+    Completed,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct PurgeRun {
+    pub id: Uuid,
+    pub workspace_id: Uuid,
+    pub target_kind: PurgeTargetKind,
+    pub target_id: Uuid,
+    pub status: PurgeStatus,
+    pub step: PurgeStep,
+    pub attempt: i32,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct PurgeObject {
+    pub ledger_id: Uuid,
+    pub storage_key: String,
+}
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]

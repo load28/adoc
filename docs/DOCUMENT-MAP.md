@@ -192,6 +192,7 @@
 | PLAN-19 | `design/implementation/REVIEW-APPROVAL.md` | revision-bound Review·Approval·Publish gate 구현 계약 | 구현 기준 |
 | PLAN-20 | `design/implementation/REFERENCE-VOCABULARY.md` | Reference graph·Vocabulary 구현 계약 | 구현 기준 |
 | PLAN-21 | `design/implementation/FILE-OBJECT-STORAGE.md` | File lifecycle·ObjectStorage·reference·Range·GC 구현 계약 | 구현 기준 |
+| PLAN-22 | `design/implementation/AUDIT-RETENTION.md` | Audit append·query·purge ledger·retention worker 구현 계약 | 구현 기준 |
 | PLAN-15 | `design/implementation/CONTENT-OPERATION-REDUCER.md` | Content·Region·Operation reducer 구현 계약 | 구현 기준 |
 | PLAN-16 | `design/implementation/DOCUMENT-TREE-DRAFT-LEASE.md` | Document Tree·Draft·Lease 구현 계약 | 구현 기준 |
 

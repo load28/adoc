@@ -766,6 +766,8 @@ pub enum GovernanceError {
     DocumentRankConflict,
     #[error("document state is invalid")]
     DocumentStateInvalid,
+    #[error("purge is not eligible yet")]
+    PurgeNotEligible,
     #[error("document is effectively trashed")]
     DocumentEffectivelyTrashed,
     #[error("document move preview is stale")]

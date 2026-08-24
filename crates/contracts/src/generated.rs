@@ -11764,6 +11764,7 @@ pub struct OpenApiAiUsage {
 ///  "required": [
 ///    "action",
 ///    "actor",
+///    "correlationId",
 ///    "id",
 ///    "metadata",
 ///    "occurredAt",
@@ -11793,6 +11794,41 @@ pub struct OpenApiAiUsage {
 ///      },
 ///      "additionalProperties": false
 ///    },
+///    "after": {
+///      "type": [
+///        "object",
+///        "null"
+///      ],
+///      "additionalProperties": {
+///        "type": [
+///          "string",
+///          "number",
+///          "integer",
+///          "boolean",
+///          "null"
+///        ]
+///      }
+///    },
+///    "before": {
+///      "type": [
+///        "object",
+///        "null"
+///      ],
+///      "additionalProperties": {
+///        "type": [
+///          "string",
+///          "number",
+///          "integer",
+///          "boolean",
+///          "null"
+///        ]
+///      }
+///    },
+///    "correlationId": {
+///      "type": "string",
+///      "maxLength": 128,
+///      "minLength": 8
+///    },
 ///    "id": {
 ///      "$ref": "#/$defs/OpenApi__Id"
 ///    },
@@ -11812,6 +11848,13 @@ pub struct OpenApiAiUsage {
 ///      "type": "string",
 ///      "format": "date-time"
 ///    },
+///    "redactedAt": {
+///      "type": [
+///        "string",
+///        "null"
+///      ],
+///      "format": "date-time"
+///    },
 ///    "sequence": {
 ///      "type": "integer",
 ///      "minimum": 1.0
@@ -11829,11 +11872,27 @@ pub struct OpenApiAiUsage {
 pub struct OpenApiAuditEvent {
     pub action: ::std::string::String,
     pub actor: OpenApiAuditEventActor,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub after: ::std::option::Option<
+        ::std::collections::HashMap<::std::string::String, OpenApiAuditEventAfterValue>,
+    >,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub before: ::std::option::Option<
+        ::std::collections::HashMap<::std::string::String, OpenApiAuditEventBeforeValue>,
+    >,
+    #[serde(rename = "correlationId")]
+    pub correlation_id: OpenApiAuditEventCorrelationId,
     pub id: OpenApiId,
     pub metadata:
         ::std::collections::HashMap<::std::string::String, OpenApiAuditEventMetadataValue>,
     #[serde(rename = "occurredAt")]
     pub occurred_at: ::chrono::DateTime<::chrono::offset::Utc>,
+    #[serde(
+        rename = "redactedAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub redacted_at: ::std::option::Option<::chrono::DateTime<::chrono::offset::Utc>>,
     pub sequence: ::std::num::NonZeroU64,
     pub target: OpenApiResourceTarget,
 }
@@ -11944,6 +12003,158 @@ impl ::std::convert::TryFrom<::std::string::String> for OpenApiAuditEventActorKi
         value: ::std::string::String,
     ) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
+    }
+}
+///`OpenApiAuditEventAfterValue`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": [
+///    "string",
+///    "number",
+///    "integer",
+///    "boolean",
+///    "null"
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(untagged)]
+pub enum OpenApiAuditEventAfterValue {
+    Null,
+    Boolean(bool),
+    Integer(i64),
+    Number(f64),
+    String(::std::string::String),
+}
+impl ::std::convert::From<bool> for OpenApiAuditEventAfterValue {
+    fn from(value: bool) -> Self {
+        Self::Boolean(value)
+    }
+}
+impl ::std::convert::From<i64> for OpenApiAuditEventAfterValue {
+    fn from(value: i64) -> Self {
+        Self::Integer(value)
+    }
+}
+impl ::std::convert::From<f64> for OpenApiAuditEventAfterValue {
+    fn from(value: f64) -> Self {
+        Self::Number(value)
+    }
+}
+///`OpenApiAuditEventBeforeValue`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": [
+///    "string",
+///    "number",
+///    "integer",
+///    "boolean",
+///    "null"
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(untagged)]
+pub enum OpenApiAuditEventBeforeValue {
+    Null,
+    Boolean(bool),
+    Integer(i64),
+    Number(f64),
+    String(::std::string::String),
+}
+impl ::std::convert::From<bool> for OpenApiAuditEventBeforeValue {
+    fn from(value: bool) -> Self {
+        Self::Boolean(value)
+    }
+}
+impl ::std::convert::From<i64> for OpenApiAuditEventBeforeValue {
+    fn from(value: i64) -> Self {
+        Self::Integer(value)
+    }
+}
+impl ::std::convert::From<f64> for OpenApiAuditEventBeforeValue {
+    fn from(value: f64) -> Self {
+        Self::Number(value)
+    }
+}
+///`OpenApiAuditEventCorrelationId`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 128,
+///  "minLength": 8
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OpenApiAuditEventCorrelationId(::std::string::String);
+impl ::std::ops::Deref for OpenApiAuditEventCorrelationId {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OpenApiAuditEventCorrelationId> for ::std::string::String {
+    fn from(value: OpenApiAuditEventCorrelationId) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OpenApiAuditEventCorrelationId {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 128usize {
+            return Err("longer than 128 characters".into());
+        }
+        if value.chars().count() < 8usize {
+            return Err("shorter than 8 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OpenApiAuditEventCorrelationId {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for OpenApiAuditEventCorrelationId {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OpenApiAuditEventCorrelationId {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OpenApiAuditEventCorrelationId {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
     }
 }
 ///`OpenApiAuditEventMetadataValue`

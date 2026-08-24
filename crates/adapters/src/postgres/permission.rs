@@ -1,7 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use adoc_application::{
-    governance::GovernanceError,
+    governance::{Command, GovernanceError},
+    operations::{AuditAction, AuditEventInput, AuditTarget, AuditTargetKind},
     permission::{
         Access, AccessStamp, PermissionGrant, PermissionMutation, PermissionNode,
         PermissionRepository, PointSnapshot, PolicyMutation, PublishMode, PublishPolicy,
@@ -15,7 +16,7 @@ use sqlx::{PgPool, Postgres, Row, Transaction, postgres::PgRow};
 use uuid::Uuid;
 
 use super::{
-    PostgresStore,
+    PostgresStore, append_audit_event,
     governance::{
         OutboxEvent, append_event, begin_workspace, check_revision, complete_workspace, map_store,
     },
@@ -178,6 +179,15 @@ impl PermissionRepository for PostgresPermissionRepository {
                 payload: json!({"documentId":input.document_id,"affectedRootId":input.document_id,"revision":new_revision,"before":before,"after":result}),
                 occurred_at: input.command.now,
             }).await?;
+            audit_permission(
+                &mut tx,
+                &input.command,
+                input.workspace_id,
+                AuditAction::PermissionChanged,
+                AuditTargetKind::Permission,
+                input.grant_id,
+            )
+            .await?;
             complete_workspace(&mut tx, input.workspace_id, &input.command, 200, &result).await?;
             tx.commit().await.map_err(map_store)?;
             Ok(result)
@@ -229,6 +239,15 @@ impl PermissionRepository for PostgresPermissionRepository {
                 payload: json!({"documentId":input.document_id,"affectedRootId":input.document_id,"revision":new_revision,"before":before,"after":Value::Null}),
                 occurred_at: input.command.now,
             }).await?;
+            audit_permission(
+                &mut tx,
+                &input.command,
+                input.workspace_id,
+                AuditAction::PermissionChanged,
+                AuditTargetKind::Permission,
+                input.grant_id,
+            )
+            .await?;
             let empty: Option<PermissionGrant> = None;
             complete_workspace(&mut tx, input.workspace_id, &input.command, 204, &empty).await?;
             tx.commit().await.map_err(map_store)?;
@@ -301,11 +320,43 @@ impl PermissionRepository for PostgresPermissionRepository {
                 payload: json!({"documentId":input.document_id,"revision":new_revision,"effectivePolicy":result}),
                 occurred_at: input.command.now,
             }).await?;
+            audit_permission(
+                &mut tx,
+                &input.command,
+                input.workspace_id,
+                AuditAction::PublishPolicyChanged,
+                AuditTargetKind::PublishPolicy,
+                input.document_id,
+            )
+            .await?;
             complete_workspace(&mut tx, input.workspace_id, &input.command, 200, &result).await?;
             tx.commit().await.map_err(map_store)?;
             Ok(result)
         })
     }
+}
+
+async fn audit_permission(
+    tx: &mut Transaction<'_, Postgres>,
+    command: &Command,
+    workspace: Uuid,
+    action: AuditAction,
+    kind: AuditTargetKind,
+    id: Uuid,
+) -> Result<(), GovernanceError> {
+    append_audit_event(
+        tx,
+        AuditEventInput::user(
+            workspace,
+            command.actor_id,
+            action,
+            AuditTarget { kind, id },
+            command.now,
+            &command.idempotency_key,
+        ),
+    )
+    .await?;
+    Ok(())
 }
 
 async fn access_stamp_tx(

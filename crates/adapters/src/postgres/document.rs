@@ -9,8 +9,9 @@ use adoc_application::{
         ReferenceTarget, RegionResolutionStatus, StoredImpactPreview, TreeRank, ValidatedContent,
         apply_operations, canonical_hash, reanchor_region,
     },
-    governance::GovernanceError,
+    governance::{Command, GovernanceError},
     identity::TokenHash,
+    operations::{AuditAction, AuditEventInput, AuditTarget, AuditTargetKind},
     permission::{Access, compile_permission_scope, resolve_permission_path},
 };
 use adoc_ports::BoxFuture;
@@ -21,7 +22,7 @@ use subtle::ConstantTimeEq;
 use uuid::Uuid;
 
 use super::{
-    PostgresStore,
+    PostgresStore, append_audit_event,
     collaboration::invalidate_reviews,
     file::sync_file_references,
     governance::{
@@ -155,6 +156,7 @@ impl DocumentRepository for PostgresDocumentRepository {
                 let result = document(&row)?;
                 let tree_revision = bump_tree_revision(&mut tx, input.workspace_id, input.command.now).await?;
                 append_document_changed(&mut tx, input.workspace_id, &result, tree_revision, "CREATED", input.command.now).await?;
+                audit_document(&mut tx, &input.command, input.workspace_id, AuditAction::DocumentCreated, AuditTargetKind::Document, input.id).await?;
                 complete_workspace(&mut tx, input.workspace_id, &input.command, 201, &result).await?;
                 tx.commit().await.map_err(map_store)?;
                 Ok(result)
@@ -248,6 +250,20 @@ impl DocumentRepository for PostgresDocumentRepository {
                 tree_revision,
                 action,
                 input.command.now,
+            )
+            .await?;
+            audit_document(
+                &mut tx,
+                &input.command,
+                input.workspace_id,
+                match action {
+                    "RENAMED" => AuditAction::DocumentRenamed,
+                    "RESTORED" => AuditAction::DocumentRestored,
+                    "TRASHED" => AuditAction::DocumentTrashed,
+                    _ => return Err(GovernanceError::Internal),
+                },
+                AuditTargetKind::Document,
+                input.document_id,
             )
             .await?;
             complete_workspace(&mut tx, input.workspace_id, &input.command, 200, &result).await?;
@@ -350,6 +366,7 @@ impl DocumentRepository for PostgresDocumentRepository {
                 let result = document(&result_row)?;
                 let tree_revision = bump_tree_revision(&mut tx, input.workspace_id, input.command.now).await?;
                 append_event(&mut tx, OutboxEvent { workspace_id:input.workspace_id, aggregate_kind:"Document", aggregate_id:input.document_id, sequence:result.revision+1, event_type:"DocumentMoved.v1", payload:json!({"documentId":input.document_id,"beforeParentId":row.parent_id,"afterParentId":input.input.new_parent_id,"revision":result.revision,"treeRevision":tree_revision}), occurred_at:input.command.now }).await?;
+                audit_document(&mut tx, &input.command, input.workspace_id, AuditAction::DocumentMoved, AuditTargetKind::Document, input.document_id).await?;
                 sqlx::query("DELETE FROM document_move_previews WHERE token_hash=$1").bind(input.preview_token_hash.0.as_slice()).execute(&mut *tx).await.map_err(map_store)?;
                 complete_workspace(&mut tx, input.workspace_id, &input.command, 200, &result).await?;
                 tx.commit().await.map_err(map_store)?;
@@ -456,6 +473,15 @@ impl DocumentRepository for PostgresDocumentRepository {
                 content_fingerprint: canonical_hash(content.as_value()),
                 content: content.into_value(),
             };
+            audit_document(
+                &mut tx,
+                &input.command,
+                input.workspace_id,
+                AuditAction::DraftCreated,
+                AuditTargetKind::Draft,
+                input.id,
+            )
+            .await?;
             complete_workspace(&mut tx, input.workspace_id, &input.command, 200, &result).await?;
             tx.commit().await.map_err(map_store)?;
             Ok(result)
@@ -1190,6 +1216,29 @@ fn build_tree(
     }
     Ok(build(None, &docs, &children))
 }
+async fn audit_document(
+    tx: &mut Transaction<'_, Postgres>,
+    command: &Command,
+    workspace: Uuid,
+    action: AuditAction,
+    kind: AuditTargetKind,
+    id: Uuid,
+) -> Result<(), GovernanceError> {
+    append_audit_event(
+        tx,
+        AuditEventInput::user(
+            workspace,
+            command.actor_id,
+            action,
+            AuditTarget { kind, id },
+            command.now,
+            &command.idempotency_key,
+        ),
+    )
+    .await?;
+    Ok(())
+}
+
 fn document(row: &PgRow) -> Result<Document, GovernanceError> {
     Ok(Document {
         id: row.get("id"),

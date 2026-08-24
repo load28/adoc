@@ -629,6 +629,13 @@ impl From<GovernanceError> for Problem {
                 None,
                 None,
             ),
+            GovernanceError::PurgeNotEligible => (
+                StatusCode::CONFLICT,
+                "PURGE_NOT_ELIGIBLE",
+                false,
+                None,
+                None,
+            ),
             GovernanceError::DocumentEffectivelyTrashed => (
                 StatusCode::CONFLICT,
                 "DOCUMENT_EFFECTIVELY_TRASHED",

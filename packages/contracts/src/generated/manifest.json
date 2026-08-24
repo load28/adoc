@@ -7,7 +7,7 @@
     "typify": "0.7.0"
   },
   "sources": {
-    "docs/design/api/openapi.yaml": "a2dc74d8357f4caa6471a9198d2c1dd5a1d2135a4cf8737322a015df51fbf74a",
+    "docs/design/api/openapi.yaml": "322fb3628c8b51c29f471307d44d8996f7d3d7b277f29f1822cc68a22d82f7e6",
     "docs/design/api/asyncapi.yaml": "56010b252cc20f760995d1f4ad5f9f9977604b8822dfebc26f8593b80bf99d08",
     "docs/design/contracts/ai-contracts.schema.json": "b2a2b5c20d34fa7652350a0061e00ed8c3574d719e3fd073d80a3c62dfc43901",
     "docs/design/contracts/document-content.schema.json": "bb8eec6392aaa24c16740cfe5e823add8cb2bb3a925db2def1c15237ed0d0c7c",

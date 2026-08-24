@@ -2,8 +2,8 @@ use adoc_application::{
     governance::{Command, GovernanceError},
     identity::TokenHash,
     operations::{
-        CreateFileCommand, FileAccess, FileAsset, FileMutation, FileRepository, FileStatus,
-        GcCandidate, UploadAuthorization,
+        AuditAction, AuditEventInput, AuditTarget, AuditTargetKind, CreateFileCommand, FileAccess,
+        FileAsset, FileMutation, FileRepository, FileStatus, GcCandidate, UploadAuthorization,
     },
 };
 use adoc_ports::BoxFuture;
@@ -15,7 +15,7 @@ use subtle::ConstantTimeEq;
 use uuid::Uuid;
 
 use super::{
-    PostgresStore,
+    PostgresStore, append_audit_event,
     document::require_access,
     governance::{
         OutboxEvent, append_event, begin_workspace, check_revision, complete_workspace, map_store,
@@ -301,6 +301,21 @@ impl FileRepository for PostgresFileRepository {
             sqlx::query("UPDATE file_assets SET status='DELETED',deleted_at=$3,purge_after=$3+interval '7 days',revision=revision+1 WHERE workspace_id=$1 AND id=$2").bind(workspace).bind(asset).bind(now).execute(&mut *tx).await.map_err(map_store)?;
             let result = get_asset(&mut tx, workspace, asset, false).await?;
             append_file_event(&mut tx, workspace, &result, "DELETED", now).await?;
+            append_audit_event(
+                &mut tx,
+                AuditEventInput::user(
+                    workspace,
+                    actor,
+                    AuditAction::FileDeleted,
+                    AuditTarget {
+                        kind: AuditTargetKind::File,
+                        id: asset,
+                    },
+                    now,
+                    key,
+                ),
+            )
+            .await?;
             complete_workspace(&mut tx, workspace, &command, 204, &()).await?;
             tx.commit().await.map_err(map_store)?;
             Ok(())

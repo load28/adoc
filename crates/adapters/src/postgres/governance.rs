@@ -1,10 +1,11 @@
 use adoc_application::governance::{
-    GovernanceError, GovernanceRepository, Group, GroupChange, GroupOperation, Invitation,
+    Command, GovernanceError, GovernanceRepository, Group, GroupChange, GroupOperation, Invitation,
     InvitationAcceptance, InvitationChange, InvitationPage, InvitationRole, InvitationStatus,
     Membership, MembershipChange, MembershipRole, MembershipStatus, NewGroup, NewInvitation,
     NewWorkspace, PersistedInvitation, PublishMode, Workspace, WorkspaceChange, WorkspaceDeletion,
     WorkspaceStatus, may_change_role,
 };
+use adoc_application::operations::{AuditAction, AuditEventInput, AuditTarget, AuditTargetKind};
 use adoc_ports::BoxFuture;
 use chrono::{DateTime, Utc};
 use serde::{Serialize, de::DeserializeOwned};
@@ -13,7 +14,7 @@ use sqlx::{PgPool, Postgres, Row, Transaction, postgres::PgRow};
 use subtle::ConstantTimeEq;
 use uuid::Uuid;
 
-use super::PostgresStore;
+use super::{PostgresStore, append_audit_event};
 
 #[derive(Clone)]
 pub struct PostgresGovernanceRepository {
@@ -79,6 +80,15 @@ impl GovernanceRepository for PostgresGovernanceRepository {
                 },
             )
             .await?;
+            audit_user(
+                &mut tx,
+                created.id,
+                &input.command,
+                AuditAction::WorkspaceCreated,
+                AuditTargetKind::Workspace,
+                created.id,
+            )
+            .await?;
             complete_user(&mut tx, &input.command, &created).await?;
             tx.commit().await.map_err(map_store)?;
             Ok(created)
@@ -137,6 +147,15 @@ impl GovernanceRepository for PostgresGovernanceRepository {
                 },
             )
             .await?;
+            audit_user(
+                &mut tx,
+                result.id,
+                &input.command,
+                AuditAction::WorkspaceUpdated,
+                AuditTargetKind::Workspace,
+                result.id,
+            )
+            .await?;
             complete_workspace(&mut tx, input.workspace_id, &input.command, 200, &result).await?;
             tx.commit().await.map_err(map_store)?;
             Ok(result)
@@ -188,6 +207,19 @@ impl GovernanceRepository for PostgresGovernanceRepository {
                 payload: json!({"workspaceId":result.id,"revision":result.revision,"reason":input.reason}),
                 occurred_at: input.command.now,
             })
+            .await?;
+            audit_user(
+                &mut tx,
+                result.id,
+                &input.command,
+                if input.delete_after.is_some() {
+                    AuditAction::WorkspaceDeletionScheduled
+                } else {
+                    AuditAction::WorkspaceRestored
+                },
+                AuditTargetKind::Workspace,
+                result.id,
+            )
             .await?;
             complete_workspace(&mut tx, input.workspace_id, &input.command, 200, &result).await?;
             tx.commit().await.map_err(map_store)?;
@@ -266,6 +298,19 @@ impl GovernanceRepository for PostgresGovernanceRepository {
                 payload: json!({"workspaceId":input.workspace_id,"userId":input.user_id,"before":{"role":current.role,"status":current.status},"after":{"role":result.role,"status":result.status},"revision":result.revision}),
                 occurred_at: input.command.now,
             }).await?;
+            audit_user(
+                &mut tx,
+                input.workspace_id,
+                &input.command,
+                if input.role.is_some() {
+                    AuditAction::MemberRoleChanged
+                } else {
+                    AuditAction::MemberRemoved
+                },
+                AuditTargetKind::Membership,
+                input.user_id,
+            )
+            .await?;
             complete_workspace(&mut tx, input.workspace_id, &input.command, 200, &result).await?;
             tx.commit().await.map_err(map_store)?;
             Ok(result)
@@ -338,6 +383,15 @@ impl GovernanceRepository for PostgresGovernanceRepository {
                     payload: json!({"invitationId":input.id}),
                     occurred_at: input.command.now,
                 },
+            )
+            .await?;
+            audit_user(
+                &mut tx,
+                input.workspace_id,
+                &input.command,
+                AuditAction::MemberInvited,
+                AuditTargetKind::Invitation,
+                input.id,
             )
             .await?;
             complete_workspace(&mut tx, input.workspace_id, &input.command, 201, &result).await?;
@@ -448,6 +502,15 @@ impl GovernanceRepository for PostgresGovernanceRepository {
                     payload: json!({"invitationId":input.invitation_id,"workspaceId":workspace_id,"userId":input.command.actor_id}),
                     occurred_at: input.command.now,
                 }).await?;
+                audit_user(
+                    &mut tx,
+                    workspace_id,
+                    &input.command,
+                    AuditAction::MemberAdded,
+                    AuditTargetKind::Membership,
+                    input.command.actor_id,
+                )
+                .await?;
                 result
             };
             complete_user(&mut tx, &input.command, &result).await?;
@@ -533,6 +596,15 @@ impl GovernanceRepository for PostgresGovernanceRepository {
                     payload: json!({"groupId":input.id,"revision":0}),
                     occurred_at: input.command.now,
                 },
+            )
+            .await?;
+            audit_user(
+                &mut tx,
+                input.workspace_id,
+                &input.command,
+                AuditAction::GroupCreated,
+                AuditTargetKind::Group,
+                input.id,
             )
             .await?;
             complete_workspace(&mut tx, input.workspace_id, &input.command, 201, &result).await?;
@@ -644,6 +716,20 @@ impl GovernanceRepository for PostgresGovernanceRepository {
                     },
                 )
                 .await?;
+                audit_user(
+                    &mut tx,
+                    input.workspace_id,
+                    &input.command,
+                    match operation {
+                        GroupOperation::Rename => AuditAction::GroupUpdated,
+                        GroupOperation::Delete => AuditAction::GroupDeleted,
+                        GroupOperation::AddMember => AuditAction::GroupMemberAdded,
+                        GroupOperation::RemoveMember => AuditAction::GroupMemberRemoved,
+                    },
+                    AuditTargetKind::Group,
+                    input.group_id,
+                )
+                .await?;
             }
             complete_workspace(
                 &mut tx,
@@ -661,6 +747,29 @@ impl GovernanceRepository for PostgresGovernanceRepository {
             Ok(result)
         })
     }
+}
+
+async fn audit_user(
+    tx: &mut Transaction<'_, Postgres>,
+    workspace: Uuid,
+    command: &Command,
+    action: AuditAction,
+    kind: AuditTargetKind,
+    id: Uuid,
+) -> Result<(), GovernanceError> {
+    append_audit_event(
+        tx,
+        AuditEventInput::user(
+            workspace,
+            command.actor_id,
+            action,
+            AuditTarget { kind, id },
+            command.now,
+            &command.idempotency_key,
+        ),
+    )
+    .await?;
+    Ok(())
 }
 
 #[derive(Clone, Copy)]

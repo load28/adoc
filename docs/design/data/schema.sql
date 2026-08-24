@@ -495,13 +495,24 @@ CREATE TABLE inbox_items (
 CREATE INDEX inbox_items_unresolved_idx ON inbox_items (workspace_id, user_id, created_at DESC)
   WHERE resolved_at IS NULL;
 
+CREATE FUNCTION retention_mutation_allowed() RETURNS boolean LANGUAGE sql STABLE AS $$
+  SELECT current_user = 'adoc_retention'
+    OR (current_user = 'postgres' AND current_setting('adoc.retention_context', true) = 'on')
+$$;
+
 CREATE OR REPLACE FUNCTION reject_message_revision_mutation() RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN RAISE EXCEPTION 'message revisions are immutable'; END $$;
+BEGIN
+  IF retention_mutation_allowed() AND TG_OP = 'DELETE' THEN RETURN OLD; END IF;
+  RAISE EXCEPTION 'message revisions are immutable';
+END $$;
 CREATE TRIGGER message_revisions_immutable BEFORE UPDATE OR DELETE ON message_revisions
 FOR EACH ROW EXECUTE FUNCTION reject_message_revision_mutation();
 
 CREATE OR REPLACE FUNCTION reject_review_decision_revision_mutation() RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN RAISE EXCEPTION 'review decision revisions are immutable'; END $$;
+BEGIN
+  IF retention_mutation_allowed() AND TG_OP = 'DELETE' THEN RETURN OLD; END IF;
+  RAISE EXCEPTION 'review decision revisions are immutable';
+END $$;
 CREATE TRIGGER review_decision_revisions_immutable BEFORE UPDATE OR DELETE ON review_decision_revisions
 FOR EACH ROW EXECUTE FUNCTION reject_review_decision_revision_mutation();
 
@@ -571,7 +582,10 @@ CREATE TABLE vocabulary_concept_revisions (
 );
 
 CREATE OR REPLACE FUNCTION reject_vocabulary_revision_mutation() RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN RAISE EXCEPTION 'vocabulary concept revisions are immutable'; END $$;
+BEGIN
+  IF retention_mutation_allowed() AND TG_OP = 'DELETE' THEN RETURN OLD; END IF;
+  RAISE EXCEPTION 'vocabulary concept revisions are immutable';
+END $$;
 CREATE TRIGGER vocabulary_concept_revisions_immutable BEFORE UPDATE OR DELETE ON vocabulary_concept_revisions
 FOR EACH ROW EXECUTE FUNCTION reject_vocabulary_revision_mutation();
 
@@ -708,8 +722,12 @@ CREATE TABLE audit_events (
   actor_json jsonb NOT NULL,
   action text NOT NULL,
   target_json jsonb NOT NULL,
+  before_json jsonb,
+  after_json jsonb,
   metadata_json jsonb NOT NULL,
+  correlation_id text NOT NULL CHECK (char_length(correlation_id) BETWEEN 8 AND 128),
   occurred_at timestamptz NOT NULL DEFAULT now(),
+  redacted_at timestamptz,
   UNIQUE (workspace_id, sequence)
 );
 CREATE INDEX audit_events_target_idx ON audit_events (workspace_id, (target_json->>'kind'), (target_json->>'id'), sequence DESC);
@@ -777,24 +795,41 @@ CREATE INDEX idempotency_expiry_idx ON idempotency_keys (expires_at);
 CREATE TABLE purge_ledger (
   id uuid PRIMARY KEY,
   workspace_id uuid,
-  target_kind text NOT NULL,
+  target_kind text NOT NULL CHECK (target_kind IN ('DOCUMENT', 'WORKSPACE')),
   target_id uuid NOT NULL,
   reason text NOT NULL,
+  status text NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'RUNNING', 'RETRY', 'COMPLETED')),
+  step text NOT NULL DEFAULT 'PENDING' CHECK (step IN ('PENDING', 'ACCESS_REVOKED', 'OBJECTS_CAPTURED', 'DOMAIN_PURGED', 'OBJECTS_PURGED', 'AUDIT_REDACTED', 'COMPLETED')),
+  attempt integer NOT NULL DEFAULT 0 CHECK (attempt >= 0),
+  run_after timestamptz NOT NULL,
+  lease_owner text,
+  lease_until timestamptz,
+  last_error_code text,
   started_at timestamptz NOT NULL,
+  updated_at timestamptz NOT NULL,
   completed_at timestamptz,
   result_hash text,
-  UNIQUE (target_kind, target_id)
+  UNIQUE (target_kind, target_id),
+  CHECK ((lease_owner IS NULL) = (lease_until IS NULL)),
+  CHECK ((status = 'COMPLETED') = (completed_at IS NOT NULL)),
+  CHECK (result_hash IS NULL OR result_hash ~ '^[a-f0-9]{64}$')
+);
+CREATE INDEX purge_ledger_claim_idx ON purge_ledger (run_after, started_at, id)
+  WHERE status IN ('PENDING', 'RETRY', 'RUNNING');
+
+CREATE TABLE purge_object_deletions (
+  ledger_id uuid NOT NULL REFERENCES purge_ledger(id) ON DELETE CASCADE,
+  storage_key text NOT NULL CHECK (storage_key ~ '^[a-f0-9]{64}$'),
+  attempt integer NOT NULL DEFAULT 0 CHECK (attempt >= 0),
+  last_error_code text,
+  deleted_at timestamptz,
+  PRIMARY KEY (ledger_id, storage_key)
 );
 
 CREATE FUNCTION reject_immutable_row() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
-  IF current_user = 'adoc_retention' THEN
-    IF TG_OP = 'DELETE' THEN
-      RETURN OLD;
-    END IF;
-    RETURN NEW;
-  END IF;
-  RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = TG_TABLE_NAME || ' is append-only';
+  IF retention_mutation_allowed() AND TG_OP = 'DELETE' THEN RETURN OLD; END IF;
+  RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'immutable history cannot be changed';
 END;
 $$;
 
@@ -804,9 +839,21 @@ CREATE TRIGGER published_versions_immutable
 CREATE TRIGGER version_context_immutable
   BEFORE UPDATE OR DELETE ON version_context
   FOR EACH ROW EXECUTE FUNCTION reject_immutable_row();
+CREATE FUNCTION reject_audit_event_mutation() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'UPDATE' AND retention_mutation_allowed() AND
+     NEW.id = OLD.id AND NEW.workspace_id = OLD.workspace_id AND NEW.sequence = OLD.sequence AND
+     NEW.actor_json = OLD.actor_json AND NEW.action = OLD.action AND NEW.target_json = OLD.target_json AND
+     NEW.correlation_id = OLD.correlation_id AND NEW.occurred_at = OLD.occurred_at AND
+     NEW.redacted_at IS NOT NULL THEN
+    RETURN NEW;
+  END IF;
+  RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'audit_events is append-only';
+END;
+$$;
 CREATE TRIGGER audit_events_immutable
   BEFORE UPDATE OR DELETE ON audit_events
-  FOR EACH ROW EXECUTE FUNCTION reject_immutable_row();
+  FOR EACH ROW EXECUTE FUNCTION reject_audit_event_mutation();
 
 CREATE FUNCTION validate_permission_subject() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN

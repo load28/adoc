@@ -5184,6 +5184,7 @@
         "action",
         "target",
         "metadata",
+        "correlationId",
         "occurredAt"
       ],
       "properties": {
@@ -5219,6 +5220,36 @@
         "target": {
           "$ref": "#/$defs/OpenApi__ResourceTarget"
         },
+        "before": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "integer",
+              "boolean",
+              "null"
+            ]
+          }
+        },
+        "after": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "integer",
+              "boolean",
+              "null"
+            ]
+          }
+        },
         "metadata": {
           "type": "object",
           "additionalProperties": {
@@ -5231,8 +5262,20 @@
             ]
           }
         },
+        "correlationId": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 128
+        },
         "occurredAt": {
           "type": "string",
+          "format": "date-time"
+        },
+        "redactedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
           "format": "date-time"
         }
       }

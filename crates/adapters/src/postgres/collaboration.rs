@@ -6,7 +6,8 @@ use adoc_application::{
         ReviewAssignment, ReviewCommand, ReviewDecision, ReviewDecisionInputKind, ReviewStatus,
         Topic, TopicInput, TopicKind, may_edit_message, review_status,
     },
-    governance::GovernanceError,
+    governance::{Command, GovernanceError},
+    operations::{AuditAction, AuditEventInput, AuditTarget, AuditTargetKind},
     permission::{Access, PublishMode, ReviewerRule},
 };
 use adoc_ports::BoxFuture;
@@ -16,7 +17,7 @@ use sqlx::{PgPool, Postgres, Row, Transaction, postgres::PgRow};
 use uuid::Uuid;
 
 use super::{
-    PostgresStore,
+    PostgresStore, append_audit_event,
     document::{require_access, require_effective_active},
     file::sync_file_asset_ids,
     governance::{
@@ -275,6 +276,24 @@ impl CollaborationRepository for PostgresCollaborationRepository {
                 discussion_row(&mut tx, input.workspace_id, input.discussion_id, false).await?;
             let result = load_discussion_row(&mut tx, input.workspace_id, &row).await?;
             append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"Discussion",aggregate_id:input.discussion_id,sequence:result.revision+1,event_type:"DiscussionChanged.v1",payload:json!({"discussionId":result.id,"documentId":result.document_id,"revision":result.revision,"action":format!("{:?}",input.action)}),occurred_at:input.command.now}).await?;
+            if let Some(action) = match input.action {
+                DiscussionAction::Create => Some(AuditAction::DiscussionCreated),
+                DiscussionAction::Close => Some(AuditAction::DiscussionClosed),
+                DiscussionAction::Reopen => Some(AuditAction::DiscussionReopened),
+                DiscussionAction::Update
+                | DiscussionAction::AddTopic
+                | DiscussionAction::RemoveTopic => None,
+            } {
+                audit_collaboration(
+                    &mut tx,
+                    &input.command,
+                    input.workspace_id,
+                    action,
+                    AuditTargetKind::Discussion,
+                    input.discussion_id,
+                )
+                .await?;
+            }
             complete_workspace(&mut tx, input.workspace_id, &input.command, 200, &result).await?;
             tx.commit().await.map_err(map_store)?;
             Ok(result)
@@ -609,11 +628,56 @@ impl CollaborationRepository for PostgresCollaborationRepository {
                 format!("{:?}", input.action)
             };
             append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"Review",aggregate_id:input.review_id,sequence:result.revision+1,event_type:"ReviewChanged.v1",payload:json!({"reviewId":result.id,"documentId":result.document_id,"draftRevision":result.draft_revision,"revision":result.revision,"action":event_action}),occurred_at:input.command.now}).await?;
+            let audit_action = match input.action {
+                ReviewAction::Request => Some(AuditAction::ReviewRequested),
+                ReviewAction::Decide => match input.decision.as_ref().map(|value| value.decision) {
+                    Some(ReviewDecisionInputKind::Approve) => Some(AuditAction::ReviewApproved),
+                    Some(ReviewDecisionInputKind::RequestChanges) => {
+                        Some(AuditAction::ReviewChangesRequested)
+                    }
+                    None => return Err(GovernanceError::Internal),
+                },
+                ReviewAction::Cancel => None,
+            };
+            if let Some(action) = audit_action {
+                audit_collaboration(
+                    &mut tx,
+                    &input.command,
+                    input.workspace_id,
+                    action,
+                    AuditTargetKind::Review,
+                    input.review_id,
+                )
+                .await?;
+            }
             complete_workspace(&mut tx, input.workspace_id, &input.command, 200, &result).await?;
             tx.commit().await.map_err(map_store)?;
             Ok(result)
         })
     }
+}
+
+async fn audit_collaboration(
+    tx: &mut Transaction<'_, Postgres>,
+    command: &Command,
+    workspace: Uuid,
+    action: AuditAction,
+    kind: AuditTargetKind,
+    id: Uuid,
+) -> Result<(), GovernanceError> {
+    append_audit_event(
+        tx,
+        AuditEventInput::user(
+            workspace,
+            command.actor_id,
+            action,
+            AuditTarget { kind, id },
+            command.now,
+            &command.idempotency_key,
+        ),
+    )
+    .await?;
+    Ok(())
 }
 
 async fn request_review(

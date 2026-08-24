@@ -2145,10 +2145,18 @@ export interface OpenApi__AuditEvent {
   };
   action: string;
   target: OpenApi__ResourceTarget;
+  before?: {
+    [k: string]: string | number | boolean | null;
+  } | null;
+  after?: {
+    [k: string]: string | number | boolean | null;
+  } | null;
   metadata: {
     [k: string]: string | number | boolean | null;
   };
+  correlationId: string;
   occurredAt: string;
+  redactedAt?: string | null;
 }
 export interface OpenApi__AuditPage {
   items: OpenApi__AuditEvent[];

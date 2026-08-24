@@ -5,10 +5,14 @@ use std::{process::ExitCode, sync::Arc, time::Duration};
 use adoc_adapters::{
     identity::SystemClock,
     object_storage::LocalObjectStorage,
-    postgres::{DatabaseSettings, PostgresFileRepository, PostgresStore},
+    postgres::{
+        DatabaseSettings, PostgresFileRepository, PostgresRetentionRepository, PostgresStore,
+    },
 };
-use adoc_application::operations::FileGarbageCollector;
-use adoc_configuration::{AppConfig, ConfigError, ConfigSource, ObjectStorageDriver, ServiceKind};
+use adoc_application::operations::{FileGarbageCollector, RetentionService};
+use adoc_configuration::{
+    AppConfig, ConfigError, ConfigSource, Environment, ObjectStorageDriver, ServiceKind,
+};
 use adoc_telemetry::{SafeEvent, TelemetryConfig};
 
 #[tokio::main]
@@ -52,8 +56,28 @@ async fn run(health_only: bool) -> Result<(), Box<dyn std::error::Error>> {
     })
     .await?;
     store.preflight().await?;
+    let retention_url = config
+        .dependencies
+        .retention_database_url
+        .as_ref()
+        .ok_or("retention database URL is missing")?;
+    let retention_store = PostgresStore::connect(DatabaseSettings {
+        url: retention_url.value.expose(),
+        max_connections: config.dependencies.db_max_connections,
+        application_name: "adoc-retention-worker",
+    })
+    .await?;
+    retention_store.preflight().await?;
+    if matches!(
+        config.common.environment,
+        Environment::Staging | Environment::Production
+    ) && retention_store.current_user().await? != "adoc_retention"
+    {
+        return Err("retention database credential must use adoc_retention".into());
+    }
     if health_only {
         store.close().await;
+        retention_store.close().await;
         return Ok(());
     }
     SafeEvent::new(&telemetry, "SERVICE_STARTED")
@@ -72,19 +96,31 @@ async fn run(health_only: bool) -> Result<(), Box<dyn std::error::Error>> {
     } else {
         std::env::current_dir()?.join(root)
     };
+    let storage =
+        Arc::new(LocalObjectStorage::new(root).map_err(|_| "invalid local object storage root")?);
     let gc = FileGarbageCollector::new(
         Arc::new(PostgresFileRepository::new(&store)),
-        Arc::new(LocalObjectStorage::new(root).map_err(|_| "invalid object storage root")?),
+        storage.clone(),
         Arc::new(SystemClock),
+    );
+    let retention = RetentionService::new(
+        Arc::new(PostgresRetentionRepository::new(&retention_store)),
+        storage,
+        Arc::new(SystemClock),
+        Arc::from(format!("retention-{}", config.common.release_sha)),
     );
     let mut interval = tokio::time::interval(Duration::from_secs(60));
     loop {
         tokio::select! {
             _ = shutdown_signal() => break,
-            _ = interval.tick() => { gc.run_once(100).await?; }
+            _ = interval.tick() => {
+                retention.run_once(25).await?;
+                gc.run_once(100).await?;
+            }
         }
     }
     store.close().await;
+    retention_store.close().await;
     Ok(())
 }
 

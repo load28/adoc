@@ -9,6 +9,7 @@ use adoc_application::document::{
     DocumentService, LeaseCommandRequest, MoveDocumentCommitInput, MoveDocumentInput,
     RestoreDocumentInput, UpdateDocumentMetadataInput,
 };
+use adoc_application::governance::ReasonInput;
 use axum::{
     Json, Router,
     extract::{Path, Query, State},
@@ -54,7 +55,9 @@ pub(crate) fn document_routes() -> Router<HealthState> {
         )
         .route(
             "/workspaces/{workspace_id}/documents/{document_id}",
-            get(get_document).put(rename_document),
+            get(get_document)
+                .put(rename_document)
+                .delete(purge_document),
         )
         .route(
             "/workspaces/{workspace_id}/documents/{document_id}/trash",
@@ -88,6 +91,30 @@ pub(crate) fn document_routes() -> Router<HealthState> {
             "/workspaces/{workspace_id}/documents/{document_id}/draft/operations",
             post(apply_operations),
         )
+}
+
+async fn purge_document(
+    State(state): State<HealthState>,
+    headers: HeaderMap,
+    auth: Authenticated,
+    Path((workspace, document)): Path<(Uuid, Uuid)>,
+    Json(input): Json<ReasonInput>,
+) -> Result<Response, Problem> {
+    validate_command(&state.identity, &headers, &auth)?;
+    let result = state
+        .operations
+        .retention
+        .request_document_purge(
+            auth.principal.user.id,
+            workspace,
+            document,
+            expected_revision(&headers)?,
+            input.reason,
+            idempotency_key(&headers)?,
+        )
+        .await
+        .map_err(Problem::from)?;
+    Ok((StatusCode::ACCEPTED, Json(result)).into_response())
 }
 
 #[derive(Deserialize)]

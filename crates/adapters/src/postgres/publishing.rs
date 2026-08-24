@@ -1,7 +1,8 @@
 use adoc_application::{
     document::{Draft, ValidatedContent, canonical_hash},
-    governance::{GovernanceError, PublishMode},
+    governance::{Command, GovernanceError, PublishMode},
     identity::TokenHash,
+    operations::{AuditAction, AuditEventInput, AuditTarget, AuditTargetKind},
     permission::{Access, PublishPolicy},
     publishing::{
         CreatePublicLinkCommand, DocumentDiff, PublicDocument, PublicLink, PublishCommand,
@@ -18,7 +19,7 @@ use subtle::ConstantTimeEq;
 use uuid::Uuid;
 
 use super::{
-    PostgresStore,
+    PostgresStore, append_audit_event,
     document::{require_access, require_effective_active},
     file::sync_file_references,
     governance::{
@@ -219,6 +220,15 @@ impl PublishingRepository for PostgresPublishingRepository {
             .map_err(map_store)?;
             append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"Version",aggregate_id:input.version_id,sequence:1,event_type:"VersionPublished.v1",payload:json!({"documentId":input.document_id,"versionId":input.version_id,"number":number,"sourceDraftRevision":draft_revision}),occurred_at:input.command.now}).await?;
             append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"Document",aggregate_id:input.document_id,sequence:document_revision+1,event_type:"DocumentChanged.v1",payload:json!({"documentId":input.document_id,"action":"PUBLISHED","revision":document_revision,"treeRevision":tree_revision}),occurred_at:input.command.now}).await?;
+            audit_publish(
+                &mut tx,
+                &input.command,
+                input.workspace_id,
+                AuditAction::VersionPublished,
+                AuditTargetKind::Version,
+                input.version_id,
+            )
+            .await?;
             complete_workspace(&mut tx, input.workspace_id, &input.command, 201, &result).await?;
             tx.commit().await.map_err(map_store)?;
             Ok(result)
@@ -270,6 +280,15 @@ impl PublishingRepository for PostgresPublishingRepository {
             .await?;
             let result = draft(&inserted)?;
             append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"Draft",aggregate_id:input.draft_id,sequence:1,event_type:"DraftChanged.v1",payload:json!({"documentId":input.document_id,"draftId":input.draft_id,"revision":0,"operationIds":[]}),occurred_at:input.command.now}).await?;
+            audit_publish(
+                &mut tx,
+                &input.command,
+                input.workspace_id,
+                AuditAction::DraftCreated,
+                AuditTargetKind::Draft,
+                input.draft_id,
+            )
+            .await?;
             complete_workspace(&mut tx, input.workspace_id, &input.command, 201, &result).await?;
             tx.commit().await.map_err(map_store)?;
             Ok(result)
@@ -332,6 +351,15 @@ impl PublishingRepository for PostgresPublishingRepository {
                 },
             )
             .await?;
+            audit_publish(
+                &mut tx,
+                &input.command,
+                input.workspace_id,
+                AuditAction::PublicLinkCreated,
+                AuditTargetKind::PublicLink,
+                input.link_id,
+            )
+            .await?;
             complete_workspace(
                 &mut tx,
                 input.workspace_id,
@@ -373,6 +401,15 @@ impl PublishingRepository for PostgresPublishingRepository {
             }
             let revision:i64=sqlx::query_scalar("UPDATE public_links SET revoked_at=$4,revision=revision+1 WHERE workspace_id=$1 AND document_id=$2 AND id=$3 RETURNING revision").bind(input.workspace_id).bind(input.document_id).bind(input.link_id).bind(input.command.now).fetch_one(&mut *tx).await.map_err(map_store)?;
             append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"PublicLink",aggregate_id:input.link_id,sequence:revision+1,event_type:"PublicLinkChanged.v1",payload:json!({"entityId":input.link_id,"revision":revision,"action":"INVALIDATED"}),occurred_at:input.command.now}).await?;
+            audit_publish(
+                &mut tx,
+                &input.command,
+                input.workspace_id,
+                AuditAction::PublicLinkRevoked,
+                AuditTargetKind::PublicLink,
+                input.link_id,
+            )
+            .await?;
             complete_workspace(&mut tx, input.workspace_id, &input.command, 204, &json!({}))
                 .await?;
             tx.commit().await.map_err(map_store)?;
@@ -395,6 +432,29 @@ impl PublishingRepository for PostgresPublishingRepository {
             })
         })
     }
+}
+
+async fn audit_publish(
+    tx: &mut Transaction<'_, Postgres>,
+    command: &Command,
+    workspace: Uuid,
+    action: AuditAction,
+    kind: AuditTargetKind,
+    id: Uuid,
+) -> Result<(), GovernanceError> {
+    append_audit_event(
+        tx,
+        AuditEventInput::user(
+            workspace,
+            command.actor_id,
+            action,
+            AuditTarget { kind, id },
+            command.now,
+            &command.idempotency_key,
+        ),
+    )
+    .await?;
+    Ok(())
 }
 
 async fn approved_review_snapshot(

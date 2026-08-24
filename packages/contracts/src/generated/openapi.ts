@@ -1723,11 +1723,20 @@ export interface components {
             };
             action: string;
             target: components["schemas"]["ResourceTarget"];
+            before?: {
+                [key: string]: string | number | boolean | null;
+            } | null;
+            after?: {
+                [key: string]: string | number | boolean | null;
+            } | null;
             metadata: {
                 [key: string]: string | number | boolean | null;
             };
+            correlationId: string;
             /** Format: date-time */
             occurredAt: string;
+            /** Format: date-time */
+            redactedAt?: string | null;
         };
         AuditPage: {
             items: components["schemas"]["AuditEvent"][];
