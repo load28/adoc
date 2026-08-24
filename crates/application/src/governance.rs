@@ -852,6 +852,24 @@ pub enum GovernanceError {
     VocabularyTermConflict,
     #[error("vocabulary state is invalid")]
     VocabularyStateInvalid,
+    #[error("file was not found")]
+    FileNotFound,
+    #[error("file state is invalid")]
+    FileStateInvalid,
+    #[error("file is referenced")]
+    FileInUse { reference_count: i64 },
+    #[error("upload token is invalid")]
+    UploadTokenInvalid,
+    #[error("upload session expired")]
+    UploadExpired,
+    #[error("file size does not match")]
+    FileSizeMismatch,
+    #[error("file checksum does not match")]
+    FileChecksumMismatch,
+    #[error("file MIME type is rejected")]
+    FileMimeRejected,
+    #[error("file contains malware")]
+    FileMalwareDetected,
     #[error("idempotency key was reused")]
     IdempotencyKeyReused,
     #[error("governance storage is unavailable")]

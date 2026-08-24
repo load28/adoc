@@ -964,6 +964,18 @@
       "$ref": "#/$defs/Operation__DownloadFileResponse"
     },
     {
+      "$ref": "#/$defs/Operation__UploadFileContentRequest"
+    },
+    {
+      "$ref": "#/$defs/Operation__UploadFileContentResponse"
+    },
+    {
+      "$ref": "#/$defs/Operation__DownloadPublicFileRequest"
+    },
+    {
+      "$ref": "#/$defs/Operation__DownloadPublicFileResponse"
+    },
+    {
       "$ref": "#/$defs/Operation__ListAuditEventsRequest"
     },
     {
@@ -5078,9 +5090,11 @@
     },
     "OpenApi__FileUpload": {
       "type": "object",
+      "additionalProperties": false,
       "required": [
         "assetId",
         "uploadUrl",
+        "uploadToken",
         "expiresAt"
       ],
       "properties": {
@@ -5090,6 +5104,10 @@
         "uploadUrl": {
           "type": "string",
           "format": "uri"
+        },
+        "uploadToken": {
+          "type": "string",
+          "writeOnly": true
         },
         "expiresAt": {
           "type": "string",
@@ -5131,10 +5149,24 @@
           "type": "string",
           "enum": [
             "UPLOADING",
+            "VALIDATING",
             "READY",
             "FAILED",
             "DELETED"
           ]
+        },
+        "failureCode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "readyAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
         },
         "revision": {
           "type": "integer",
@@ -12852,10 +12884,16 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -12957,11 +12995,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -13118,11 +13162,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         }
       },
@@ -13189,7 +13239,7 @@
           "properties": {
             "Range": {
               "type": "string",
-              "pattern": "^bytes=[0-9]+-[0-9]*$"
+              "pattern": "^bytes=([0-9]+-[0-9]*|-[0-9]+)$"
             }
           }
         }
@@ -13199,6 +13249,178 @@
       ]
     },
     "Operation__DownloadFileResponse": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "body"
+          ],
+          "properties": {
+            "status": {
+              "const": "200"
+            },
+            "body": {
+              "type": "string",
+              "format": "binary"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "body"
+          ],
+          "properties": {
+            "status": {
+              "const": "206"
+            },
+            "body": {
+              "type": "string",
+              "format": "binary"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "body"
+          ],
+          "properties": {
+            "status": {
+              "const": "default"
+            },
+            "body": {
+              "$ref": "#/$defs/OpenApi__Problem"
+            }
+          }
+        }
+      ]
+    },
+    "Operation__UploadFileContentRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "workspaceId": {
+              "$ref": "#/$defs/OpenApi__Id"
+            },
+            "assetId": {
+              "$ref": "#/$defs/OpenApi__Id"
+            }
+          },
+          "required": [
+            "workspaceId",
+            "assetId"
+          ]
+        },
+        "header": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "X-Upload-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
+            }
+          },
+          "required": [
+            "X-Upload-Token",
+            "X-CSRF-Token"
+          ]
+        },
+        "body": {
+          "type": "string",
+          "format": "binary"
+        }
+      },
+      "required": [
+        "path",
+        "header",
+        "body"
+      ]
+    },
+    "Operation__UploadFileContentResponse": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status"
+          ],
+          "properties": {
+            "status": {
+              "const": "204"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "body"
+          ],
+          "properties": {
+            "status": {
+              "const": "default"
+            },
+            "body": {
+              "$ref": "#/$defs/OpenApi__Problem"
+            }
+          }
+        }
+      ]
+    },
+    "Operation__DownloadPublicFileRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "publicToken": {
+              "type": "string"
+            },
+            "assetId": {
+              "$ref": "#/$defs/OpenApi__Id"
+            }
+          },
+          "required": [
+            "publicToken",
+            "assetId"
+          ]
+        },
+        "header": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "Range": {
+              "type": "string",
+              "pattern": "^bytes=([0-9]+-[0-9]*|-[0-9]+)$"
+            }
+          }
+        }
+      },
+      "required": [
+        "path"
+      ]
+    },
+    "Operation__DownloadPublicFileResponse": {
       "oneOf": [
         {
           "type": "object",

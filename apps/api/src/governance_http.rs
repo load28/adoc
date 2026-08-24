@@ -890,6 +890,61 @@ impl From<GovernanceError> for Problem {
                 None,
                 None,
             ),
+            GovernanceError::FileNotFound => {
+                (StatusCode::NOT_FOUND, "FILE_NOT_FOUND", false, None, None)
+            }
+            GovernanceError::FileStateInvalid => (
+                StatusCode::CONFLICT,
+                "FILE_STATE_INVALID",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::FileInUse { reference_count } => (
+                StatusCode::CONFLICT,
+                "FILE_IN_USE",
+                false,
+                None,
+                Some(reference_count),
+            ),
+            GovernanceError::UploadTokenInvalid => (
+                StatusCode::UNAUTHORIZED,
+                "UPLOAD_TOKEN_INVALID",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::UploadExpired => {
+                (StatusCode::GONE, "UPLOAD_EXPIRED", false, None, None)
+            }
+            GovernanceError::FileSizeMismatch => (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "FILE_SIZE_MISMATCH",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::FileChecksumMismatch => (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "FILE_CHECKSUM_MISMATCH",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::FileMimeRejected => (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "FILE_MIME_REJECTED",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::FileMalwareDetected => (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "FILE_MALWARE_DETECTED",
+                false,
+                None,
+                None,
+            ),
             GovernanceError::IdempotencyKeyReused => (
                 StatusCode::CONFLICT,
                 "IDEMPOTENCY_KEY_REUSED",

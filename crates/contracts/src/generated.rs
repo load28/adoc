@@ -996,6 +996,18 @@ pub mod error {
 ///      "$ref": "#/$defs/Operation__DownloadFileResponse"
 ///    },
 ///    {
+///      "$ref": "#/$defs/Operation__UploadFileContentRequest"
+///    },
+///    {
+///      "$ref": "#/$defs/Operation__UploadFileContentResponse"
+///    },
+///    {
+///      "$ref": "#/$defs/Operation__DownloadPublicFileRequest"
+///    },
+///    {
+///      "$ref": "#/$defs/Operation__DownloadPublicFileResponse"
+///    },
+///    {
 ///      "$ref": "#/$defs/Operation__ListAuditEventsRequest"
 ///    },
 ///    {
@@ -1406,6 +1418,10 @@ pub enum AdocContractBundle {
     OperationDeleteFileResponse(OperationDeleteFileResponse),
     OperationDownloadFileRequest(OperationDownloadFileRequest),
     OperationDownloadFileResponse(OperationDownloadFileResponse),
+    OperationUploadFileContentRequest(OperationUploadFileContentRequest),
+    OperationUploadFileContentResponse(OperationUploadFileContentResponse),
+    OperationDownloadPublicFileRequest(OperationDownloadPublicFileRequest),
+    OperationDownloadPublicFileResponse(OperationDownloadPublicFileResponse),
     OperationListAuditEventsRequest(OperationListAuditEventsRequest),
     OperationListAuditEventsResponse(OperationListAuditEventsResponse),
     OperationGetWritingConfigurationRequest(OperationGetWritingConfigurationRequest),
@@ -3033,6 +3049,26 @@ impl ::std::convert::From<OperationDownloadFileRequest> for AdocContractBundle {
 impl ::std::convert::From<OperationDownloadFileResponse> for AdocContractBundle {
     fn from(value: OperationDownloadFileResponse) -> Self {
         Self::OperationDownloadFileResponse(value)
+    }
+}
+impl ::std::convert::From<OperationUploadFileContentRequest> for AdocContractBundle {
+    fn from(value: OperationUploadFileContentRequest) -> Self {
+        Self::OperationUploadFileContentRequest(value)
+    }
+}
+impl ::std::convert::From<OperationUploadFileContentResponse> for AdocContractBundle {
+    fn from(value: OperationUploadFileContentResponse) -> Self {
+        Self::OperationUploadFileContentResponse(value)
+    }
+}
+impl ::std::convert::From<OperationDownloadPublicFileRequest> for AdocContractBundle {
+    fn from(value: OperationDownloadPublicFileRequest) -> Self {
+        Self::OperationDownloadPublicFileRequest(value)
+    }
+}
+impl ::std::convert::From<OperationDownloadPublicFileResponse> for AdocContractBundle {
+    fn from(value: OperationDownloadPublicFileResponse) -> Self {
+        Self::OperationDownloadPublicFileResponse(value)
     }
 }
 impl ::std::convert::From<OperationListAuditEventsRequest> for AdocContractBundle {
@@ -13128,6 +13164,12 @@ pub struct OpenApiEffectivePermission {
 ///      "type": "string",
 ///      "pattern": "^[a-f0-9]{64}$"
 ///    },
+///    "failureCode": {
+///      "type": [
+///        "string",
+///        "null"
+///      ]
+///    },
 ///    "id": {
 ///      "$ref": "#/$defs/OpenApi__Id"
 ///    },
@@ -13136,6 +13178,13 @@ pub struct OpenApiEffectivePermission {
 ///    },
 ///    "originalName": {
 ///      "type": "string"
+///    },
+///    "readyAt": {
+///      "type": [
+///        "string",
+///        "null"
+///      ],
+///      "format": "date-time"
 ///    },
 ///    "revision": {
 ///      "type": "integer",
@@ -13149,6 +13198,7 @@ pub struct OpenApiEffectivePermission {
 ///      "type": "string",
 ///      "enum": [
 ///        "UPLOADING",
+///        "VALIDATING",
 ///        "READY",
 ///        "FAILED",
 ///        "DELETED"
@@ -13164,11 +13214,23 @@ pub struct OpenApiEffectivePermission {
 pub struct OpenApiFileAsset {
     #[serde(rename = "checksumSha256")]
     pub checksum_sha256: OpenApiFileAssetChecksumSha256,
+    #[serde(
+        rename = "failureCode",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub failure_code: ::std::option::Option<::std::string::String>,
     pub id: OpenApiId,
     #[serde(rename = "mimeType")]
     pub mime_type: ::std::string::String,
     #[serde(rename = "originalName")]
     pub original_name: ::std::string::String,
+    #[serde(
+        rename = "readyAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub ready_at: ::std::option::Option<::chrono::DateTime<::chrono::offset::Utc>>,
     pub revision: u64,
     #[serde(rename = "sizeBytes")]
     pub size_bytes: u64,
@@ -13253,6 +13315,7 @@ impl<'de> ::serde::Deserialize<'de> for OpenApiFileAssetChecksumSha256 {
 ///  "type": "string",
 ///  "enum": [
 ///    "UPLOADING",
+///    "VALIDATING",
 ///    "READY",
 ///    "FAILED",
 ///    "DELETED"
@@ -13275,6 +13338,8 @@ impl<'de> ::serde::Deserialize<'de> for OpenApiFileAssetChecksumSha256 {
 pub enum OpenApiFileAssetStatus {
     #[serde(rename = "UPLOADING")]
     Uploading,
+    #[serde(rename = "VALIDATING")]
+    Validating,
     #[serde(rename = "READY")]
     Ready,
     #[serde(rename = "FAILED")]
@@ -13286,6 +13351,7 @@ impl ::std::fmt::Display for OpenApiFileAssetStatus {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
             Self::Uploading => f.write_str("UPLOADING"),
+            Self::Validating => f.write_str("VALIDATING"),
             Self::Ready => f.write_str("READY"),
             Self::Failed => f.write_str("FAILED"),
             Self::Deleted => f.write_str("DELETED"),
@@ -13297,6 +13363,7 @@ impl ::std::str::FromStr for OpenApiFileAssetStatus {
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
             "UPLOADING" => Ok(Self::Uploading),
+            "VALIDATING" => Ok(Self::Validating),
             "READY" => Ok(Self::Ready),
             "FAILED" => Ok(Self::Failed),
             "DELETED" => Ok(Self::Deleted),
@@ -13336,6 +13403,7 @@ impl ::std::convert::TryFrom<::std::string::String> for OpenApiFileAssetStatus {
 ///  "required": [
 ///    "assetId",
 ///    "expiresAt",
+///    "uploadToken",
 ///    "uploadUrl"
 ///  ],
 ///  "properties": {
@@ -13346,20 +13414,28 @@ impl ::std::convert::TryFrom<::std::string::String> for OpenApiFileAssetStatus {
 ///      "type": "string",
 ///      "format": "date-time"
 ///    },
+///    "uploadToken": {
+///      "writeOnly": true,
+///      "type": "string"
+///    },
 ///    "uploadUrl": {
 ///      "type": "string",
 ///      "format": "uri"
 ///    }
-///  }
+///  },
+///  "additionalProperties": false
 ///}
 /// ```
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct OpenApiFileUpload {
     #[serde(rename = "assetId")]
     pub asset_id: OpenApiId,
     #[serde(rename = "expiresAt")]
     pub expires_at: ::chrono::DateTime<::chrono::offset::Utc>,
+    #[serde(rename = "uploadToken")]
+    pub upload_token: ::std::string::String,
     #[serde(rename = "uploadUrl")]
     pub upload_url: ::std::string::String,
 }
@@ -23474,7 +23550,8 @@ impl ::std::convert::From<OpenApiProblem> for OperationCompareVersionsResponse {
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
-///        "If-Match"
+///        "If-Match",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
@@ -23485,6 +23562,11 @@ impl ::std::convert::From<OpenApiProblem> for OperationCompareVersionsResponse {
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -23635,7 +23717,8 @@ impl<'de> ::serde::Deserialize<'de> for OperationCompleteFileUploadRequestBodyCh
 ///  "type": "object",
 ///  "required": [
 ///    "Idempotency-Key",
-///    "If-Match"
+///    "If-Match",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
@@ -23646,6 +23729,11 @@ impl<'de> ::serde::Deserialize<'de> for OperationCompleteFileUploadRequestBodyCh
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -23659,6 +23747,8 @@ pub struct OperationCompleteFileUploadRequestHeader {
     pub idempotency_key: OperationCompleteFileUploadRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationCompleteFileUploadRequestHeaderIfMatch,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationCompleteFileUploadRequestHeaderXCsrfToken,
 }
 ///`OperationCompleteFileUploadRequestHeaderIdempotencyKey`
 ///
@@ -23803,6 +23893,84 @@ impl ::std::convert::TryFrom<::std::string::String>
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationCompleteFileUploadRequestHeaderIfMatch {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationCompleteFileUploadRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationCompleteFileUploadRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationCompleteFileUploadRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationCompleteFileUploadRequestHeaderXCsrfToken>
+    for ::std::string::String
+{
+    fn from(value: OperationCompleteFileUploadRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationCompleteFileUploadRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationCompleteFileUploadRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationCompleteFileUploadRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationCompleteFileUploadRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationCompleteFileUploadRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -25340,13 +25508,19 @@ impl ::std::convert::From<OpenApiProblem> for OperationCreateDocumentResponse {
 ///    "header": {
 ///      "type": "object",
 ///      "required": [
-///        "Idempotency-Key"
+///        "Idempotency-Key",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
 ///          "type": "string",
 ///          "maxLength": 128,
 ///          "minLength": 16
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -25422,13 +25596,19 @@ pub struct OperationCreateFileUploadRequestBody {
 ///{
 ///  "type": "object",
 ///  "required": [
-///    "Idempotency-Key"
+///    "Idempotency-Key",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
 ///      "type": "string",
 ///      "maxLength": 128,
 ///      "minLength": 16
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -25440,6 +25620,8 @@ pub struct OperationCreateFileUploadRequestBody {
 pub struct OperationCreateFileUploadRequestHeader {
     #[serde(rename = "Idempotency-Key")]
     pub idempotency_key: OperationCreateFileUploadRequestHeaderIdempotencyKey,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationCreateFileUploadRequestHeaderXCsrfToken,
 }
 ///`OperationCreateFileUploadRequestHeaderIdempotencyKey`
 ///
@@ -25508,6 +25690,84 @@ impl ::std::convert::TryFrom<::std::string::String>
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationCreateFileUploadRequestHeaderIdempotencyKey {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationCreateFileUploadRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationCreateFileUploadRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationCreateFileUploadRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationCreateFileUploadRequestHeaderXCsrfToken>
+    for ::std::string::String
+{
+    fn from(value: OperationCreateFileUploadRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationCreateFileUploadRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationCreateFileUploadRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationCreateFileUploadRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationCreateFileUploadRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationCreateFileUploadRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -29062,7 +29322,8 @@ impl ::std::convert::From<OpenApiProblem> for OperationDeleteDocumentPermissionR
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
-///        "If-Match"
+///        "If-Match",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
@@ -29073,6 +29334,11 @@ impl ::std::convert::From<OpenApiProblem> for OperationDeleteDocumentPermissionR
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -29113,7 +29379,8 @@ pub struct OperationDeleteFileRequest {
 ///  "type": "object",
 ///  "required": [
 ///    "Idempotency-Key",
-///    "If-Match"
+///    "If-Match",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
@@ -29124,6 +29391,11 @@ pub struct OperationDeleteFileRequest {
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -29137,6 +29409,8 @@ pub struct OperationDeleteFileRequestHeader {
     pub idempotency_key: OperationDeleteFileRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationDeleteFileRequestHeaderIfMatch,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationDeleteFileRequestHeaderXCsrfToken,
 }
 ///`OperationDeleteFileRequestHeaderIdempotencyKey`
 ///
@@ -29275,6 +29549,80 @@ impl ::std::convert::TryFrom<::std::string::String> for OperationDeleteFileReque
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationDeleteFileRequestHeaderIfMatch {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationDeleteFileRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationDeleteFileRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationDeleteFileRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationDeleteFileRequestHeaderXCsrfToken> for ::std::string::String {
+    fn from(value: OperationDeleteFileRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationDeleteFileRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationDeleteFileRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationDeleteFileRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OperationDeleteFileRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationDeleteFileRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -31240,7 +31588,7 @@ impl ::std::convert::From<OpenApiProblem> for OperationDeprecateVocabularyConcep
 ///      "properties": {
 ///        "Range": {
 ///          "type": "string",
-///          "pattern": "^bytes=[0-9]+-[0-9]*$"
+///          "pattern": "^bytes=([0-9]+-[0-9]*|-[0-9]+)$"
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -31283,7 +31631,7 @@ pub struct OperationDownloadFileRequest {
 ///  "properties": {
 ///    "Range": {
 ///      "type": "string",
-///      "pattern": "^bytes=[0-9]+-[0-9]*$"
+///      "pattern": "^bytes=([0-9]+-[0-9]*|-[0-9]+)$"
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -31314,7 +31662,7 @@ impl ::std::default::Default for OperationDownloadFileRequestHeader {
 /// ```json
 ///{
 ///  "type": "string",
-///  "pattern": "^bytes=[0-9]+-[0-9]*$"
+///  "pattern": "^bytes=([0-9]+-[0-9]*|-[0-9]+)$"
 ///}
 /// ```
 /// </details>
@@ -31336,9 +31684,11 @@ impl ::std::str::FromStr for OperationDownloadFileRequestHeaderRange {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         static PATTERN: ::std::sync::LazyLock<::regress::Regex> =
-            ::std::sync::LazyLock::new(|| ::regress::Regex::new("^bytes=[0-9]+-[0-9]*$").unwrap());
+            ::std::sync::LazyLock::new(|| {
+                ::regress::Regex::new("^bytes=([0-9]+-[0-9]*|-[0-9]+)$").unwrap()
+            });
         if PATTERN.find(value).is_none() {
-            return Err("doesn't match pattern \"^bytes=[0-9]+-[0-9]*$\"".into());
+            return Err("doesn't match pattern \"^bytes=([0-9]+-[0-9]*|-[0-9]+)$\"".into());
         }
         Ok(Self(value.to_string()))
     }
@@ -31480,6 +31830,272 @@ pub enum OperationDownloadFileResponse {
     Default(OpenApiProblem),
 }
 impl ::std::convert::From<OpenApiProblem> for OperationDownloadFileResponse {
+    fn from(value: OpenApiProblem) -> Self {
+        Self::Default(value)
+    }
+}
+///`OperationDownloadPublicFileRequest`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "object",
+///  "required": [
+///    "path"
+///  ],
+///  "properties": {
+///    "header": {
+///      "type": "object",
+///      "properties": {
+///        "Range": {
+///          "type": "string",
+///          "pattern": "^bytes=([0-9]+-[0-9]*|-[0-9]+)$"
+///        }
+///      },
+///      "additionalProperties": false
+///    },
+///    "path": {
+///      "type": "object",
+///      "required": [
+///        "assetId",
+///        "publicToken"
+///      ],
+///      "properties": {
+///        "assetId": {
+///          "$ref": "#/$defs/OpenApi__Id"
+///        },
+///        "publicToken": {
+///          "type": "string"
+///        }
+///      },
+///      "additionalProperties": false
+///    }
+///  },
+///  "additionalProperties": false
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct OperationDownloadPublicFileRequest {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub header: ::std::option::Option<OperationDownloadPublicFileRequestHeader>,
+    pub path: OperationDownloadPublicFileRequestPath,
+}
+///`OperationDownloadPublicFileRequestHeader`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "object",
+///  "properties": {
+///    "Range": {
+///      "type": "string",
+///      "pattern": "^bytes=([0-9]+-[0-9]*|-[0-9]+)$"
+///    }
+///  },
+///  "additionalProperties": false
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct OperationDownloadPublicFileRequestHeader {
+    #[serde(
+        rename = "Range",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub range: ::std::option::Option<OperationDownloadPublicFileRequestHeaderRange>,
+}
+impl ::std::default::Default for OperationDownloadPublicFileRequestHeader {
+    fn default() -> Self {
+        Self {
+            range: Default::default(),
+        }
+    }
+}
+///`OperationDownloadPublicFileRequestHeaderRange`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "pattern": "^bytes=([0-9]+-[0-9]*|-[0-9]+)$"
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationDownloadPublicFileRequestHeaderRange(::std::string::String);
+impl ::std::ops::Deref for OperationDownloadPublicFileRequestHeaderRange {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationDownloadPublicFileRequestHeaderRange> for ::std::string::String {
+    fn from(value: OperationDownloadPublicFileRequestHeaderRange) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationDownloadPublicFileRequestHeaderRange {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        static PATTERN: ::std::sync::LazyLock<::regress::Regex> =
+            ::std::sync::LazyLock::new(|| {
+                ::regress::Regex::new("^bytes=([0-9]+-[0-9]*|-[0-9]+)$").unwrap()
+            });
+        if PATTERN.find(value).is_none() {
+            return Err("doesn't match pattern \"^bytes=([0-9]+-[0-9]*|-[0-9]+)$\"".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationDownloadPublicFileRequestHeaderRange {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationDownloadPublicFileRequestHeaderRange
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationDownloadPublicFileRequestHeaderRange
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationDownloadPublicFileRequestHeaderRange {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationDownloadPublicFileRequestPath`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "object",
+///  "required": [
+///    "assetId",
+///    "publicToken"
+///  ],
+///  "properties": {
+///    "assetId": {
+///      "$ref": "#/$defs/OpenApi__Id"
+///    },
+///    "publicToken": {
+///      "type": "string"
+///    }
+///  },
+///  "additionalProperties": false
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct OperationDownloadPublicFileRequestPath {
+    #[serde(rename = "assetId")]
+    pub asset_id: OpenApiId,
+    #[serde(rename = "publicToken")]
+    pub public_token: ::std::string::String,
+}
+///`OperationDownloadPublicFileResponse`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "oneOf": [
+///    {
+///      "type": "object",
+///      "required": [
+///        "body",
+///        "status"
+///      ],
+///      "properties": {
+///        "body": {
+///          "type": "string",
+///          "format": "binary"
+///        },
+///        "status": {
+///          "const": "200"
+///        }
+///      },
+///      "additionalProperties": false
+///    },
+///    {
+///      "type": "object",
+///      "required": [
+///        "body",
+///        "status"
+///      ],
+///      "properties": {
+///        "body": {
+///          "type": "string",
+///          "format": "binary"
+///        },
+///        "status": {
+///          "const": "206"
+///        }
+///      },
+///      "additionalProperties": false
+///    },
+///    {
+///      "type": "object",
+///      "required": [
+///        "body",
+///        "status"
+///      ],
+///      "properties": {
+///        "body": {
+///          "$ref": "#/$defs/OpenApi__Problem"
+///        },
+///        "status": {
+///          "const": "default"
+///        }
+///      },
+///      "additionalProperties": false
+///    }
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(tag = "status", content = "body")]
+pub enum OperationDownloadPublicFileResponse {
+    #[serde(rename = "200")]
+    X200(::std::string::String),
+    #[serde(rename = "206")]
+    X206(::std::string::String),
+    #[serde(rename = "default")]
+    Default(OpenApiProblem),
+}
+impl ::std::convert::From<OpenApiProblem> for OperationDownloadPublicFileResponse {
     fn from(value: OpenApiProblem) -> Self {
         Self::Default(value)
     }
@@ -54782,6 +55398,345 @@ impl ::std::convert::From<OpenApiWritingConfiguration>
     }
 }
 impl ::std::convert::From<OpenApiProblem> for OperationUpdateWritingConfigurationResponse {
+    fn from(value: OpenApiProblem) -> Self {
+        Self::Default(value)
+    }
+}
+///`OperationUploadFileContentRequest`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "object",
+///  "required": [
+///    "body",
+///    "header",
+///    "path"
+///  ],
+///  "properties": {
+///    "body": {
+///      "type": "string",
+///      "format": "binary"
+///    },
+///    "header": {
+///      "type": "object",
+///      "required": [
+///        "X-CSRF-Token",
+///        "X-Upload-Token"
+///      ],
+///      "properties": {
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
+///        },
+///        "X-Upload-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
+///        }
+///      },
+///      "additionalProperties": false
+///    },
+///    "path": {
+///      "type": "object",
+///      "required": [
+///        "assetId",
+///        "workspaceId"
+///      ],
+///      "properties": {
+///        "assetId": {
+///          "$ref": "#/$defs/OpenApi__Id"
+///        },
+///        "workspaceId": {
+///          "$ref": "#/$defs/OpenApi__Id"
+///        }
+///      },
+///      "additionalProperties": false
+///    }
+///  },
+///  "additionalProperties": false
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct OperationUploadFileContentRequest {
+    pub body: ::std::string::String,
+    pub header: OperationUploadFileContentRequestHeader,
+    pub path: OperationUploadFileContentRequestPath,
+}
+///`OperationUploadFileContentRequestHeader`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "object",
+///  "required": [
+///    "X-CSRF-Token",
+///    "X-Upload-Token"
+///  ],
+///  "properties": {
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
+///    },
+///    "X-Upload-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
+///    }
+///  },
+///  "additionalProperties": false
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct OperationUploadFileContentRequestHeader {
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationUploadFileContentRequestHeaderXCsrfToken,
+    #[serde(rename = "X-Upload-Token")]
+    pub x_upload_token: OperationUploadFileContentRequestHeaderXUploadToken,
+}
+///`OperationUploadFileContentRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationUploadFileContentRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationUploadFileContentRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationUploadFileContentRequestHeaderXCsrfToken>
+    for ::std::string::String
+{
+    fn from(value: OperationUploadFileContentRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationUploadFileContentRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationUploadFileContentRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationUploadFileContentRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationUploadFileContentRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationUploadFileContentRequestHeaderXCsrfToken {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationUploadFileContentRequestHeaderXUploadToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationUploadFileContentRequestHeaderXUploadToken(::std::string::String);
+impl ::std::ops::Deref for OperationUploadFileContentRequestHeaderXUploadToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationUploadFileContentRequestHeaderXUploadToken>
+    for ::std::string::String
+{
+    fn from(value: OperationUploadFileContentRequestHeaderXUploadToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationUploadFileContentRequestHeaderXUploadToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationUploadFileContentRequestHeaderXUploadToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationUploadFileContentRequestHeaderXUploadToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationUploadFileContentRequestHeaderXUploadToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationUploadFileContentRequestHeaderXUploadToken {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationUploadFileContentRequestPath`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "object",
+///  "required": [
+///    "assetId",
+///    "workspaceId"
+///  ],
+///  "properties": {
+///    "assetId": {
+///      "$ref": "#/$defs/OpenApi__Id"
+///    },
+///    "workspaceId": {
+///      "$ref": "#/$defs/OpenApi__Id"
+///    }
+///  },
+///  "additionalProperties": false
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct OperationUploadFileContentRequestPath {
+    #[serde(rename = "assetId")]
+    pub asset_id: OpenApiId,
+    #[serde(rename = "workspaceId")]
+    pub workspace_id: OpenApiId,
+}
+///`OperationUploadFileContentResponse`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "oneOf": [
+///    {
+///      "type": "object",
+///      "required": [
+///        "status"
+///      ],
+///      "properties": {
+///        "status": {
+///          "const": "204"
+///        }
+///      },
+///      "additionalProperties": false
+///    },
+///    {
+///      "type": "object",
+///      "required": [
+///        "body",
+///        "status"
+///      ],
+///      "properties": {
+///        "body": {
+///          "$ref": "#/$defs/OpenApi__Problem"
+///        },
+///        "status": {
+///          "const": "default"
+///        }
+///      },
+///      "additionalProperties": false
+///    }
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(tag = "status", content = "body")]
+pub enum OperationUploadFileContentResponse {
+    #[serde(rename = "204")]
+    X204,
+    #[serde(rename = "default")]
+    Default(OpenApiProblem),
+}
+impl ::std::convert::From<OpenApiProblem> for OperationUploadFileContentResponse {
     fn from(value: OpenApiProblem) -> Self {
         Self::Default(value)
     }

@@ -11,6 +11,7 @@ use axum::{Json, Router, extract::State, http::StatusCode, routing::get};
 
 mod collaboration_http;
 mod document_http;
+mod file_http;
 mod governance_http;
 mod identity_http;
 mod knowledge_http;
@@ -19,6 +20,7 @@ mod publishing_http;
 
 use collaboration_http::{CollaborationRuntime, collaboration_routes};
 use document_http::{DocumentRuntime, document_routes};
+use file_http::{FileRuntime, file_routes, public_file_routes};
 use governance_http::{GovernanceRuntime, governance_routes};
 use identity_http::{IdentityRuntime, identity_routes};
 use knowledge_http::{KnowledgeRuntime, knowledge_routes};
@@ -103,6 +105,7 @@ struct HealthState {
     publishing: PublishingRuntime,
     collaboration: CollaborationRuntime,
     knowledge: KnowledgeRuntime,
+    files: FileRuntime,
 }
 
 async fn serve() -> Result<(), Box<dyn std::error::Error>> {
@@ -127,6 +130,7 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     let publishing = PublishingRuntime::new(&store);
     let collaboration = CollaborationRuntime::new(&store);
     let knowledge = KnowledgeRuntime::new(&store, document.service.clone());
+    let files = FileRuntime::new(&config, &store)?;
     let state = HealthState {
         store,
         release_sha: Arc::from(config.common.release_sha.as_str()),
@@ -137,6 +141,7 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
         publishing,
         collaboration,
         knowledge,
+        files,
     };
     let app = Router::new()
         .route("/health/live", get(live))
@@ -149,9 +154,11 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
                 .merge(permission_routes())
                 .merge(publishing_routes())
                 .merge(collaboration_routes())
-                .merge(knowledge_routes()),
+                .merge(knowledge_routes())
+                .merge(file_routes()),
         )
         .merge(public_routes())
+        .merge(public_file_routes())
         .with_state(state.clone());
     let listener = tokio::net::TcpListener::bind(bind).await?;
     SafeEvent::new(&telemetry, "SERVICE_STARTED")

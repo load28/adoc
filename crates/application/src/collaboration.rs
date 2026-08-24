@@ -651,8 +651,11 @@ impl CollaborationService {
 }
 fn validate_message(input: &RichMessage) -> Result<(), GovernanceError> {
     ValidatedContent::parse(input.body.clone()).map_err(|_| GovernanceError::Validation)?;
-    if !input.attachment_ids.is_empty() {
-        return Err(GovernanceError::DependencyUnavailable);
+    let mut attachments = input.attachment_ids.clone();
+    attachments.sort_unstable();
+    attachments.dedup();
+    if attachments.len() != input.attachment_ids.len() {
+        return Err(GovernanceError::Validation);
     }
     let mut ids = input.mention_user_ids.clone();
     ids.sort();

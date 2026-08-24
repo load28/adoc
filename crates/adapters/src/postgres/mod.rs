@@ -1,6 +1,7 @@
 mod collaboration;
 mod document;
 mod error;
+mod file;
 mod governance;
 mod idempotency;
 mod identity;
@@ -13,6 +14,7 @@ mod transaction;
 
 pub use collaboration::PostgresCollaborationRepository;
 pub use document::PostgresDocumentRepository;
+pub use file::PostgresFileRepository;
 pub use governance::PostgresGovernanceRepository;
 pub use idempotency::{
     IdempotencyDecision, IdempotencyError, IdempotencyIdentity, IdempotencyReservation,

@@ -52,6 +52,14 @@
     {
       "file": "0013_vocabulary_change_reason.sql",
       "sha256": "524990b4998ba881a0d574bafa00a41b0d6e0ed92dc043fd57d80a3a727ac9e7"
+    },
+    {
+      "file": "0014_file_upload_lifecycle.sql",
+      "sha256": "d81d7a0c0c33aef9c4605e5bd353670bec57f12f9b3a8fa8823d9574e87aaa03"
+    },
+    {
+      "file": "0015_file_upload_sessions.sql",
+      "sha256": "c8a47b7d48b647b9b28a8c87ec2b86ecbc3ca28eef3e730be4c150acd5f4c2cd"
     }
   ]
 }

@@ -320,6 +320,10 @@ export type AdocContractBundle =
   | Operation__DeleteFileResponse
   | Operation__DownloadFileRequest
   | Operation__DownloadFileResponse
+  | Operation__UploadFileContentRequest
+  | Operation__UploadFileContentResponse
+  | Operation__DownloadPublicFileRequest
+  | Operation__DownloadPublicFileResponse
   | Operation__ListAuditEventsRequest
   | Operation__ListAuditEventsResponse
   | Operation__GetWritingConfigurationRequest
@@ -1385,6 +1389,27 @@ export type Operation__DownloadFileResponse =
       status: "default";
       body: OpenApi__Problem;
     };
+export type Operation__UploadFileContentResponse =
+  | {
+      status: "204";
+    }
+  | {
+      status: "default";
+      body: OpenApi__Problem;
+    };
+export type Operation__DownloadPublicFileResponse =
+  | {
+      status: "200";
+      body: string;
+    }
+  | {
+      status: "206";
+      body: string;
+    }
+  | {
+      status: "default";
+      body: OpenApi__Problem;
+    };
 export type Operation__ListAuditEventsResponse =
   | {
       status: "200";
@@ -2097,8 +2122,8 @@ export interface OpenApi__AIJobPage {
 export interface OpenApi__FileUpload {
   assetId: OpenApi__Id;
   uploadUrl: string;
+  uploadToken: string;
   expiresAt: string;
-  [k: string]: unknown;
 }
 export interface OpenApi__FileAsset {
   id: OpenApi__Id;
@@ -2106,7 +2131,9 @@ export interface OpenApi__FileAsset {
   mimeType: string;
   sizeBytes: number;
   checksumSha256: string;
-  status: "UPLOADING" | "READY" | "FAILED" | "DELETED";
+  status: "UPLOADING" | "VALIDATING" | "READY" | "FAILED" | "DELETED";
+  failureCode?: string | null;
+  readyAt?: string | null;
   revision: number;
 }
 export interface OpenApi__AuditEvent {
@@ -3154,6 +3181,7 @@ export interface Operation__CreateFileUploadRequest {
   };
   header: {
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     name: string;
@@ -3171,6 +3199,7 @@ export interface Operation__CompleteFileUploadRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     checksumSha256: string;
@@ -3191,11 +3220,32 @@ export interface Operation__DeleteFileRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
 }
 export interface Operation__DownloadFileRequest {
   path: {
     workspaceId: OpenApi__Id;
+    assetId: OpenApi__Id;
+  };
+  header?: {
+    Range?: string;
+  };
+}
+export interface Operation__UploadFileContentRequest {
+  path: {
+    workspaceId: OpenApi__Id;
+    assetId: OpenApi__Id;
+  };
+  header: {
+    "X-Upload-Token": string;
+    "X-CSRF-Token": string;
+  };
+  body: string;
+}
+export interface Operation__DownloadPublicFileRequest {
+  path: {
+    publicToken: string;
     assetId: OpenApi__Id;
   };
   header?: {

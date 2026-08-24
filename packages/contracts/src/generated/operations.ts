@@ -652,6 +652,20 @@ export const operations = [
     "response": "Operation__DownloadFileResponse"
   },
   {
+    "operationId": "uploadFileContent",
+    "method": "PUT",
+    "path": "/workspaces/{workspaceId}/files/{assetId}/content",
+    "request": "Operation__UploadFileContentRequest",
+    "response": "Operation__UploadFileContentResponse"
+  },
+  {
+    "operationId": "downloadPublicFile",
+    "method": "GET",
+    "path": "/public/v1/documents/{publicToken}/files/{assetId}",
+    "request": "Operation__DownloadPublicFileRequest",
+    "response": "Operation__DownloadPublicFileResponse"
+  },
+  {
     "operationId": "listAuditEvents",
     "method": "GET",
     "path": "/workspaces/{workspaceId}/audit-events",

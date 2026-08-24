@@ -18,6 +18,7 @@ use uuid::Uuid;
 use super::{
     PostgresStore,
     document::{require_access, require_effective_active},
+    file::sync_file_asset_ids,
     governance::{
         OutboxEvent, append_event, begin_workspace, check_revision, complete_workspace, map_store,
     },
@@ -379,6 +380,18 @@ impl CollaborationRepository for PostgresCollaborationRepository {
                         ),
                     };
                     sqlx::query("UPDATE messages SET body_json=$2,mention_user_ids=$3,revision=revision+1,edited_at=$4,deleted_at=$5 WHERE id=$1").bind(input.message_id).bind(body).bind(&mentions).bind(input.command.now).bind(deleted).execute(&mut *tx).await.map_err(map_store)?;
+                    let attachments = input
+                        .message
+                        .as_ref()
+                        .map_or(&[][..], |message| message.attachment_ids.as_slice());
+                    sync_file_asset_ids(
+                        &mut tx,
+                        input.workspace_id,
+                        "MESSAGE",
+                        input.message_id,
+                        attachments,
+                    )
+                    .await?;
                     sync_mentions(
                         &mut tx,
                         input.workspace_id,
@@ -1066,6 +1079,7 @@ async fn insert_message(
     now: DateTime<Utc>,
 ) -> Result<(), GovernanceError> {
     sqlx::query("INSERT INTO messages(id,workspace_id,discussion_id,author_id,body_json,mention_user_ids,created_at) VALUES($1,$2,$3,$4,$5,$6,$7)").bind(id).bind(workspace).bind(discussion).bind(author).bind(&input.body).bind(&input.mention_user_ids).bind(now).execute(&mut **tx).await.map_err(map_store)?;
+    sync_file_asset_ids(tx, workspace, "MESSAGE", id, &input.attachment_ids).await?;
     Ok(())
 }
 #[allow(clippy::too_many_arguments)]

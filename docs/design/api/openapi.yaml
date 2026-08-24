@@ -780,7 +780,7 @@ paths:
     post:
       tags: [Operations]
       operationId: createFileUpload
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody:
         required: true
         content: {application/json: {schema: {type: object, required: [name, mimeType, size, checksum], properties: {name: {type: string}, mimeType: {type: string}, size: {type: integer, minimum: 1}, checksum: {type: string}}}}}
@@ -791,7 +791,7 @@ paths:
     post:
       tags: [Operations]
       operationId: completeFileUpload
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/AssetId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/AssetId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody: {$ref: '#/components/requestBodies/CompleteUpload'}
       responses:
         '200': {description: Asset, content: {application/json: {schema: {$ref: '#/components/schemas/FileAsset'}}}}
@@ -807,15 +807,38 @@ paths:
     delete:
       tags: [Operations]
       operationId: deleteFile
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/AssetId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/AssetId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       responses:
         '204': {description: Deleted}
         default: {$ref: '#/components/responses/Problem'}
   /workspaces/{workspaceId}/files/{assetId}/content:
+    put:
+      tags: [Operations]
+      operationId: uploadFileContent
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/AssetId'}, {$ref: '#/components/parameters/UploadToken'}, {$ref: '#/components/parameters/CsrfToken'}]
+      requestBody:
+        required: true
+        content: {application/octet-stream: {schema: {type: string, format: binary}}}
+      responses:
+        '204': {description: Uploaded}
+        default: {$ref: '#/components/responses/Problem'}
     get:
       tags: [Operations]
       operationId: downloadFile
       parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/AssetId'}, {$ref: '#/components/parameters/Range'}]
+      responses:
+        '200': {description: File bytes, content: {application/octet-stream: {schema: {type: string, format: binary}}}}
+        '206': {description: Partial file bytes, content: {application/octet-stream: {schema: {type: string, format: binary}}}}
+        default: {$ref: '#/components/responses/Problem'}
+  /public/v1/documents/{publicToken}/files/{assetId}:
+    get:
+      tags: [Public]
+      security: []
+      operationId: downloadPublicFile
+      parameters:
+        - {name: publicToken, in: path, required: true, schema: {type: string}}
+        - {$ref: '#/components/parameters/AssetId'}
+        - {$ref: '#/components/parameters/Range'}
       responses:
         '200': {description: File bytes, content: {application/octet-stream: {schema: {type: string, format: binary}}}}
         '206': {description: Partial file bytes, content: {application/octet-stream: {schema: {type: string, format: binary}}}}
@@ -949,7 +972,8 @@ components:
     LinkId: {name: linkId, in: path, required: true, schema: {$ref: '#/components/schemas/Id'}}
     Cursor: {name: cursor, in: query, schema: {type: string, maxLength: 2048}}
     StatusFilter: {name: status, in: query, schema: {type: string, enum: [UNREAD, ACTIONABLE, RESOLVED, ALL]}}
-    Range: {name: Range, in: header, schema: {type: string, pattern: '^bytes=[0-9]+-[0-9]*$'}}
+    Range: {name: Range, in: header, schema: {type: string, pattern: '^bytes=([0-9]+-[0-9]*|-[0-9]+)$'}}
+    UploadToken: {name: X-Upload-Token, in: header, required: true, schema: {type: string, minLength: 43, maxLength: 1024}}
     IfMatch: {name: If-Match, in: header, required: true, schema: {type: string, pattern: '^"[0-9]+"$'}}
     IdempotencyKey: {name: Idempotency-Key, in: header, required: true, schema: {type: string, minLength: 16, maxLength: 128}}
     CsrfToken: {name: X-CSRF-Token, in: header, required: true, schema: {type: string, minLength: 43, maxLength: 1024}}
@@ -1082,8 +1106,8 @@ components:
     AIJob: {type: object, additionalProperties: false, required: [id, kind, status, sequence, revision], properties: {id: {$ref: '#/components/schemas/Id'}, kind: {type: string, enum: [COMPOSE, REWRITE, REVIEW, DISCUSSION_APPLY, CONFLICT_MERGE, KNOWLEDGE_QUERY]}, status: {type: string, enum: [QUEUED, RUNNING, CANCEL_REQUESTED, SUCCEEDED, FAILED, CANCELLED, TIMED_OUT]}, sequence: {type: integer}, revision: {type: integer}, result: {oneOf: [{$ref: '../contracts/ai-contracts.schema.json#/$defs/result'}, {type: 'null'}]}, errorCode: {type: [string, 'null']}}}
     AIJobPage: {type: object, additionalProperties: false, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/AIJob'}}, nextCursor: {type: [string, 'null']}}}
     Proposal: {allOf: [{$ref: '../contracts/ai-contracts.schema.json#/$defs/proposal'}, {type: object, properties: {revision: {type: integer, minimum: 0}}}]}
-    FileUpload: {type: object, required: [assetId, uploadUrl, expiresAt], properties: {assetId: {$ref: '#/components/schemas/Id'}, uploadUrl: {type: string, format: uri}, expiresAt: {type: string, format: date-time}}}
-    FileAsset: {type: object, additionalProperties: false, required: [id, originalName, mimeType, sizeBytes, checksumSha256, status, revision], properties: {id: {$ref: '#/components/schemas/Id'}, originalName: {type: string}, mimeType: {type: string}, sizeBytes: {type: integer, minimum: 0}, checksumSha256: {type: string, pattern: '^[a-f0-9]{64}$'}, status: {type: string, enum: [UPLOADING, READY, FAILED, DELETED]}, revision: {type: integer, minimum: 0}}}
+    FileUpload: {type: object, additionalProperties: false, required: [assetId, uploadUrl, uploadToken, expiresAt], properties: {assetId: {$ref: '#/components/schemas/Id'}, uploadUrl: {type: string, format: uri}, uploadToken: {type: string, writeOnly: true}, expiresAt: {type: string, format: date-time}}}
+    FileAsset: {type: object, additionalProperties: false, required: [id, originalName, mimeType, sizeBytes, checksumSha256, status, revision], properties: {id: {$ref: '#/components/schemas/Id'}, originalName: {type: string}, mimeType: {type: string}, sizeBytes: {type: integer, minimum: 0}, checksumSha256: {type: string, pattern: '^[a-f0-9]{64}$'}, status: {type: string, enum: [UPLOADING, VALIDATING, READY, FAILED, DELETED]}, failureCode: {type: [string, 'null']}, readyAt: {type: [string, 'null'], format: date-time}, revision: {type: integer, minimum: 0}}}
     AuditEvent: {type: object, additionalProperties: false, required: [id, sequence, actor, action, target, metadata, occurredAt], properties: {id: {$ref: '#/components/schemas/Id'}, sequence: {type: integer, minimum: 1}, actor: {type: object, additionalProperties: false, required: [kind], properties: {kind: {type: string, enum: [USER, SYSTEM]}, userId: {$ref: '#/components/schemas/NullableId'}}}, action: {type: string}, target: {$ref: '#/components/schemas/ResourceTarget'}, metadata: {type: object, additionalProperties: {type: [string, number, integer, boolean, 'null']}}, occurredAt: {type: string, format: date-time}}}
     AuditPage: {type: object, additionalProperties: false, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/AuditEvent'}}, nextCursor: {type: [string, 'null']}}}
     PublicLink: {type: object, additionalProperties: false, required: [id, expiresAt, revokedAt, createdAt, revision], properties: {id: {$ref: '#/components/schemas/Id'}, expiresAt: {type: [string, 'null'], format: date-time}, revokedAt: {type: [string, 'null'], format: date-time}, createdAt: {type: string, format: date-time}, revision: {type: integer, minimum: 0}}}

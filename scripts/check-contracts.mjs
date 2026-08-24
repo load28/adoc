@@ -7,8 +7,8 @@ const generated = resolve(root, "packages/contracts/src/generated");
 const bundle = JSON.parse(readFileSync(resolve(generated, "contract-bundle.schema.json"), "utf8"));
 const manifest = JSON.parse(readFileSync(resolve(generated, "manifest.json"), "utf8"));
 
-if (manifest.counts.openapiOperations !== 105)
-  throw new Error(`expected 105 OpenAPI operations; found ${manifest.counts.openapiOperations}`);
+if (manifest.counts.openapiOperations !== 107)
+  throw new Error(`expected 107 OpenAPI operations; found ${manifest.counts.openapiOperations}`);
 if (manifest.counts.asyncapiOperations !== 3 || manifest.counts.asyncapiMessages !== 2)
   throw new Error("AsyncAPI operation or message coverage drifted");
 

@@ -23,6 +23,7 @@ use uuid::Uuid;
 use super::{
     PostgresStore,
     collaboration::invalidate_reviews,
+    file::sync_file_references,
     governance::{
         OutboxEvent, append_event, begin_workspace, check_revision, complete_workspace, map_store,
     },
@@ -438,6 +439,14 @@ impl DocumentRepository for PostgresDocumentRepository {
             sqlx::query("INSERT INTO drafts(id,workspace_id,document_id,base_version_id,content_json,schema_version,updated_by,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$8)")
                 .bind(input.id).bind(input.workspace_id).bind(input.document_id).bind(base_version).bind(content.as_value()).bind(schema_version).bind(input.command.actor_id).bind(input.command.now)
                 .execute(&mut *tx).await.map_err(map_document_store)?;
+            sync_file_references(
+                &mut tx,
+                input.workspace_id,
+                "DRAFT",
+                input.id,
+                content.as_value(),
+            )
+            .await?;
             let result = Draft {
                 id: input.id,
                 document_id: input.document_id,
@@ -647,6 +656,14 @@ impl DocumentRepository for PostgresDocumentRepository {
                 applied_operation_ids: reduced.applied_operation_ids,
                 inverse_operations: reduced.inverse_operations,
             };
+            sync_file_references(
+                &mut tx,
+                input.workspace_id,
+                "DRAFT",
+                draft_row.get("id"),
+                &reduced.content,
+            )
+            .await?;
             sqlx::query("UPDATE drafts SET content_json=$3,schema_version=1,revision=$4,updated_by=$5,updated_at=$6 WHERE workspace_id=$1 AND document_id=$2")
                 .bind(input.workspace_id).bind(input.document_id).bind(reduced.content).bind(result.revision).bind(input.actor_id).bind(input.command.now).execute(&mut *tx).await.map_err(map_store)?;
             invalidate_reviews(

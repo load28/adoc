@@ -1112,6 +1112,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["downloadFile"];
+        put: operations["uploadFileContent"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/v1/documents/{publicToken}/files/{assetId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["downloadPublicFile"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1680,6 +1696,7 @@ export interface components {
             assetId: components["schemas"]["Id"];
             /** Format: uri */
             uploadUrl: string;
+            uploadToken: string;
             /** Format: date-time */
             expiresAt: string;
         };
@@ -1690,7 +1707,10 @@ export interface components {
             sizeBytes: number;
             checksumSha256: string;
             /** @enum {string} */
-            status: "UPLOADING" | "READY" | "FAILED" | "DELETED";
+            status: "UPLOADING" | "VALIDATING" | "READY" | "FAILED" | "DELETED";
+            failureCode?: string | null;
+            /** Format: date-time */
+            readyAt?: string | null;
             revision: number;
         };
         AuditEvent: {
@@ -2414,6 +2434,7 @@ export interface components {
         Cursor: string;
         StatusFilter: "UNREAD" | "ACTIONABLE" | "RESOLVED" | "ALL";
         Range: string;
+        UploadToken: string;
         IfMatch: string;
         IdempotencyKey: string;
         CsrfToken: string;
@@ -4976,6 +4997,7 @@ export interface operations {
             query?: never;
             header: {
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -5011,6 +5033,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -5062,6 +5085,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -5089,6 +5113,70 @@ export interface operations {
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
+                assetId: components["parameters"]["AssetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description File bytes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            /** @description Partial file bytes */
+            206: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    uploadFileContent: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Upload-Token": components["parameters"]["UploadToken"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                assetId: components["parameters"]["AssetId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Uploaded */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    downloadPublicFile: {
+        parameters: {
+            query?: never;
+            header?: {
+                Range?: components["parameters"]["Range"];
+            };
+            path: {
+                publicToken: string;
                 assetId: components["parameters"]["AssetId"];
             };
             cookie?: never;

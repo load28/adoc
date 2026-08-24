@@ -20,6 +20,7 @@ use uuid::Uuid;
 use super::{
     PostgresStore,
     document::{require_access, require_effective_active},
+    file::sync_file_references,
     governance::{
         OutboxEvent, append_event, begin_workspace, check_revision, complete_workspace, map_store,
     },
@@ -170,9 +171,6 @@ impl PublishingRepository for PostgresPublishingRepository {
             let content = ValidatedContent::parse(draft_row.get("content_json"))
                 .map_err(|_| GovernanceError::OperationPreconditionFailed)?
                 .into_value();
-            if contains_file_owner(&content) {
-                return Err(GovernanceError::DependencyUnavailable);
-            }
             let fingerprint = canonical_hash(&content);
             let number: i64 = sqlx::query_scalar(
                 "SELECT COALESCE(MAX(number),0)+1 FROM published_versions WHERE document_id=$1",
@@ -183,6 +181,16 @@ impl PublishingRepository for PostgresPublishingRepository {
             .map_err(map_store)?;
             sqlx::query("INSERT INTO published_versions(id,workspace_id,document_id,number,content_json,schema_version,content_fingerprint,based_on_version_id,source_draft_revision,publisher_id,summary,published_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)")
                 .bind(input.version_id).bind(input.workspace_id).bind(input.document_id).bind(number).bind(&content).bind(draft_row.get::<i32,_>("schema_version")).bind(&fingerprint).bind(base_version_id).bind(draft_revision).bind(input.command.actor_id).bind(&input.summary).bind(input.command.now).execute(&mut *tx).await.map_err(map_store)?;
+            sync_file_references(
+                &mut tx,
+                input.workspace_id,
+                "PUBLISHED_VERSION",
+                input.version_id,
+                &content,
+            )
+            .await?;
+            sqlx::query("DELETE FROM file_references WHERE workspace_id=$1 AND owner_kind='DRAFT' AND owner_id=$2")
+                .bind(input.workspace_id).bind(draft_id).execute(&mut *tx).await.map_err(map_store)?;
             sqlx::query("INSERT INTO version_context(version_id,review_snapshot_json,discussion_ids,source_revision) VALUES($1,$2,'{}'::uuid[],$3)")
                 .bind(input.version_id).bind(&review_snapshot).bind(draft_revision).execute(&mut *tx).await.map_err(map_store)?;
             let document_revision:i64=sqlx::query_scalar("UPDATE documents SET current_version_id=$3,revision=revision+1,updated_at=$4 WHERE workspace_id=$1 AND id=$2 RETURNING revision")
@@ -252,6 +260,14 @@ impl PublishingRepository for PostgresPublishingRepository {
                 .map_err(|_| GovernanceError::OperationPreconditionFailed)?;
             let inserted=sqlx::query("INSERT INTO drafts(id,workspace_id,document_id,base_version_id,content_json,schema_version,revision,updated_by,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,0,$7,$8,$8) ON CONFLICT(document_id) DO NOTHING RETURNING id,document_id,base_version_id,content_json,schema_version,revision")
                 .bind(input.draft_id).bind(input.workspace_id).bind(input.document_id).bind(input.version_id).bind(&version.content).bind(version.schema_version).bind(input.command.actor_id).bind(input.command.now).fetch_optional(&mut *tx).await.map_err(map_store)?.ok_or(GovernanceError::DraftExists)?;
+            sync_file_references(
+                &mut tx,
+                input.workspace_id,
+                "DRAFT",
+                input.draft_id,
+                &version.content,
+            )
+            .await?;
             let result = draft(&inserted)?;
             append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"Draft",aggregate_id:input.draft_id,sequence:1,event_type:"DraftChanged.v1",payload:json!({"documentId":input.document_id,"draftId":input.draft_id,"revision":0,"operationIds":[]}),occurred_at:input.command.now}).await?;
             complete_workspace(&mut tx, input.workspace_id, &input.command, 201, &result).await?;
@@ -552,19 +568,6 @@ async fn validate_publish_lease(
         Ok(())
     } else {
         Err(GovernanceError::PublishLeaseConflict)
-    }
-}
-fn contains_file_owner(value: &Value) -> bool {
-    match value {
-        Value::Object(object) => {
-            object
-                .get("type")
-                .and_then(Value::as_str)
-                .is_some_and(|kind| matches!(kind, "image" | "file" | "attachment"))
-                || object.values().any(contains_file_owner)
-        }
-        Value::Array(values) => values.iter().any(contains_file_owner),
-        _ => false,
     }
 }
 fn format_cursor(value: &PublishedVersion) -> String {

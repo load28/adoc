@@ -69,6 +69,10 @@ docker compose -p "$project" exec -T postgres psql --username postgres --dbname 
 docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
   <infra/migrations/0013_vocabulary_change_reason.sql >/dev/null
 docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
+  <infra/migrations/0014_file_upload_lifecycle.sql >/dev/null
+docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
+  <infra/migrations/0015_file_upload_sessions.sql >/dev/null
+docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
   --tuples-only --no-align --command \
   "SELECT count(*) FROM information_schema.columns WHERE table_name='sessions' AND column_name IN ('hash_key_id','idle_expires_at','absolute_expires_at')" \
   | grep -qx 3
@@ -88,6 +92,10 @@ docker compose -p "$project" exec -T postgres psql --username postgres --dbname 
   --tuples-only --no-align --command \
   "SELECT count(*) FROM information_schema.columns WHERE table_name='edit_leases' AND column_name IN ('client_instance_id','released_at')" \
   | grep -qx 2
+docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
+  --tuples-only --no-align --command \
+  "SELECT count(*) FROM information_schema.columns WHERE table_name='file_upload_sessions' AND column_name IN ('token_key_id','validation_key','validation_request_hash')" \
+  | grep -qx 3
 docker compose -p "$project" --profile test build test-runner
 docker compose -p "$project" --profile test run --rm test-runner \
   cargo test --locked -p adoc-adapters \
@@ -99,6 +107,7 @@ docker compose -p "$project" --profile test run --rm test-runner \
   --test collaboration_inbox \
   --test review_approval \
   --test reference_vocabulary \
+  --test file_object_storage \
   -- --ignored --nocapture
 docker compose -p "$project" --profile backup run --rm backup >/dev/null
 docker compose -p "$project" --profile backup run --rm --entrypoint sh backup -c \

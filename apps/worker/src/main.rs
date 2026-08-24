@@ -1,9 +1,14 @@
 #![forbid(unsafe_code)]
 
-use std::process::ExitCode;
+use std::{process::ExitCode, sync::Arc, time::Duration};
 
-use adoc_adapters::postgres::{DatabaseSettings, PostgresStore};
-use adoc_configuration::{AppConfig, ConfigError, ConfigSource, ServiceKind};
+use adoc_adapters::{
+    identity::SystemClock,
+    object_storage::LocalObjectStorage,
+    postgres::{DatabaseSettings, PostgresFileRepository, PostgresStore},
+};
+use adoc_application::operations::FileGarbageCollector;
+use adoc_configuration::{AppConfig, ConfigError, ConfigSource, ObjectStorageDriver, ServiceKind};
 use adoc_telemetry::{SafeEvent, TelemetryConfig};
 
 #[tokio::main]
@@ -54,7 +59,31 @@ async fn run(health_only: bool) -> Result<(), Box<dyn std::error::Error>> {
     SafeEvent::new(&telemetry, "SERVICE_STARTED")
         .field("environment", format!("{:?}", config.common.environment))
         .emit();
-    shutdown_signal().await;
+    if config.storage.driver != ObjectStorageDriver::Local {
+        return Err("S3 object storage adapter is not configured in this release".into());
+    }
+    let root = config
+        .storage
+        .local_root
+        .clone()
+        .ok_or("local object storage root is missing")?;
+    let root = if root.is_absolute() {
+        root
+    } else {
+        std::env::current_dir()?.join(root)
+    };
+    let gc = FileGarbageCollector::new(
+        Arc::new(PostgresFileRepository::new(&store)),
+        Arc::new(LocalObjectStorage::new(root).map_err(|_| "invalid object storage root")?),
+        Arc::new(SystemClock),
+    );
+    let mut interval = tokio::time::interval(Duration::from_secs(60));
+    loop {
+        tokio::select! {
+            _ = shutdown_signal() => break,
+            _ = interval.tick() => { gc.run_once(100).await?; }
+        }
+    }
     store.close().await;
     Ok(())
 }

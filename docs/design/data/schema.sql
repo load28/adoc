@@ -16,7 +16,7 @@ CREATE TYPE review_decision AS ENUM ('PENDING', 'APPROVED', 'CHANGES_REQUESTED')
 CREATE TYPE vocabulary_status AS ENUM ('ACTIVE', 'DEPRECATED');
 CREATE TYPE ai_job_status AS ENUM ('QUEUED', 'RUNNING', 'CANCEL_REQUESTED', 'SUCCEEDED', 'FAILED', 'CANCELLED', 'TIMED_OUT');
 CREATE TYPE proposal_status AS ENUM ('OPEN', 'APPLIED', 'REJECTED', 'STALE', 'CANCELLED');
-CREATE TYPE file_status AS ENUM ('UPLOADING', 'READY', 'FAILED', 'DELETED');
+CREATE TYPE file_status AS ENUM ('UPLOADING', 'VALIDATING', 'READY', 'FAILED', 'DELETED');
 CREATE TYPE job_status AS ENUM ('QUEUED', 'RUNNING', 'CANCEL_REQUESTED', 'SUCCEEDED', 'FAILED', 'CANCELLED', 'TIMED_OUT', 'DEAD_LETTER');
 
 CREATE TABLE users (
@@ -650,21 +650,40 @@ CREATE TABLE file_assets (
   size_bytes bigint NOT NULL CHECK (size_bytes >= 0),
   checksum_sha256 text NOT NULL CHECK (checksum_sha256 ~ '^[a-f0-9]{64}$'),
   status file_status NOT NULL DEFAULT 'UPLOADING',
+  detected_mime_type text,
+  failure_code text,
   uploaded_by uuid NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   ready_at timestamptz,
   deleted_at timestamptz,
   purge_after timestamptz,
+  gc_claimed_at timestamptz,
+  byte_deleted_at timestamptz,
   revision bigint NOT NULL DEFAULT 0 CHECK (revision >= 0),
   PRIMARY KEY (id),
   UNIQUE (workspace_id, id),
   UNIQUE (workspace_id, storage_key),
   FOREIGN KEY (workspace_id, uploaded_by) REFERENCES memberships(workspace_id, user_id),
-  CHECK ((status IN ('UPLOADING', 'FAILED') AND ready_at IS NULL) OR
+  CHECK ((status IN ('UPLOADING', 'VALIDATING', 'FAILED') AND ready_at IS NULL) OR
          (status IN ('READY', 'DELETED') AND ready_at IS NOT NULL)),
   CHECK ((status = 'DELETED') = (deleted_at IS NOT NULL AND purge_after IS NOT NULL))
 );
 CREATE INDEX file_assets_gc_idx ON file_assets (workspace_id, purge_after) WHERE status = 'DELETED';
+
+CREATE TABLE file_upload_sessions (
+  asset_id uuid PRIMARY KEY,
+  workspace_id uuid NOT NULL,
+  token_hash bytea NOT NULL CHECK (octet_length(token_hash) = 32),
+  token_key_id text NOT NULL CHECK (char_length(token_key_id) BETWEEN 1 AND 100),
+  expires_at timestamptz NOT NULL,
+  uploaded_at timestamptz,
+  validation_key text,
+  validation_request_hash text,
+  completed_at timestamptz,
+  FOREIGN KEY (workspace_id, asset_id) REFERENCES file_assets(workspace_id, id) ON DELETE CASCADE,
+  CHECK (completed_at IS NULL OR uploaded_at IS NOT NULL),
+  CHECK ((validation_key IS NULL) = (validation_request_hash IS NULL))
+);
 
 CREATE TABLE file_references (
   workspace_id uuid NOT NULL,
