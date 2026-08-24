@@ -11,13 +11,13 @@
     "docs/design/api/asyncapi.yaml": "56010b252cc20f760995d1f4ad5f9f9977604b8822dfebc26f8593b80bf99d08",
     "docs/design/contracts/ai-contracts.schema.json": "b2a2b5c20d34fa7652350a0061e00ed8c3574d719e3fd073d80a3c62dfc43901",
     "docs/design/contracts/document-content.schema.json": "bb8eec6392aaa24c16740cfe5e823add8cb2bb3a925db2def1c15237ed0d0c7c",
-    "docs/design/contracts/document-operation.schema.json": "ab39ef5651651d7c01f9d1c49fd41c5266c6e8d1408093a584ca39a56ba5c9c4",
+    "docs/design/contracts/document-operation.schema.json": "39b5e691284a5e1fc61293bfb8d58219cb1a857529b8d3f247a5418bbe2c1209",
     "docs/design/contracts/event-payloads.schema.json": "1c4a5801e5c60744d6220043a7b975fda45a6e177244a262713a084ee6acc93b"
   },
   "counts": {
     "openapiOperations": 105,
     "asyncapiOperations": 3,
     "asyncapiMessages": 2,
-    "definitions": 343
+    "definitions": 344
   }
 }

@@ -118,7 +118,7 @@
       "$ref": "#/$defs/DocumentOperation__textAnchor"
     },
     {
-      "$ref": "#/$defs/DocumentOperation__blockNode"
+      "$ref": "#/$defs/DocumentOperation__contentNode"
     },
     {
       "$ref": "#/$defs/DocumentOperation__insertBlock"
@@ -146,6 +146,9 @@
     },
     {
       "$ref": "#/$defs/DocumentOperation__removeReference"
+    },
+    {
+      "$ref": "#/$defs/DocumentOperation__attrPatch"
     },
     {
       "$ref": "#/$defs/DocumentOperation__referenceTarget"
@@ -2175,6 +2178,18 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "const": "DOCUMENT"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
             "kind",
             "blockId"
           ],
@@ -2279,8 +2294,21 @@
         }
       }
     },
-    "DocumentOperation__blockNode": {
-      "$ref": "#/$defs/DocumentContent__block"
+    "DocumentOperation__contentNode": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/DocumentContent__block"
+        },
+        {
+          "$ref": "#/$defs/DocumentContent__listItem"
+        },
+        {
+          "$ref": "#/$defs/DocumentContent__tableRow"
+        },
+        {
+          "$ref": "#/$defs/DocumentContent__tableCell"
+        }
+      ]
     },
     "DocumentOperation__insertBlock": {
       "allOf": [
@@ -2314,7 +2342,7 @@
               "minimum": 0
             },
             "block": {
-              "$ref": "#/$defs/DocumentOperation__blockNode"
+              "$ref": "#/$defs/DocumentOperation__contentNode"
             }
           }
         }
@@ -2393,7 +2421,7 @@
           "required": [
             "kind",
             "range",
-            "text"
+            "content"
           ],
           "properties": {
             "kind": {
@@ -2402,9 +2430,8 @@
             "range": {
               "$ref": "#/$defs/DocumentOperation__region"
             },
-            "text": {
-              "type": "string",
-              "maxLength": 1000000
+            "content": {
+              "$ref": "#/$defs/DocumentContent__textChildren"
             }
           }
         }
@@ -2432,15 +2459,10 @@
             },
             "attrs": {
               "type": "object",
+              "minProperties": 1,
               "maxProperties": 16,
               "additionalProperties": {
-                "type": [
-                  "string",
-                  "number",
-                  "integer",
-                  "boolean",
-                  "null"
-                ]
+                "$ref": "#/$defs/DocumentOperation__attrPatch"
               }
             }
           }
@@ -2508,7 +2530,7 @@
             "blocks": {
               "type": "array",
               "items": {
-                "$ref": "#/$defs/DocumentOperation__blockNode"
+                "$ref": "#/$defs/DocumentOperation__contentNode"
               }
             }
           }
@@ -2525,12 +2547,16 @@
           "type": "object",
           "required": [
             "kind",
+            "referenceId",
             "sourceRegion",
             "target"
           ],
           "properties": {
             "kind": {
               "const": "ADD_REFERENCE"
+            },
+            "referenceId": {
+              "$ref": "#/$defs/DocumentOperation__id"
             },
             "sourceRegion": {
               "$ref": "#/$defs/DocumentOperation__region"
@@ -2552,7 +2578,9 @@
           "type": "object",
           "required": [
             "kind",
-            "referenceId"
+            "referenceId",
+            "sourceRegion",
+            "target"
           ],
           "properties": {
             "kind": {
@@ -2560,11 +2588,55 @@
             },
             "referenceId": {
               "$ref": "#/$defs/DocumentOperation__id"
+            },
+            "sourceRegion": {
+              "$ref": "#/$defs/DocumentOperation__region"
+            },
+            "target": {
+              "$ref": "#/$defs/DocumentOperation__referenceTarget"
             }
           }
         }
       ],
       "unevaluatedProperties": false
+    },
+    "DocumentOperation__attrPatch": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "action",
+            "value"
+          ],
+          "properties": {
+            "action": {
+              "const": "SET"
+            },
+            "value": {
+              "type": [
+                "string",
+                "number",
+                "integer",
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "action"
+          ],
+          "properties": {
+            "action": {
+              "const": "REMOVE"
+            }
+          }
+        }
+      ]
     },
     "DocumentOperation__referenceTarget": {
       "type": "object",

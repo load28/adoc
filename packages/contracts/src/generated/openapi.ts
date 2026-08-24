@@ -2021,6 +2021,9 @@ export interface components {
         };
         region: {
             /** @constant */
+            kind: "DOCUMENT";
+        } | {
+            /** @constant */
             kind: "BLOCK";
             blockId: components["schemas"]["id"];
         } | {
@@ -2051,6 +2054,15 @@ export interface components {
             precondition: components["schemas"]["precondition"];
             dependsOn?: components["schemas"]["id"][];
         };
+        contentNode: components["schemas"]["block"] | components["schemas"]["listItem"] | components["schemas"]["tableRow"] | components["schemas"]["tableCell"];
+        attrPatch: {
+            /** @constant */
+            action: "SET";
+            value: string | number | boolean | null;
+        } | {
+            /** @constant */
+            action: "REMOVE";
+        };
         referenceTarget: {
             /** @enum {unknown} */
             kind: "DOCUMENT" | "REGION" | "DISCUSSION" | "VOCABULARY" | "EXTERNAL";
@@ -2061,7 +2073,7 @@ export interface components {
             kind: "INSERT_BLOCK";
             parentId: components["schemas"]["id"] | null;
             index: number;
-            block: components["schemas"]["block"];
+            block: components["schemas"]["contentNode"];
         };
         deleteBlock: components["schemas"]["base"] & {
             /** @constant */
@@ -2079,14 +2091,14 @@ export interface components {
             /** @constant */
             kind: "REPLACE_TEXT";
             range: components["schemas"]["region"];
-            text: string;
+            content: components["schemas"]["textChildren"];
         };
         setBlockAttrs: components["schemas"]["base"] & {
             /** @constant */
             kind: "SET_BLOCK_ATTRS";
             blockId: components["schemas"]["id"];
             attrs: {
-                [key: string]: string | number | boolean | null;
+                [key: string]: components["schemas"]["attrPatch"];
             };
         };
         setMarks: components["schemas"]["base"] & {
@@ -2101,11 +2113,12 @@ export interface components {
             /** @constant */
             kind: "REPLACE_REGION";
             region: components["schemas"]["region"];
-            blocks: components["schemas"]["block"][];
+            blocks: components["schemas"]["contentNode"][];
         };
         addReference: components["schemas"]["base"] & {
             /** @constant */
             kind: "ADD_REFERENCE";
+            referenceId: components["schemas"]["id"];
             sourceRegion: components["schemas"]["region"];
             target: components["schemas"]["referenceTarget"];
         };
@@ -2113,6 +2126,8 @@ export interface components {
             /** @constant */
             kind: "REMOVE_REFERENCE";
             referenceId: components["schemas"]["id"];
+            sourceRegion: components["schemas"]["region"];
+            target: components["schemas"]["referenceTarget"];
         };
         /** DocumentOperation */
         "document-operation.schema": {
@@ -2131,6 +2146,9 @@ export interface components {
                     targetHash?: string | null;
                 };
                 region: {
+                    /** @constant */
+                    kind: "DOCUMENT";
+                } | {
                     /** @constant */
                     kind: "BLOCK";
                     blockId: components["schemas"]["id"];
@@ -2157,13 +2175,13 @@ export interface components {
                     affinity: "BEFORE" | "AFTER";
                     contextHash: string;
                 };
-                blockNode: components["schemas"]["block"];
+                contentNode: components["schemas"]["block"] | components["schemas"]["listItem"] | components["schemas"]["tableRow"] | components["schemas"]["tableCell"];
                 insertBlock: components["schemas"]["base"] & {
                     /** @constant */
                     kind: "INSERT_BLOCK";
                     parentId: components["schemas"]["id"] | null;
                     index: number;
-                    block: components["schemas"]["block"];
+                    block: components["schemas"]["contentNode"];
                 };
                 deleteBlock: components["schemas"]["base"] & {
                     /** @constant */
@@ -2181,14 +2199,14 @@ export interface components {
                     /** @constant */
                     kind: "REPLACE_TEXT";
                     range: components["schemas"]["region"];
-                    text: string;
+                    content: components["schemas"]["textChildren"];
                 };
                 setBlockAttrs: components["schemas"]["base"] & {
                     /** @constant */
                     kind: "SET_BLOCK_ATTRS";
                     blockId: components["schemas"]["id"];
                     attrs: {
-                        [key: string]: string | number | boolean | null;
+                        [key: string]: components["schemas"]["attrPatch"];
                     };
                 };
                 setMarks: components["schemas"]["base"] & {
@@ -2203,11 +2221,12 @@ export interface components {
                     /** @constant */
                     kind: "REPLACE_REGION";
                     region: components["schemas"]["region"];
-                    blocks: components["schemas"]["block"][];
+                    blocks: components["schemas"]["contentNode"][];
                 };
                 addReference: components["schemas"]["base"] & {
                     /** @constant */
                     kind: "ADD_REFERENCE";
+                    referenceId: components["schemas"]["id"];
                     sourceRegion: components["schemas"]["region"];
                     target: components["schemas"]["referenceTarget"];
                 };
@@ -2215,6 +2234,16 @@ export interface components {
                     /** @constant */
                     kind: "REMOVE_REFERENCE";
                     referenceId: components["schemas"]["id"];
+                    sourceRegion: components["schemas"]["region"];
+                    target: components["schemas"]["referenceTarget"];
+                };
+                attrPatch: {
+                    /** @constant */
+                    action: "SET";
+                    value: string | number | boolean | null;
+                } | {
+                    /** @constant */
+                    action: "REMOVE";
                 };
                 referenceTarget: {
                     /** @enum {unknown} */

@@ -122,6 +122,14 @@ name = "adoc-document"
 version = "0.1.0"
 dependencies = [
  "adoc-kernel",
+ "hex",
+ "serde",
+ "serde_json",
+ "sha1",
+ "sha2",
+ "thiserror",
+ "url",
+ "uuid",
 ]
 
 [[package]]

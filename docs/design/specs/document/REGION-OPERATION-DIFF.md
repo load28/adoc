@@ -5,16 +5,22 @@
 
 ## Region
 
-`BLOCK(blockId)`, `BLOCK_RANGE(startId,endId)`, `SECTION(headingId)`,
+`DOCUMENT`, `BLOCK(blockId)`, `BLOCK_RANGE(startId,endId)`, `SECTION(headingId)`,
 `TEXT_RANGE(blockId,fromAnchor,toAnchor,quoteHash)`를 지원한다. text anchor는 주변 text hash와
 offset affinity를 함께 가져 편집 후 재위치한다. 해석 불가하면 `ORPHANED`이지 임의 위치로
 붙이지 않는다.
+
+`DOCUMENT`는 root children 전체다. `BLOCK_RANGE`의 두 Block은 같은 parent의 연속 구간이어야 한다.
+`SECTION`은 heading부터 같은 parent에서 다음 같거나 높은 level heading 직전까지다. text offset은
+Browser와 같은 UTF-16 code unit이며 surrogate pair 내부 offset은 유효하지 않다.
 
 ## Operation
 
 insertBlock, deleteBlock, moveBlock, replaceText, setBlockAttrs, setMarks, replaceRegion,
 addReference, removeReference를 지원한다. 각 Operation은 opId, scope Region, precondition과
-payload를 가진다.
+payload를 가진다. replaceText는 plain string이 아니라 inline content를 받아 mark와 hard break를
+손실 없이 표현한다. Reference 두 연산은 같은 referenceId·sourceRegion·target snapshot을 가져
+서로 완전한 역연산이 된다.
 
 ## Validation·apply
 

@@ -1,0 +1,42 @@
+{
+  "baseRevision": 0,
+  "content": { "schemaVersion": 1, "root": { "type": "doc", "children": [] } },
+  "references": [],
+  "operations": [
+    {
+      "opId": "00000000-0000-0000-0000-000000000002",
+      "kind": "INSERT_BLOCK",
+      "scope": { "kind": "DOCUMENT" },
+      "precondition": { "draftRevision": 0, "targetHash": null },
+      "dependsOn": [],
+      "parentId": null,
+      "index": 1,
+      "block": { "id": "00000000-0000-0000-0000-000000000012", "type": "paragraph", "children": [{ "type": "text", "text": "나" }] }
+    },
+    {
+      "opId": "00000000-0000-0000-0000-000000000001",
+      "kind": "INSERT_BLOCK",
+      "scope": { "kind": "DOCUMENT" },
+      "precondition": { "draftRevision": 0, "targetHash": null },
+      "dependsOn": [],
+      "parentId": null,
+      "index": 0,
+      "block": { "id": "00000000-0000-0000-0000-000000000011", "type": "paragraph", "children": [{ "type": "text", "text": "가" }] }
+    }
+  ],
+  "expected": {
+    "content": {
+      "schemaVersion": 1,
+      "root": {
+        "type": "doc",
+        "children": [
+          { "id": "00000000-0000-0000-0000-000000000011", "type": "paragraph", "children": [{ "type": "text", "text": "가" }] },
+          { "id": "00000000-0000-0000-0000-000000000012", "type": "paragraph", "children": [{ "type": "text", "text": "나" }] }
+        ]
+      }
+    },
+    "contentFingerprint": "e77bf5ccbdd679d4252ceaff4649982355dbfdf01fa8532cbd407c4ede64253b",
+    "appliedOperationIds": ["00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000002"],
+    "inverseOperationIds": ["a1923dd8-8af3-50cc-819b-533673f8e55c", "42f5e8fb-6e2d-5299-a196-873c737ba574"]
+  }
+}

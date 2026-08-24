@@ -150,7 +150,7 @@ pub mod error {
 ///      "$ref": "#/$defs/DocumentOperation__textAnchor"
 ///    },
 ///    {
-///      "$ref": "#/$defs/DocumentOperation__blockNode"
+///      "$ref": "#/$defs/DocumentOperation__contentNode"
 ///    },
 ///    {
 ///      "$ref": "#/$defs/DocumentOperation__insertBlock"
@@ -178,6 +178,9 @@ pub mod error {
 ///    },
 ///    {
 ///      "$ref": "#/$defs/DocumentOperation__removeReference"
+///    },
+///    {
+///      "$ref": "#/$defs/DocumentOperation__attrPatch"
 ///    },
 ///    {
 ///      "$ref": "#/$defs/DocumentOperation__referenceTarget"
@@ -1109,7 +1112,7 @@ pub enum AdocContractBundle {
     DocumentOperationPrecondition(DocumentOperationPrecondition),
     DocumentOperationRegion(DocumentOperationRegion),
     DocumentOperationTextAnchor(DocumentOperationTextAnchor),
-    DocumentOperationBlockNode(DocumentOperationBlockNode),
+    DocumentOperationContentNode(DocumentOperationContentNode),
     DocumentOperationInsertBlock(DocumentOperationInsertBlock),
     DocumentOperationDeleteBlock(DocumentOperationDeleteBlock),
     DocumentOperationMoveBlock(DocumentOperationMoveBlock),
@@ -1119,6 +1122,7 @@ pub enum AdocContractBundle {
     DocumentOperationReplaceRegion(DocumentOperationReplaceRegion),
     DocumentOperationAddReference(DocumentOperationAddReference),
     DocumentOperationRemoveReference(DocumentOperationRemoveReference),
+    DocumentOperationAttrPatch(DocumentOperationAttrPatch),
     DocumentOperationReferenceTarget(DocumentOperationReferenceTarget),
     EventPayloads(EventPayloads),
     EventPayloadsId(EventPayloadsId),
@@ -1605,9 +1609,9 @@ impl ::std::convert::From<DocumentOperationTextAnchor> for AdocContractBundle {
         Self::DocumentOperationTextAnchor(value)
     }
 }
-impl ::std::convert::From<DocumentOperationBlockNode> for AdocContractBundle {
-    fn from(value: DocumentOperationBlockNode) -> Self {
-        Self::DocumentOperationBlockNode(value)
+impl ::std::convert::From<DocumentOperationContentNode> for AdocContractBundle {
+    fn from(value: DocumentOperationContentNode) -> Self {
+        Self::DocumentOperationContentNode(value)
     }
 }
 impl ::std::convert::From<DocumentOperationInsertBlock> for AdocContractBundle {
@@ -1653,6 +1657,11 @@ impl ::std::convert::From<DocumentOperationAddReference> for AdocContractBundle 
 impl ::std::convert::From<DocumentOperationRemoveReference> for AdocContractBundle {
     fn from(value: DocumentOperationRemoveReference) -> Self {
         Self::DocumentOperationRemoveReference(value)
+    }
+}
+impl ::std::convert::From<DocumentOperationAttrPatch> for AdocContractBundle {
+    fn from(value: DocumentOperationAttrPatch) -> Self {
+        Self::DocumentOperationAttrPatch(value)
     }
 }
 impl ::std::convert::From<DocumentOperationReferenceTarget> for AdocContractBundle {
@@ -7283,12 +7292,16 @@ impl ::std::convert::From<DocumentOperationRemoveReference> for DocumentOperatio
 ///      "type": "object",
 ///      "required": [
 ///        "kind",
+///        "referenceId",
 ///        "sourceRegion",
 ///        "target"
 ///      ],
 ///      "properties": {
 ///        "kind": {
 ///          "const": "ADD_REFERENCE"
+///        },
+///        "referenceId": {
+///          "$ref": "#/$defs/DocumentOperation__id"
 ///        },
 ///        "sourceRegion": {
 ///          "$ref": "#/$defs/DocumentOperation__region"
@@ -7314,6 +7327,8 @@ pub struct DocumentOperationAddReference {
     #[serde(rename = "opId")]
     pub op_id: DocumentOperationId,
     pub precondition: DocumentOperationPrecondition,
+    #[serde(rename = "referenceId")]
+    pub reference_id: DocumentOperationId,
     pub scope: DocumentOperationRegion,
     #[serde(rename = "sourceRegion")]
     pub source_region: DocumentOperationRegion,
@@ -7386,6 +7401,104 @@ impl ::std::convert::TryFrom<::std::string::String> for DocumentOperationAddRefe
         value.parse()
     }
 }
+///`DocumentOperationAttrPatch`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "oneOf": [
+///    {
+///      "type": "object",
+///      "required": [
+///        "action",
+///        "value"
+///      ],
+///      "properties": {
+///        "action": {
+///          "const": "SET"
+///        },
+///        "value": {
+///          "type": [
+///            "string",
+///            "number",
+///            "integer",
+///            "boolean",
+///            "null"
+///          ]
+///        }
+///      },
+///      "additionalProperties": false
+///    },
+///    {
+///      "type": "object",
+///      "required": [
+///        "action"
+///      ],
+///      "properties": {
+///        "action": {
+///          "const": "REMOVE"
+///        }
+///      },
+///      "additionalProperties": false
+///    }
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(tag = "action", content = "value")]
+pub enum DocumentOperationAttrPatch {
+    #[serde(rename = "SET")]
+    Set(DocumentOperationAttrPatchValue),
+    #[serde(rename = "REMOVE")]
+    Remove,
+}
+impl ::std::convert::From<DocumentOperationAttrPatchValue> for DocumentOperationAttrPatch {
+    fn from(value: DocumentOperationAttrPatchValue) -> Self {
+        Self::Set(value)
+    }
+}
+///`DocumentOperationAttrPatchValue`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": [
+///    "string",
+///    "number",
+///    "integer",
+///    "boolean",
+///    "null"
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(untagged)]
+pub enum DocumentOperationAttrPatchValue {
+    Null,
+    Boolean(bool),
+    Integer(i64),
+    Number(f64),
+    String(::std::string::String),
+}
+impl ::std::convert::From<bool> for DocumentOperationAttrPatchValue {
+    fn from(value: bool) -> Self {
+        Self::Boolean(value)
+    }
+}
+impl ::std::convert::From<i64> for DocumentOperationAttrPatchValue {
+    fn from(value: i64) -> Self {
+        Self::Integer(value)
+    }
+}
+impl ::std::convert::From<f64> for DocumentOperationAttrPatchValue {
+    fn from(value: f64) -> Self {
+        Self::Number(value)
+    }
+}
 ///`DocumentOperationBase`
 ///
 /// <details><summary>JSON schema</summary>
@@ -7437,33 +7550,55 @@ pub struct DocumentOperationBase {
     pub precondition: DocumentOperationPrecondition,
     pub scope: DocumentOperationRegion,
 }
-///`DocumentOperationBlockNode`
+///`DocumentOperationContentNode`
 ///
 /// <details><summary>JSON schema</summary>
 ///
 /// ```json
 ///{
-///  "$ref": "#/$defs/DocumentContent__block"
+///  "oneOf": [
+///    {
+///      "$ref": "#/$defs/DocumentContent__block"
+///    },
+///    {
+///      "$ref": "#/$defs/DocumentContent__listItem"
+///    },
+///    {
+///      "$ref": "#/$defs/DocumentContent__tableRow"
+///    },
+///    {
+///      "$ref": "#/$defs/DocumentContent__tableCell"
+///    }
+///  ]
 ///}
 /// ```
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-#[serde(transparent)]
-pub struct DocumentOperationBlockNode(pub DocumentContentBlock);
-impl ::std::ops::Deref for DocumentOperationBlockNode {
-    type Target = DocumentContentBlock;
-    fn deref(&self) -> &DocumentContentBlock {
-        &self.0
-    }
+#[serde(untagged)]
+pub enum DocumentOperationContentNode {
+    Block(DocumentContentBlock),
+    ListItem(DocumentContentListItem),
+    TableRow(DocumentContentTableRow),
+    TableCell(DocumentContentTableCell),
 }
-impl ::std::convert::From<DocumentOperationBlockNode> for DocumentContentBlock {
-    fn from(value: DocumentOperationBlockNode) -> Self {
-        value.0
-    }
-}
-impl ::std::convert::From<DocumentContentBlock> for DocumentOperationBlockNode {
+impl ::std::convert::From<DocumentContentBlock> for DocumentOperationContentNode {
     fn from(value: DocumentContentBlock) -> Self {
-        Self(value)
+        Self::Block(value)
+    }
+}
+impl ::std::convert::From<DocumentContentListItem> for DocumentOperationContentNode {
+    fn from(value: DocumentContentListItem) -> Self {
+        Self::ListItem(value)
+    }
+}
+impl ::std::convert::From<DocumentContentTableRow> for DocumentOperationContentNode {
+    fn from(value: DocumentContentTableRow) -> Self {
+        Self::TableRow(value)
+    }
+}
+impl ::std::convert::From<DocumentContentTableCell> for DocumentOperationContentNode {
+    fn from(value: DocumentContentTableCell) -> Self {
+        Self::TableCell(value)
     }
 }
 ///`DocumentOperationDeleteBlock`
@@ -7651,7 +7786,7 @@ impl ::std::fmt::Display for DocumentOperationId {
 ///      ],
 ///      "properties": {
 ///        "block": {
-///          "$ref": "#/$defs/DocumentOperation__blockNode"
+///          "$ref": "#/$defs/DocumentOperation__contentNode"
 ///        },
 ///        "index": {
 ///          "type": "integer",
@@ -7678,7 +7813,7 @@ impl ::std::fmt::Display for DocumentOperationId {
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 pub struct DocumentOperationInsertBlock {
-    pub block: DocumentOperationBlockNode,
+    pub block: DocumentOperationContentNode,
     #[serde(
         rename = "dependsOn",
         default,
@@ -8202,6 +8337,18 @@ impl ::std::convert::TryFrom<::std::string::String> for DocumentOperationReferen
 ///    {
 ///      "type": "object",
 ///      "required": [
+///        "kind"
+///      ],
+///      "properties": {
+///        "kind": {
+///          "const": "DOCUMENT"
+///        }
+///      },
+///      "additionalProperties": false
+///    },
+///    {
+///      "type": "object",
+///      "required": [
 ///        "blockId",
 ///        "kind"
 ///      ],
@@ -8287,6 +8434,8 @@ impl ::std::convert::TryFrom<::std::string::String> for DocumentOperationReferen
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[serde(tag = "kind", deny_unknown_fields)]
 pub enum DocumentOperationRegion {
+    #[serde(rename = "DOCUMENT")]
+    Document,
     #[serde(rename = "BLOCK")]
     Block {
         #[serde(rename = "blockId")]
@@ -8398,7 +8547,9 @@ impl<'de> ::serde::Deserialize<'de> for DocumentOperationRegionQuoteHash {
 ///      "type": "object",
 ///      "required": [
 ///        "kind",
-///        "referenceId"
+///        "referenceId",
+///        "sourceRegion",
+///        "target"
 ///      ],
 ///      "properties": {
 ///        "kind": {
@@ -8406,6 +8557,12 @@ impl<'de> ::serde::Deserialize<'de> for DocumentOperationRegionQuoteHash {
 ///        },
 ///        "referenceId": {
 ///          "$ref": "#/$defs/DocumentOperation__id"
+///        },
+///        "sourceRegion": {
+///          "$ref": "#/$defs/DocumentOperation__region"
+///        },
+///        "target": {
+///          "$ref": "#/$defs/DocumentOperation__referenceTarget"
 ///        }
 ///      }
 ///    }
@@ -8428,6 +8585,9 @@ pub struct DocumentOperationRemoveReference {
     #[serde(rename = "referenceId")]
     pub reference_id: DocumentOperationId,
     pub scope: DocumentOperationRegion,
+    #[serde(rename = "sourceRegion")]
+    pub source_region: DocumentOperationRegion,
+    pub target: DocumentOperationReferenceTarget,
 }
 ///`DocumentOperationRemoveReferenceKind`
 ///
@@ -8517,7 +8677,7 @@ impl ::std::convert::TryFrom<::std::string::String> for DocumentOperationRemoveR
 ///        "blocks": {
 ///          "type": "array",
 ///          "items": {
-///            "$ref": "#/$defs/DocumentOperation__blockNode"
+///            "$ref": "#/$defs/DocumentOperation__contentNode"
 ///          }
 ///        },
 ///        "kind": {
@@ -8534,7 +8694,7 @@ impl ::std::convert::TryFrom<::std::string::String> for DocumentOperationRemoveR
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 pub struct DocumentOperationReplaceRegion {
-    pub blocks: ::std::vec::Vec<DocumentOperationBlockNode>,
+    pub blocks: ::std::vec::Vec<DocumentOperationContentNode>,
     #[serde(
         rename = "dependsOn",
         default,
@@ -8628,20 +8788,19 @@ impl ::std::convert::TryFrom<::std::string::String> for DocumentOperationReplace
 ///    {
 ///      "type": "object",
 ///      "required": [
+///        "content",
 ///        "kind",
-///        "range",
-///        "text"
+///        "range"
 ///      ],
 ///      "properties": {
+///        "content": {
+///          "$ref": "#/$defs/DocumentContent__textChildren"
+///        },
 ///        "kind": {
 ///          "const": "REPLACE_TEXT"
 ///        },
 ///        "range": {
 ///          "$ref": "#/$defs/DocumentOperation__region"
-///        },
-///        "text": {
-///          "type": "string",
-///          "maxLength": 1000000
 ///        }
 ///      }
 ///    }
@@ -8651,6 +8810,7 @@ impl ::std::convert::TryFrom<::std::string::String> for DocumentOperationReplace
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 pub struct DocumentOperationReplaceText {
+    pub content: DocumentContentTextChildren,
     #[serde(
         rename = "dependsOn",
         default,
@@ -8663,7 +8823,6 @@ pub struct DocumentOperationReplaceText {
     pub precondition: DocumentOperationPrecondition,
     pub range: DocumentOperationRegion,
     pub scope: DocumentOperationRegion,
-    pub text: DocumentOperationReplaceTextText,
 }
 ///`DocumentOperationReplaceTextKind`
 ///
@@ -8732,74 +8891,6 @@ impl ::std::convert::TryFrom<::std::string::String> for DocumentOperationReplace
         value.parse()
     }
 }
-///`DocumentOperationReplaceTextText`
-///
-/// <details><summary>JSON schema</summary>
-///
-/// ```json
-///{
-///  "type": "string",
-///  "maxLength": 1000000
-///}
-/// ```
-/// </details>
-#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-#[serde(transparent)]
-pub struct DocumentOperationReplaceTextText(::std::string::String);
-impl ::std::ops::Deref for DocumentOperationReplaceTextText {
-    type Target = ::std::string::String;
-    fn deref(&self) -> &::std::string::String {
-        &self.0
-    }
-}
-impl ::std::convert::From<DocumentOperationReplaceTextText> for ::std::string::String {
-    fn from(value: DocumentOperationReplaceTextText) -> Self {
-        value.0
-    }
-}
-impl ::std::str::FromStr for DocumentOperationReplaceTextText {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        if value.chars().count() > 1000000usize {
-            return Err("longer than 1000000 characters".into());
-        }
-        Ok(Self(value.to_string()))
-    }
-}
-impl ::std::convert::TryFrom<&str> for DocumentOperationReplaceTextText {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for DocumentOperationReplaceTextText {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for DocumentOperationReplaceTextText {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl<'de> ::serde::Deserialize<'de> for DocumentOperationReplaceTextText {
-    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        ::std::string::String::deserialize(deserializer)?
-            .parse()
-            .map_err(|e: self::error::ConversionError| {
-                <D::Error as ::serde::de::Error>::custom(e.to_string())
-            })
-    }
-}
 ///`DocumentOperationSetBlockAttrs`
 ///
 /// <details><summary>JSON schema</summary>
@@ -8821,14 +8912,9 @@ impl<'de> ::serde::Deserialize<'de> for DocumentOperationReplaceTextText {
 ///        "attrs": {
 ///          "type": "object",
 ///          "maxProperties": 16,
+///          "minProperties": 1,
 ///          "additionalProperties": {
-///            "type": [
-///              "string",
-///              "number",
-///              "integer",
-///              "boolean",
-///              "null"
-///            ]
+///            "$ref": "#/$defs/DocumentOperation__attrPatch"
 ///          }
 ///        },
 ///        "blockId": {
@@ -8845,10 +8931,7 @@ impl<'de> ::serde::Deserialize<'de> for DocumentOperationReplaceTextText {
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 pub struct DocumentOperationSetBlockAttrs {
-    pub attrs: ::std::collections::HashMap<
-        ::std::string::String,
-        DocumentOperationSetBlockAttrsAttrsValue,
-    >,
+    pub attrs: ::std::collections::HashMap<::std::string::String, DocumentOperationAttrPatch>,
     #[serde(rename = "blockId")]
     pub block_id: DocumentOperationId,
     #[serde(
@@ -8862,46 +8945,6 @@ pub struct DocumentOperationSetBlockAttrs {
     pub op_id: DocumentOperationId,
     pub precondition: DocumentOperationPrecondition,
     pub scope: DocumentOperationRegion,
-}
-///`DocumentOperationSetBlockAttrsAttrsValue`
-///
-/// <details><summary>JSON schema</summary>
-///
-/// ```json
-///{
-///  "type": [
-///    "string",
-///    "number",
-///    "integer",
-///    "boolean",
-///    "null"
-///  ]
-///}
-/// ```
-/// </details>
-#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-#[serde(untagged)]
-pub enum DocumentOperationSetBlockAttrsAttrsValue {
-    Null,
-    Boolean(bool),
-    Integer(i64),
-    Number(f64),
-    String(::std::string::String),
-}
-impl ::std::convert::From<bool> for DocumentOperationSetBlockAttrsAttrsValue {
-    fn from(value: bool) -> Self {
-        Self::Boolean(value)
-    }
-}
-impl ::std::convert::From<i64> for DocumentOperationSetBlockAttrsAttrsValue {
-    fn from(value: i64) -> Self {
-        Self::Integer(value)
-    }
-}
-impl ::std::convert::From<f64> for DocumentOperationSetBlockAttrsAttrsValue {
-    fn from(value: f64) -> Self {
-        Self::Number(value)
-    }
 }
 ///`DocumentOperationSetBlockAttrsKind`
 ///

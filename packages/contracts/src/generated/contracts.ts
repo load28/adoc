@@ -39,6 +39,7 @@ export type AdocContractBundle =
   | DocumentOperation_Precondition
   | DocumentOperation_Region
   | DocumentOperation_TextAnchor
+  | DocumentOperation_ContentNode
   | DocumentOperation_InsertBlock
   | DocumentOperation_DeleteBlock
   | DocumentOperation_MoveBlock
@@ -48,6 +49,7 @@ export type AdocContractBundle =
   | DocumentOperation_ReplaceRegion
   | DocumentOperation_AddReference
   | DocumentOperation_RemoveReference
+  | DocumentOperation_AttrPatch
   | DocumentOperation_ReferenceTarget
   | EventEnvelope
   | EventPayloads_Id
@@ -364,6 +366,9 @@ export type AiContracts_Target =
     };
 export type DocumentOperation_Region =
   | {
+      kind: "DOCUMENT";
+    }
+  | {
       kind: "BLOCK";
       blockId: DocumentOperation_Id;
     }
@@ -398,9 +403,11 @@ export type DocumentOperation_InsertBlock = DocumentOperation_Base & {
   kind: "INSERT_BLOCK";
   parentId: DocumentOperation_Id | null;
   index: number;
-  block: DocumentContent_Block;
+  block: DocumentOperation_ContentNode;
   [k: string]: unknown;
 };
+export type DocumentOperation_ContentNode =
+  DocumentContent_Block | DocumentContent_ListItem | DocumentContent_TableRow | DocumentContent_TableCell;
 export type DocumentContent_Block =
   | DocumentContent_Paragraph
   | DocumentContent_Heading
@@ -455,17 +462,25 @@ export type DocumentOperation_MoveBlock = DocumentOperation_Base & {
 export type DocumentOperation_ReplaceText = DocumentOperation_Base & {
   kind: "REPLACE_TEXT";
   range: DocumentOperation_Region;
-  text: string;
+  content: DocumentContent_TextChildren;
   [k: string]: unknown;
 };
 export type DocumentOperation_SetBlockAttrs = DocumentOperation_Base & {
   kind: "SET_BLOCK_ATTRS";
   blockId: DocumentOperation_Id;
   attrs: {
-    [k: string]: string | number | boolean | null;
+    [k: string]: DocumentOperation_AttrPatch;
   };
   [k: string]: unknown;
 };
+export type DocumentOperation_AttrPatch =
+  | {
+      action: "SET";
+      value: string | number | boolean | null;
+    }
+  | {
+      action: "REMOVE";
+    };
 export type DocumentOperation_SetMarks = DocumentOperation_Base & {
   kind: "SET_MARKS";
   range: DocumentOperation_Region;
@@ -476,11 +491,12 @@ export type DocumentOperation_SetMarks = DocumentOperation_Base & {
 export type DocumentOperation_ReplaceRegion = DocumentOperation_Base & {
   kind: "REPLACE_REGION";
   region: DocumentOperation_Region;
-  blocks: DocumentContent_Block[];
+  blocks: DocumentOperation_ContentNode[];
   [k: string]: unknown;
 };
 export type DocumentOperation_AddReference = DocumentOperation_Base & {
   kind: "ADD_REFERENCE";
+  referenceId: DocumentOperation_Id;
   sourceRegion: DocumentOperation_Region;
   target: DocumentOperation_ReferenceTarget;
   [k: string]: unknown;
@@ -488,6 +504,8 @@ export type DocumentOperation_AddReference = DocumentOperation_Base & {
 export type DocumentOperation_RemoveReference = DocumentOperation_Base & {
   kind: "REMOVE_REFERENCE";
   referenceId: DocumentOperation_Id;
+  sourceRegion: DocumentOperation_Region;
+  target: DocumentOperation_ReferenceTarget;
   [k: string]: unknown;
 };
 export type EventEnvelope = {

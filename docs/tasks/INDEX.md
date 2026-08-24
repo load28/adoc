@@ -19,7 +19,8 @@
 | TASK-013 | Identity·Session 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-013](TASK-013-identity-session.md) |
 | TASK-014 | Workspace·Membership·Group 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-014](TASK-014-workspace-membership-group.md) |
 | TASK-015 | Permission·PublishPolicy 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-015](TASK-015-permission-publish-policy.md) |
+| TASK-016 | Content·Operation reducer 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-016](TASK-016-content-operation-reducer.md) |
 
 ## 다음 태스크 번호
 
-**TASK-016**
+**TASK-017**
