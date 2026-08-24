@@ -687,7 +687,7 @@ async fn require_workspace_role(
         Err(GovernanceError::WorkspaceNotFound)
     }
 }
-async fn require_access(
+pub(super) async fn require_access(
     tx: &mut Transaction<'_, Postgres>,
     actor: Uuid,
     workspace: Uuid,
@@ -719,7 +719,7 @@ async fn validate_destination(
     }
     Ok(())
 }
-async fn require_effective_active(
+pub(super) async fn require_effective_active(
     tx: &mut Transaction<'_, Postgres>,
     workspace: Uuid,
     document: Uuid,

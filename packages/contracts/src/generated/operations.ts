@@ -358,6 +358,13 @@ export const operations = [
     "response": "Operation__GetVersionResponse"
   },
   {
+    "operationId": "restoreVersionToDraft",
+    "method": "POST",
+    "path": "/workspaces/{workspaceId}/documents/{documentId}/versions/{versionId}/restore",
+    "request": "Operation__RestoreVersionToDraftRequest",
+    "response": "Operation__RestoreVersionToDraftResponse"
+  },
+  {
     "operationId": "compareVersions",
     "method": "GET",
     "path": "/workspaces/{workspaceId}/documents/{documentId}/version-diff",
@@ -727,13 +734,6 @@ export const operations = [
     "path": "/public/v1/documents/{token}",
     "request": "Operation__GetPublicDocumentRequest",
     "response": "Operation__GetPublicDocumentResponse"
-  },
-  {
-    "operationId": "getPublicDocumentAsset",
-    "method": "GET",
-    "path": "/public/v1/documents/{token}/assets/{assetId}",
-    "request": "Operation__GetPublicDocumentAssetRequest",
-    "response": "Operation__GetPublicDocumentAssetResponse"
   }
 ] as const;
 export type OperationId = typeof operations[number]["operationId"];

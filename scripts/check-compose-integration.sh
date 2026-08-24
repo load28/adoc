@@ -55,6 +55,8 @@ docker compose -p "$project" exec -T postgres psql --username postgres --dbname 
 docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
   <infra/migrations/0006_document_tree_draft_lease.sql >/dev/null
 docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
+  <infra/migrations/0007_publish_version_public_link.sql >/dev/null
+docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
   --tuples-only --no-align --command \
   "SELECT count(*) FROM information_schema.columns WHERE table_name='sessions' AND column_name IN ('hash_key_id','idle_expires_at','absolute_expires_at')" \
   | grep -qx 3
@@ -81,6 +83,7 @@ docker compose -p "$project" --profile test run --rm test-runner \
   --test workspace_governance \
   --test permission_policy \
   --test document_core \
+  --test publishing_version \
   -- --ignored --nocapture
 docker compose -p "$project" --profile backup run --rm backup >/dev/null
 docker compose -p "$project" --profile backup run --rm --entrypoint sh backup -c \

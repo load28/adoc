@@ -665,7 +665,7 @@ async fn validate_policy_candidates(
     }
 }
 
-async fn load_effective_policy<'e, E>(
+pub(super) async fn load_effective_policy<'e, E>(
     executor: E,
     workspace: Uuid,
     document: Uuid,

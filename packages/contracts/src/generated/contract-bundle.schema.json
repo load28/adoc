@@ -703,6 +703,12 @@
       "$ref": "#/$defs/Operation__GetVersionResponse"
     },
     {
+      "$ref": "#/$defs/Operation__RestoreVersionToDraftRequest"
+    },
+    {
+      "$ref": "#/$defs/Operation__RestoreVersionToDraftResponse"
+    },
+    {
       "$ref": "#/$defs/Operation__CompareVersionsRequest"
     },
     {
@@ -1019,12 +1025,6 @@
     },
     {
       "$ref": "#/$defs/Operation__GetPublicDocumentResponse"
-    },
-    {
-      "$ref": "#/$defs/Operation__GetPublicDocumentAssetRequest"
-    },
-    {
-      "$ref": "#/$defs/Operation__GetPublicDocumentAssetResponse"
     },
     {
       "$ref": "#/$defs/AsyncApi__StreamHeaders"
@@ -2985,7 +2985,8 @@
             "CREATED",
             "RENAMED",
             "TRASHED",
-            "RESTORED"
+            "RESTORED",
+            "PUBLISHED"
           ]
         }
       }
@@ -4004,7 +4005,13 @@
         "publishedAt",
         "publisherId",
         "schemaVersion",
-        "content"
+        "contentFingerprint",
+        "basedOnVersionId",
+        "sourceDraftRevision",
+        "content",
+        "summary",
+        "reviewSnapshot",
+        "discussionIds"
       ],
       "properties": {
         "id": {
@@ -4025,13 +4032,36 @@
           "$ref": "#/$defs/OpenApi__Id"
         },
         "schemaVersion": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 1
+        },
+        "contentFingerprint": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "basedOnVersionId": {
+          "$ref": "#/$defs/OpenApi__NullableId"
+        },
+        "sourceDraftRevision": {
+          "type": "integer",
+          "minimum": 0
         },
         "content": {
           "$ref": "#/$defs/DocumentContent"
         },
         "summary": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "reviewSnapshot": {
+          "type": "object"
+        },
+        "discussionIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OpenApi__Id"
+          }
         }
       }
     },
@@ -5230,8 +5260,7 @@
         "versionNumber",
         "publishedAt",
         "schemaVersion",
-        "content",
-        "allowedAssetIds"
+        "content"
       ],
       "properties": {
         "title": {
@@ -5249,12 +5278,6 @@
         },
         "content": {
           "$ref": "#/$defs/DocumentContent"
-        },
-        "allowedAssetIds": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/OpenApi__Id"
-          }
         }
       }
     },
@@ -5290,6 +5313,15 @@
         },
         "currentRevision": {
           "type": "integer"
+        },
+        "baseVersionId": {
+          "$ref": "#/$defs/OpenApi__NullableId"
+        },
+        "currentVersionId": {
+          "$ref": "#/$defs/OpenApi__NullableId"
+        },
+        "draftId": {
+          "$ref": "#/$defs/OpenApi__NullableId"
         },
         "fieldErrors": {
           "type": "array",
@@ -9382,6 +9414,97 @@
         }
       ]
     },
+    "Operation__RestoreVersionToDraftRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "workspaceId": {
+              "$ref": "#/$defs/OpenApi__Id"
+            },
+            "documentId": {
+              "$ref": "#/$defs/OpenApi__Id"
+            },
+            "versionId": {
+              "$ref": "#/$defs/OpenApi__Id"
+            }
+          },
+          "required": [
+            "workspaceId",
+            "documentId",
+            "versionId"
+          ]
+        },
+        "header": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "If-Match": {
+              "type": "string",
+              "pattern": "^\"[0-9]+\"$"
+            },
+            "Idempotency-Key": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
+            }
+          },
+          "required": [
+            "If-Match",
+            "Idempotency-Key",
+            "X-CSRF-Token"
+          ]
+        }
+      },
+      "required": [
+        "path",
+        "header"
+      ]
+    },
+    "Operation__RestoreVersionToDraftResponse": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "body"
+          ],
+          "properties": {
+            "status": {
+              "const": "201"
+            },
+            "body": {
+              "$ref": "#/$defs/OpenApi__Draft"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "body"
+          ],
+          "properties": {
+            "status": {
+              "const": "default"
+            },
+            "body": {
+              "$ref": "#/$defs/OpenApi__Problem"
+            }
+          }
+        }
+      ]
+    },
     "Operation__CompareVersionsRequest": {
       "type": "object",
       "additionalProperties": false,
@@ -9593,25 +9716,48 @@
               "minLength": 16,
               "maxLength": 128
             },
-            "X-Edit-Lease": {
-              "type": "string"
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
             "Idempotency-Key",
-            "X-Edit-Lease"
+            "X-CSRF-Token"
           ]
         },
         "body": {
           "type": "object",
+          "additionalProperties": false,
           "required": [
             "summary"
           ],
+          "dependentRequired": {
+            "clientInstanceId": [
+              "leaseToken"
+            ],
+            "leaseToken": [
+              "clientInstanceId"
+            ]
+          },
           "properties": {
             "summary": {
               "type": "string",
+              "minLength": 1,
               "maxLength": 1000
+            },
+            "clientInstanceId": {
+              "$ref": "#/$defs/OpenApi__NullableId"
+            },
+            "leaseToken": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 43,
+              "maxLength": 43
             }
           }
         }
@@ -13389,11 +13535,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -13487,11 +13639,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         }
       },
@@ -13586,7 +13744,8 @@
           "properties": {
             "token": {
               "type": "string",
-              "minLength": 32
+              "minLength": 43,
+              "maxLength": 43
             }
           },
           "required": [
@@ -13613,65 +13772,6 @@
             },
             "body": {
               "$ref": "#/$defs/OpenApi__PublicDocument"
-            }
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "status"
-          ],
-          "properties": {
-            "status": {
-              "const": "404"
-            }
-          }
-        }
-      ]
-    },
-    "Operation__GetPublicDocumentAssetRequest": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "path": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "token": {
-              "type": "string",
-              "minLength": 32
-            },
-            "assetId": {
-              "$ref": "#/$defs/OpenApi__Id"
-            }
-          },
-          "required": [
-            "token",
-            "assetId"
-          ]
-        }
-      },
-      "required": [
-        "path"
-      ]
-    },
-    "Operation__GetPublicDocumentAssetResponse": {
-      "oneOf": [
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "status",
-            "body"
-          ],
-          "properties": {
-            "status": {
-              "const": "200"
-            },
-            "body": {
-              "type": "string",
-              "format": "binary"
             }
           }
         },

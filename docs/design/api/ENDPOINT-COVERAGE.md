@@ -27,7 +27,7 @@
 | SCR-19 Writing Settings | `getWritingConfiguration` | `updateWritingConfiguration` |
 | SCR-20 AI Settings | `getAIConfiguration`, `getAIUsage`, `getAIProviderHealth` | `updateAIConfiguration` |
 | SCR-21 Audit | `listAuditEvents` | 없음 |
-| SCR-22 Public | `getPublicDocument`, `getPublicDocumentAsset` | 없음 |
+| SCR-22 Public | `getPublicDocument` | 없음 |
 
 Workspace settings의 `updateWorkspace`, `scheduleWorkspaceDeletion`, `cancelWorkspaceDeletion`과
 File metadata의 `getFile`, `downloadFile`, `deleteFile`은 해당 settings·Document attachment UI에서

@@ -454,6 +454,14 @@ paths:
       responses:
         '200': {description: Version, content: {application/json: {schema: {$ref: '#/components/schemas/PublishedVersion'}}}}
         default: {$ref: '#/components/responses/Problem'}
+  /workspaces/{workspaceId}/documents/{documentId}/versions/{versionId}/restore:
+    post:
+      tags: [Document]
+      operationId: restoreVersionToDraft
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/VersionId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
+      responses:
+        '201': {description: New draft copied from the selected immutable version, content: {application/json: {schema: {$ref: '#/components/schemas/Draft'}}}}
+        default: {$ref: '#/components/responses/Problem'}
   /workspaces/{workspaceId}/documents/{documentId}/version-diff:
     get:
       tags: [Document]
@@ -481,10 +489,10 @@ paths:
     post:
       tags: [Document]
       operationId: publishDocument
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/LeaseToken'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody:
         required: true
-        content: {application/json: {schema: {type: object, required: [summary], properties: {summary: {type: string, maxLength: 1000}}}}}
+        content: {application/json: {schema: {type: object, additionalProperties: false, required: [summary], dependentRequired: {clientInstanceId: [leaseToken], leaseToken: [clientInstanceId]}, properties: {summary: {type: string, minLength: 1, maxLength: 1000}, clientInstanceId: {$ref: '#/components/schemas/NullableId'}, leaseToken: {type: [string, 'null'], minLength: 43, maxLength: 43}}}}}
       responses:
         '201': {description: Published, content: {application/json: {schema: {$ref: '#/components/schemas/PublishedVersion'}}}}
         default: {$ref: '#/components/responses/Problem'}
@@ -882,7 +890,7 @@ paths:
     post:
       tags: [Governance]
       operationId: createPublicLink
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody:
         required: true
         content: {application/json: {schema: {type: object, properties: {expiresAt: {type: [string, 'null'], format: date-time}}}}}
@@ -893,7 +901,7 @@ paths:
     delete:
       tags: [Governance]
       operationId: revokePublicLink
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/LinkId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/DocumentId'}, {$ref: '#/components/parameters/LinkId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       responses:
         '204': {description: Revoked}
         default: {$ref: '#/components/responses/Problem'}
@@ -913,22 +921,10 @@ paths:
       servers: [{url: /}]
       operationId: getPublicDocument
       parameters:
-        - {name: token, in: path, required: true, schema: {type: string, minLength: 32}}
+        - {name: token, in: path, required: true, schema: {type: string, minLength: 43, maxLength: 43}}
       responses:
         '200': {description: Latest published document only, content: {application/json: {schema: {$ref: '#/components/schemas/PublicDocument'}}}}
         '404': {description: 'Unknown, revoked, expired, trashed or unpublished'}
-  /public/v1/documents/{token}/assets/{assetId}:
-    get:
-      tags: [Operations]
-      security: []
-      servers: [{url: /}]
-      operationId: getPublicDocumentAsset
-      parameters:
-        - {name: token, in: path, required: true, schema: {type: string, minLength: 32}}
-        - {name: assetId, in: path, required: true, schema: {$ref: '#/components/schemas/Id'}}
-      responses:
-        '200': {description: Asset referenced by the exact current public version, content: {application/octet-stream: {schema: {type: string, format: binary}}}}
-        '404': {description: Token or asset outside exact scope}
 components:
   securitySchemes:
     sessionCookie: {type: apiKey, in: cookie, name: adoc_session}
@@ -1053,7 +1049,7 @@ components:
     EditLease: {type: object, additionalProperties: false, required: [holderUserId, clientInstanceId, expiresAt, revision], properties: {holderUserId: {$ref: '#/components/schemas/Id'}, clientInstanceId: {$ref: '#/components/schemas/Id'}, token: {type: string, writeOnly: true, minLength: 43, maxLength: 43}, expiresAt: {type: string, format: date-time}, revision: {type: integer, minimum: 0}}}
     DocumentOperation: {$ref: '../contracts/document-operation.schema.json'}
     MutationResult: {type: object, additionalProperties: false, required: [revision, contentFingerprint, appliedOperationIds, inverseOperations], properties: {revision: {type: integer, minimum: 1}, contentFingerprint: {type: string, pattern: '^[a-f0-9]{64}$'}, appliedOperationIds: {type: array, items: {$ref: '#/components/schemas/Id'}}, inverseOperations: {type: array, items: {$ref: '#/components/schemas/DocumentOperation'}}}}
-    PublishedVersion: {type: object, additionalProperties: false, required: [id, documentId, number, publishedAt, publisherId, schemaVersion, content], properties: {id: {$ref: '#/components/schemas/Id'}, documentId: {$ref: '#/components/schemas/Id'}, number: {type: integer, minimum: 1}, publishedAt: {type: string, format: date-time}, publisherId: {$ref: '#/components/schemas/Id'}, schemaVersion: {type: integer}, content: {$ref: '../contracts/document-content.schema.json'}, summary: {type: string}}}
+    PublishedVersion: {type: object, additionalProperties: false, required: [id, documentId, number, publishedAt, publisherId, schemaVersion, contentFingerprint, basedOnVersionId, sourceDraftRevision, content, summary, reviewSnapshot, discussionIds], properties: {id: {$ref: '#/components/schemas/Id'}, documentId: {$ref: '#/components/schemas/Id'}, number: {type: integer, minimum: 1}, publishedAt: {type: string, format: date-time}, publisherId: {$ref: '#/components/schemas/Id'}, schemaVersion: {type: integer, minimum: 1}, contentFingerprint: {type: string, pattern: '^[a-f0-9]{64}$'}, basedOnVersionId: {$ref: '#/components/schemas/NullableId'}, sourceDraftRevision: {type: integer, minimum: 0}, content: {$ref: '../contracts/document-content.schema.json'}, summary: {type: string, minLength: 1, maxLength: 1000}, reviewSnapshot: {type: object}, discussionIds: {type: array, items: {$ref: '#/components/schemas/Id'}}}}
     VersionPage: {type: object, additionalProperties: false, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/PublishedVersion'}}, nextCursor: {type: [string, 'null']}}}
     DocumentDiff: {type: object, additionalProperties: false, required: [fromVersionId, toVersionId, operations], properties: {fromVersionId: {$ref: '#/components/schemas/Id'}, toVersionId: {$ref: '#/components/schemas/Id'}, operations: {type: array, items: {$ref: '../contracts/document-operation.schema.json'}}}}
     MoveDocumentInput: {type: object, additionalProperties: false, required: [newParentId, afterDocumentId], properties: {newParentId: {$ref: '#/components/schemas/NullableId'}, afterDocumentId: {$ref: '#/components/schemas/NullableId'}}}
@@ -1091,5 +1087,5 @@ components:
     AIUsage: {type: object, additionalProperties: false, required: [from, to, inputTokens, outputTokens, estimatedMicrounits, jobCount], properties: {from: {type: string, format: date}, to: {type: string, format: date}, inputTokens: {type: integer, minimum: 0}, outputTokens: {type: integer, minimum: 0}, estimatedMicrounits: {type: integer, minimum: 0}, jobCount: {type: integer, minimum: 0}}}
     AIProviderHealth: {type: object, additionalProperties: false, required: [provider, status, checkedAt], properties: {provider: {type: string, enum: [CODEX_CLI, OPENAI_RESPONSES]}, status: {type: string, enum: [HEALTHY, DEGRADED, UNAVAILABLE, UNCONFIGURED]}, checkedAt: {type: string, format: date-time}, code: {type: [string, 'null']}}}
     PublicLinkCreated: {type: object, required: [id, token, url], properties: {id: {$ref: '#/components/schemas/Id'}, token: {type: string, writeOnly: true}, url: {type: string, format: uri}}}
-    PublicDocument: {type: object, additionalProperties: false, required: [title, versionNumber, publishedAt, schemaVersion, content, allowedAssetIds], properties: {title: {type: string}, versionNumber: {type: integer}, publishedAt: {type: string, format: date-time}, schemaVersion: {type: integer}, content: {$ref: '../contracts/document-content.schema.json'}, allowedAssetIds: {type: array, items: {$ref: '#/components/schemas/Id'}}}}
-    Problem: {type: object, required: [type, title, status, code, retryable, correlationId], properties: {type: {type: string, format: uri}, title: {type: string}, status: {type: integer}, code: {type: string}, retryable: {type: boolean}, correlationId: {type: string}, currentRevision: {type: integer}, fieldErrors: {type: array, items: {type: object, required: [field, code], properties: {field: {type: string}, code: {type: string}}}}}}
+    PublicDocument: {type: object, additionalProperties: false, required: [title, versionNumber, publishedAt, schemaVersion, content], properties: {title: {type: string}, versionNumber: {type: integer}, publishedAt: {type: string, format: date-time}, schemaVersion: {type: integer}, content: {$ref: '../contracts/document-content.schema.json'}}}
+    Problem: {type: object, required: [type, title, status, code, retryable, correlationId], properties: {type: {type: string, format: uri}, title: {type: string}, status: {type: integer}, code: {type: string}, retryable: {type: boolean}, correlationId: {type: string}, currentRevision: {type: integer}, baseVersionId: {$ref: '#/components/schemas/NullableId'}, currentVersionId: {$ref: '#/components/schemas/NullableId'}, draftId: {$ref: '#/components/schemas/NullableId'}, fieldErrors: {type: array, items: {type: object, required: [field, code], properties: {field: {type: string}, code: {type: string}}}}}}

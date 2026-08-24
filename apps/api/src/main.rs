@@ -13,11 +13,13 @@ mod document_http;
 mod governance_http;
 mod identity_http;
 mod permission_http;
+mod publishing_http;
 
 use document_http::{DocumentRuntime, document_routes};
 use governance_http::{GovernanceRuntime, governance_routes};
 use identity_http::{IdentityRuntime, identity_routes};
 use permission_http::{PermissionRuntime, permission_routes};
+use publishing_http::{PublishingRuntime, public_routes, publishing_routes};
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -94,6 +96,7 @@ struct HealthState {
     governance: GovernanceRuntime,
     document: DocumentRuntime,
     permission: PermissionRuntime,
+    publishing: PublishingRuntime,
 }
 
 async fn serve() -> Result<(), Box<dyn std::error::Error>> {
@@ -115,6 +118,7 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     let governance = GovernanceRuntime::new(&config, &store)?;
     let permission = PermissionRuntime::new(&config, &store).await?;
     let document = DocumentRuntime::new(&store);
+    let publishing = PublishingRuntime::new(&store);
     let state = HealthState {
         store,
         release_sha: Arc::from(config.common.release_sha.as_str()),
@@ -122,6 +126,7 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
         governance,
         document,
         permission,
+        publishing,
     };
     let app = Router::new()
         .route("/health/live", get(live))
@@ -131,8 +136,10 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
             identity_routes()
                 .merge(governance_routes())
                 .merge(document_routes())
-                .merge(permission_routes()),
+                .merge(permission_routes())
+                .merge(publishing_routes()),
         )
+        .merge(public_routes())
         .with_state(state.clone());
     let listener = tokio::net::TcpListener::bind(bind).await?;
     SafeEvent::new(&telemetry, "SERVICE_STARTED")

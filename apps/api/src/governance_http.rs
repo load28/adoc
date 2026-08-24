@@ -22,7 +22,8 @@ use uuid::Uuid;
 use crate::{
     HealthState,
     identity_http::{
-        Authenticated, Problem, expected_revision, idempotency_key, key_ring, validate_command,
+        Authenticated, Problem, PublishConflict, expected_revision, idempotency_key, key_ring,
+        validate_command,
     },
 };
 
@@ -499,6 +500,18 @@ fn json_value<T: serde::Serialize>(value: T) -> Result<Json<serde_json::Value>, 
 
 impl From<GovernanceError> for Problem {
     fn from(error: GovernanceError) -> Self {
+        let publish_conflict = match &error {
+            GovernanceError::PublishBaseStale {
+                base_version_id,
+                current_version_id,
+                draft_id,
+            } => Some(PublishConflict {
+                base_version_id: *base_version_id,
+                current_version_id: *current_version_id,
+                draft_id: *draft_id,
+            }),
+            _ => None,
+        };
         let (status, code, retryable, current_revision, reference_count) = match error {
             GovernanceError::Validation => (
                 StatusCode::UNPROCESSABLE_ENTITY,
@@ -710,6 +723,62 @@ impl From<GovernanceError> for Problem {
                 None,
                 None,
             ),
+            GovernanceError::VersionNotFound => (
+                StatusCode::NOT_FOUND,
+                "VERSION_NOT_FOUND",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::PublishBaseStale { .. } => (
+                StatusCode::CONFLICT,
+                "PUBLISH_BASE_STALE",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::PublishReviewRequired => (
+                StatusCode::CONFLICT,
+                "PUBLISH_REVIEW_REQUIRED",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::PublishLeaseConflict => (
+                StatusCode::LOCKED,
+                "PUBLISH_LEASE_CONFLICT",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::DocumentUnpublished => (
+                StatusCode::CONFLICT,
+                "DOCUMENT_UNPUBLISHED",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::PublicLinkInvalid => (
+                StatusCode::NOT_FOUND,
+                "PUBLIC_LINK_INVALID",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::PublicLinkStateInvalid => (
+                StatusCode::CONFLICT,
+                "PUBLIC_LINK_STATE_INVALID",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::PublicLinkTokenAlreadyIssued => (
+                StatusCode::CONFLICT,
+                "PUBLIC_LINK_TOKEN_ALREADY_ISSUED",
+                false,
+                None,
+                None,
+            ),
             GovernanceError::IdempotencyKeyReused => (
                 StatusCode::CONFLICT,
                 "IDEMPOTENCY_KEY_REUSED",
@@ -732,6 +801,7 @@ impl From<GovernanceError> for Problem {
             retryable,
             current_revision,
             reference_count,
+            publish_conflict,
         }
     }
 }
@@ -748,11 +818,25 @@ mod tests {
         assert_eq!(revision.status, StatusCode::CONFLICT);
         assert_eq!(revision.code, "REVISION_CONFLICT");
         assert_eq!(revision.current_revision, Some(7));
+        assert!(revision.publish_conflict.is_none());
 
         let group = Problem::from(GovernanceError::GroupInUse { reference_count: 3 });
         assert_eq!(group.status, StatusCode::CONFLICT);
         assert_eq!(group.code, "GROUP_IN_USE");
         assert_eq!(group.reference_count, Some(3));
+
+        let base = Uuid::now_v7();
+        let current = Uuid::now_v7();
+        let draft = Uuid::now_v7();
+        let stale = Problem::from(GovernanceError::PublishBaseStale {
+            base_version_id: Some(base),
+            current_version_id: Some(current),
+            draft_id: draft,
+        });
+        let conflict = stale.publish_conflict.unwrap();
+        assert_eq!(conflict.base_version_id, Some(base));
+        assert_eq!(conflict.current_version_id, Some(current));
+        assert_eq!(conflict.draft_id, draft);
     }
 
     #[test]

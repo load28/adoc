@@ -12,6 +12,7 @@ layer = "adapters"
 [dependencies]
 adoc-application.workspace = true
 adoc-ports.workspace = true
+base64 = "0.22.1"
 chrono = { version = "0.4.42", features = ["serde"] }
 getrandom = "0.3.4"
 hex = "0.4.3"
@@ -28,7 +29,6 @@ tokio = { version = "1", features = ["sync", "time"] }
 uuid = { version = "1.25.0", features = ["serde", "v7"] }
 
 [dev-dependencies]
-base64 = "0.22.1"
 rand = "0.8.7"
 rsa = "0.9.10"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }

@@ -233,6 +233,8 @@ export type AdocContractBundle =
   | Operation__ListVersionsResponse
   | Operation__GetVersionRequest
   | Operation__GetVersionResponse
+  | Operation__RestoreVersionToDraftRequest
+  | Operation__RestoreVersionToDraftResponse
   | Operation__CompareVersionsRequest
   | Operation__CompareVersionsResponse
   | Operation__SubmitReviewDecisionRequest
@@ -339,8 +341,6 @@ export type AdocContractBundle =
   | Operation__OpenWorkspaceStreamResponse
   | Operation__GetPublicDocumentRequest
   | Operation__GetPublicDocumentResponse
-  | Operation__GetPublicDocumentAssetRequest
-  | Operation__GetPublicDocumentAssetResponse
   | AsyncApi__StreamHeaders
   | AsyncApi__OutboxHeaders
   | AsyncApi__WorkspaceEvent
@@ -992,6 +992,15 @@ export type Operation__GetVersionResponse =
       status: "default";
       body: OpenApi__Problem;
     };
+export type Operation__RestoreVersionToDraftResponse =
+  | {
+      status: "201";
+      body: OpenApi__Draft;
+    }
+  | {
+      status: "default";
+      body: OpenApi__Problem;
+    };
 export type Operation__CompareVersionsResponse =
   | {
       status: "200";
@@ -1451,14 +1460,6 @@ export type Operation__GetPublicDocumentResponse =
   | {
       status: "404";
     };
-export type Operation__GetPublicDocumentAssetResponse =
-  | {
-      status: "200";
-      body: string;
-    }
-  | {
-      status: "404";
-    };
 
 export interface AiContracts_Task {
   kind: "COMPOSE" | "REWRITE" | "REVIEW" | "DISCUSSION_APPLY" | "CONFLICT_MERGE" | "KNOWLEDGE_QUERY";
@@ -1675,7 +1676,7 @@ export interface EventPayloads_DocumentChanged {
   documentId: EventPayloads_Id;
   revision: EventPayloads_Revision;
   treeRevision: EventPayloads_Revision;
-  action: "CREATED" | "RENAMED" | "TRASHED" | "RESTORED";
+  action: "CREATED" | "RENAMED" | "TRASHED" | "RESTORED" | "PUBLISHED";
 }
 export interface EventPayloads_DocumentMoved {
   documentId: EventPayloads_Id;
@@ -1850,8 +1851,15 @@ export interface OpenApi__PublishedVersion {
   publishedAt: string;
   publisherId: OpenApi__Id;
   schemaVersion: number;
+  contentFingerprint: string;
+  basedOnVersionId: OpenApi__NullableId;
+  sourceDraftRevision: number;
   content: DocumentContent;
-  summary?: string;
+  summary: string;
+  reviewSnapshot: {
+    [k: string]: unknown;
+  };
+  discussionIds: OpenApi__Id[];
 }
 export interface OpenApi__EditLease {
   holderUserId: OpenApi__Id;
@@ -2129,7 +2137,6 @@ export interface OpenApi__PublicDocument {
   publishedAt: string;
   schemaVersion: number;
   content: DocumentContent;
-  allowedAssetIds: OpenApi__Id[];
 }
 export interface OpenApi__Problem {
   type: string;
@@ -2139,6 +2146,9 @@ export interface OpenApi__Problem {
   retryable: boolean;
   correlationId: string;
   currentRevision?: number;
+  baseVersionId?: OpenApi__NullableId;
+  currentVersionId?: OpenApi__NullableId;
+  draftId?: OpenApi__NullableId;
   fieldErrors?: {
     field: string;
     code: string;
@@ -2658,6 +2668,18 @@ export interface Operation__GetVersionRequest {
     versionId: OpenApi__Id;
   };
 }
+export interface Operation__RestoreVersionToDraftRequest {
+  path: {
+    workspaceId: OpenApi__Id;
+    documentId: OpenApi__Id;
+    versionId: OpenApi__Id;
+  };
+  header: {
+    "If-Match": string;
+    "Idempotency-Key": string;
+    "X-CSRF-Token": string;
+  };
+}
 export interface Operation__CompareVersionsRequest {
   path: {
     workspaceId: OpenApi__Id;
@@ -2691,11 +2713,12 @@ export interface Operation__PublishDocumentRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
-    "X-Edit-Lease": string;
+    "X-CSRF-Token": string;
   };
   body: {
     summary: string;
-    [k: string]: unknown;
+    clientInstanceId?: OpenApi__NullableId;
+    leaseToken?: string | null;
   };
 }
 export interface Operation__ListDiscussionsRequest {
@@ -3186,6 +3209,7 @@ export interface Operation__CreatePublicLinkRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     expiresAt?: string | null;
@@ -3201,6 +3225,7 @@ export interface Operation__RevokePublicLinkRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
 }
 export interface Operation__OpenWorkspaceStreamRequest {
@@ -3212,12 +3237,6 @@ export interface Operation__OpenWorkspaceStreamRequest {
 export interface Operation__GetPublicDocumentRequest {
   path: {
     token: string;
-  };
-}
-export interface Operation__GetPublicDocumentAssetRequest {
-  path: {
-    token: string;
-    assetId: OpenApi__Id;
   };
 }
 export interface AsyncApi__StreamHeaders {

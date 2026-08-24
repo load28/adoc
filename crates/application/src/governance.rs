@@ -798,6 +798,26 @@ pub enum GovernanceError {
     PermissionLastManager,
     #[error("publish policy is invalid")]
     PublishPolicyInvalid,
+    #[error("published version was not found")]
+    VersionNotFound,
+    #[error("draft base is stale")]
+    PublishBaseStale {
+        base_version_id: Option<Uuid>,
+        current_version_id: Option<Uuid>,
+        draft_id: Uuid,
+    },
+    #[error("publish requires a completed review")]
+    PublishReviewRequired,
+    #[error("publish conflicts with an active edit lease")]
+    PublishLeaseConflict,
+    #[error("document has no published version")]
+    DocumentUnpublished,
+    #[error("public link is invalid")]
+    PublicLinkInvalid,
+    #[error("public link state is invalid")]
+    PublicLinkStateInvalid,
+    #[error("public link token was already issued")]
+    PublicLinkTokenAlreadyIssued,
     #[error("idempotency key was reused")]
     IdempotencyKeyReused,
     #[error("governance storage is unavailable")]

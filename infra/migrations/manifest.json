@@ -24,6 +24,10 @@
     {
       "file": "0006_document_tree_draft_lease.sql",
       "sha256": "e99811066c2c4fc167227fda6feb1844c9a76da873e45d7d88b2975fc1d21c7d"
+    },
+    {
+      "file": "0007_publish_version_public_link.sql",
+      "sha256": "5903e6187fada70b4b15c191266e1dbee24654605bd83c26ad69de504c4747f4"
     }
   ]
 }

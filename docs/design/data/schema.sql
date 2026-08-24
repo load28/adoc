@@ -296,13 +296,17 @@ CREATE TABLE published_versions (
   number bigint NOT NULL CHECK (number > 0),
   content_json jsonb NOT NULL,
   schema_version integer NOT NULL CHECK (schema_version > 0),
+  content_fingerprint char(64) NOT NULL CHECK (content_fingerprint ~ '^[a-f0-9]{64}$'),
+  based_on_version_id uuid,
+  source_draft_revision bigint NOT NULL CHECK (source_draft_revision >= 0),
   publisher_id uuid NOT NULL,
-  summary text NOT NULL DEFAULT '' CHECK (char_length(summary) <= 2000),
+  summary text NOT NULL CHECK (char_length(summary) BETWEEN 1 AND 1000 AND summary = btrim(summary)),
   published_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (id),
   UNIQUE (workspace_id, id),
   UNIQUE (document_id, number),
   FOREIGN KEY (workspace_id, document_id) REFERENCES documents(workspace_id, id) ON DELETE RESTRICT,
+  FOREIGN KEY (workspace_id, based_on_version_id) REFERENCES published_versions(workspace_id, id),
   FOREIGN KEY (workspace_id, publisher_id) REFERENCES memberships(workspace_id, user_id)
 );
 ALTER TABLE documents ADD CONSTRAINT documents_current_version_fk
@@ -360,7 +364,9 @@ CREATE TABLE public_links (
   created_by uuid NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   FOREIGN KEY (workspace_id, document_id) REFERENCES documents(workspace_id, id) ON DELETE CASCADE,
-  FOREIGN KEY (workspace_id, created_by) REFERENCES memberships(workspace_id, user_id)
+  FOREIGN KEY (workspace_id, created_by) REFERENCES memberships(workspace_id, user_id),
+  CHECK (expires_at IS NULL OR expires_at > created_at),
+  CHECK (revoked_at IS NULL OR revoked_at >= created_at)
 );
 CREATE INDEX public_links_active_document_idx ON public_links (workspace_id, document_id)
   WHERE revoked_at IS NULL;

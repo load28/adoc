@@ -6,3 +6,4 @@ pub mod document;
 pub mod governance;
 pub mod identity;
 pub mod permission;
+pub mod publishing;

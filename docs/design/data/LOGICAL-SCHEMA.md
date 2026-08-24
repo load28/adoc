@@ -35,7 +35,7 @@ subject는 active Membership만 허용하도록 deferred constraint trigger로 �
 | workspace_access_revisions | workspace_id, permission_revision, policy_revision, updated_at | cache·projection stamp |
 | drafts | id, workspace_id, document_id, base_version_id, content_json, schema_version, revision, updated_by | unique active document |
 | edit_leases | document_id, holder_user_id, client_instance_id, token_hash, expires_at, released_at, revision | PK document_id, inactive tombstone 유지 |
-| published_versions | id, workspace_id, document_id, number, content_json, schema_version, publisher_id, published_at, summary | unique document+number |
+| published_versions | id, workspace_id, document_id, number, content_json, schema_version, content_fingerprint, based_on_version_id, source_draft_revision, publisher_id, published_at, summary | unique document+number, immutable |
 | version_context | version_id, review_snapshot_json, discussion_ids, source_revision | PK version_id |
 | public_links | id, workspace_id, document_id, token_hash, expires_at, revoked_at, created_by | token unique |
 

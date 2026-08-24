@@ -429,6 +429,14 @@ pub(crate) struct Problem {
     pub(crate) retryable: bool,
     pub(crate) current_revision: Option<i64>,
     pub(crate) reference_count: Option<i64>,
+    pub(crate) publish_conflict: Option<PublishConflict>,
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct PublishConflict {
+    pub(crate) base_version_id: Option<Uuid>,
+    pub(crate) current_version_id: Option<Uuid>,
+    pub(crate) draft_id: Uuid,
 }
 
 impl Problem {
@@ -439,6 +447,7 @@ impl Problem {
             retryable: false,
             current_revision: None,
             reference_count: None,
+            publish_conflict: None,
         }
     }
 }
@@ -452,6 +461,7 @@ impl From<IdentityError> for Problem {
                 retryable: false,
                 current_revision: None,
                 reference_count: None,
+                publish_conflict: None,
             },
             IdentityError::AuthenticationRequired => Self {
                 status: StatusCode::UNAUTHORIZED,
@@ -459,6 +469,7 @@ impl From<IdentityError> for Problem {
                 retryable: false,
                 current_revision: None,
                 reference_count: None,
+                publish_conflict: None,
             },
             IdentityError::InvalidCallback => Self {
                 status: StatusCode::BAD_REQUEST,
@@ -466,6 +477,7 @@ impl From<IdentityError> for Problem {
                 retryable: false,
                 current_revision: None,
                 reference_count: None,
+                publish_conflict: None,
             },
             IdentityError::CsrfInvalid => Self {
                 status: StatusCode::FORBIDDEN,
@@ -473,6 +485,7 @@ impl From<IdentityError> for Problem {
                 retryable: false,
                 current_revision: None,
                 reference_count: None,
+                publish_conflict: None,
             },
             IdentityError::RevisionConflict { current_revision } => Self {
                 status: StatusCode::CONFLICT,
@@ -480,6 +493,7 @@ impl From<IdentityError> for Problem {
                 retryable: false,
                 current_revision: Some(current_revision),
                 reference_count: None,
+                publish_conflict: None,
             },
             IdentityError::IdempotencyKeyReused => Self {
                 status: StatusCode::CONFLICT,
@@ -487,6 +501,7 @@ impl From<IdentityError> for Problem {
                 retryable: false,
                 current_revision: None,
                 reference_count: None,
+                publish_conflict: None,
             },
             IdentityError::ProviderUnavailable => Self {
                 status: StatusCode::SERVICE_UNAVAILABLE,
@@ -494,6 +509,7 @@ impl From<IdentityError> for Problem {
                 retryable: true,
                 current_revision: None,
                 reference_count: None,
+                publish_conflict: None,
             },
             IdentityError::StorageUnavailable => Self {
                 status: StatusCode::SERVICE_UNAVAILABLE,
@@ -501,6 +517,7 @@ impl From<IdentityError> for Problem {
                 retryable: true,
                 current_revision: None,
                 reference_count: None,
+                publish_conflict: None,
             },
             IdentityError::RateLimited => Self {
                 status: StatusCode::TOO_MANY_REQUESTS,
@@ -508,6 +525,7 @@ impl From<IdentityError> for Problem {
                 retryable: true,
                 current_revision: None,
                 reference_count: None,
+                publish_conflict: None,
             },
             IdentityError::Internal => Self::internal(),
         }
@@ -531,6 +549,11 @@ impl IntoResponse for Problem {
         }
         if let Some(count) = self.reference_count {
             body["referenceCount"] = json!(count);
+        }
+        if let Some(conflict) = self.publish_conflict {
+            body["baseVersionId"] = json!(conflict.base_version_id);
+            body["currentVersionId"] = json!(conflict.current_version_id);
+            body["draftId"] = json!(conflict.draft_id);
         }
         let rate_limited = self.code == "RATE_LIMITED";
         let mut response = (

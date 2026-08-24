@@ -187,6 +187,7 @@
 | PLAN-12 | `design/implementation/IDENTITY-SESSION.md` | Google OIDC·opaque session·CSRF·preference 구현 계약 | 구현 기준 |
 | PLAN-13 | `design/implementation/WORKSPACE-MEMBERSHIP-GROUP.md` | Workspace·Membership·Invitation·Group 구현 계약 | 구현 기준 |
 | PLAN-14 | `design/implementation/PERMISSION-PUBLISH-POLICY.md` | Permission Resolver·PublishPolicy 구현 계약 | 구현 기준 |
+| PLAN-17 | `design/implementation/PUBLISH-VERSION-PUBLIC-LINK.md` | Publish·Version·Public capability 구현 계약 | 구현 기준 |
 | PLAN-15 | `design/implementation/CONTENT-OPERATION-REDUCER.md` | Content·Region·Operation reducer 구현 계약 | 구현 기준 |
 | PLAN-16 | `design/implementation/DOCUMENT-TREE-DRAFT-LEASE.md` | Document Tree·Draft·Lease 구현 계약 | 구현 기준 |
 

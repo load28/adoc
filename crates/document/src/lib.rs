@@ -6,6 +6,7 @@ mod content;
 mod model;
 mod reducer;
 mod tree;
+mod version;
 
 pub use content::{ValidatedContent, canonical_hash, normalize_content};
 pub use model::{
@@ -19,3 +20,4 @@ pub use tree::{
     Document, DocumentStatus, DocumentTitle, Draft, EditLease, LeaseDecision, TreeRank,
     TreeValidationError, validate_lease_acquire, validate_lease_holder,
 };
+pub use version::{DiffError, DocumentDiff, PublishedVersion, VersionPage, structural_diff};

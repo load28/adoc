@@ -7,12 +7,12 @@
     "typify": "0.7.0"
   },
   "sources": {
-    "docs/design/api/openapi.yaml": "58be83095d9e04fa6a05b64fc3ae2eead55715eb65b0df51622bd0278bb0fb09",
+    "docs/design/api/openapi.yaml": "9df6dfbe7c4de1c6456b3f5ff09f640de53cfc1a170da4bf281f734a2f654126",
     "docs/design/api/asyncapi.yaml": "56010b252cc20f760995d1f4ad5f9f9977604b8822dfebc26f8593b80bf99d08",
     "docs/design/contracts/ai-contracts.schema.json": "b2a2b5c20d34fa7652350a0061e00ed8c3574d719e3fd073d80a3c62dfc43901",
     "docs/design/contracts/document-content.schema.json": "bb8eec6392aaa24c16740cfe5e823add8cb2bb3a925db2def1c15237ed0d0c7c",
     "docs/design/contracts/document-operation.schema.json": "39b5e691284a5e1fc61293bfb8d58219cb1a857529b8d3f247a5418bbe2c1209",
-    "docs/design/contracts/event-payloads.schema.json": "4f663e0005fbd3af83459d1e26cd3ad55fd81095f5a5faa1c74f74c90aa457ef"
+    "docs/design/contracts/event-payloads.schema.json": "cf35625c2a57cbc94a68203f76ca48a120e24515c068c0c63614779ad512e063"
   },
   "counts": {
     "openapiOperations": 105,

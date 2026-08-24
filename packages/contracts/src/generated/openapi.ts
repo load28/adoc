@@ -576,6 +576,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/documents/{documentId}/versions/{versionId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["restoreVersionToDraft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/documents/{documentId}/version-diff": {
         parameters: {
             query?: never;
@@ -1248,22 +1264,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/public/v1/documents/{token}/assets/{assetId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["getPublicDocumentAsset"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1451,8 +1451,13 @@ export interface components {
             publishedAt: string;
             publisherId: components["schemas"]["Id"];
             schemaVersion: number;
+            contentFingerprint: string;
+            basedOnVersionId: components["schemas"]["NullableId"];
+            sourceDraftRevision: number;
             content: components["schemas"]["document-content.schema"];
-            summary?: string;
+            summary: string;
+            reviewSnapshot: Record<string, never>;
+            discussionIds: components["schemas"]["Id"][];
         };
         VersionPage: {
             items: components["schemas"]["PublishedVersion"][];
@@ -1735,7 +1740,6 @@ export interface components {
             publishedAt: string;
             schemaVersion: number;
             content: components["schemas"]["document-content.schema"];
-            allowedAssetIds: components["schemas"]["Id"][];
         };
         Problem: {
             /** Format: uri */
@@ -1746,6 +1750,9 @@ export interface components {
             retryable: boolean;
             correlationId: string;
             currentRevision?: number;
+            baseVersionId?: components["schemas"]["NullableId"];
+            currentVersionId?: components["schemas"]["NullableId"];
+            draftId?: components["schemas"]["NullableId"];
             fieldErrors?: {
                 field: string;
                 code: string;
@@ -3878,6 +3885,35 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    restoreVersionToDraft: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                documentId: components["parameters"]["DocumentId"];
+                versionId: components["parameters"]["VersionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description New draft copied from the selected immutable version */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Draft"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
     compareVersions: {
         parameters: {
             query: {
@@ -3946,7 +3982,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
-                "X-Edit-Lease": components["parameters"]["LeaseToken"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -3958,6 +3994,8 @@ export interface operations {
             content: {
                 "application/json": {
                     summary: string;
+                    clientInstanceId?: components["schemas"]["NullableId"];
+                    leaseToken?: string | null;
                 };
             };
         };
@@ -5193,6 +5231,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -5227,6 +5266,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -5291,36 +5331,6 @@ export interface operations {
                 };
             };
             /** @description Unknown, revoked, expired, trashed or unpublished */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    getPublicDocumentAsset: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-                assetId: components["schemas"]["Id"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Asset referenced by the exact current public version */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/octet-stream": string;
-                };
-            };
-            /** @description Token or asset outside exact scope */
             404: {
                 headers: {
                     [name: string]: unknown;

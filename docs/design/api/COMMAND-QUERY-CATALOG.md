@@ -67,6 +67,7 @@ type은 [OpenAPI](openapi.yaml), 오류 의미는 [Error Catalog](ERROR-CATALOG.
 | listVersions | `GET /workspaces/{workspaceId}/documents/{documentId}/versions` | Q | Viewer | cursor | — |
 | getVersion | `GET /workspaces/{workspaceId}/documents/{documentId}/versions/{versionId}` | Q | Viewer | — | `VERSION_NOT_FOUND` |
 | compareVersions | `GET /workspaces/{workspaceId}/documents/{documentId}/version-diff` | Q | Viewer | from+to | `VERSION_NOT_FOUND` |
+| restoreVersionToDraft | `POST /workspaces/{workspaceId}/documents/{documentId}/versions/{versionId}/restore` | C | Editor | R | `DRAFT_EXISTS` |
 | publishDocument | `POST /workspaces/{workspaceId}/documents/{documentId}/publish` | C | Editor | R+L | `PUBLISH_REVIEW_REQUIRED` |
 
 ## Permission·Policy·Public Link
@@ -83,7 +84,6 @@ type은 [OpenAPI](openapi.yaml), 오류 의미는 [Error Catalog](ERROR-CATALOG.
 | createPublicLink | `POST /workspaces/{workspaceId}/documents/{documentId}/public-links` | C | Manage | R | `DOCUMENT_UNPUBLISHED` |
 | revokePublicLink | `DELETE /workspaces/{workspaceId}/documents/{documentId}/public-links/{linkId}` | C | Manage | R | `PUBLIC_LINK_STATE_INVALID` |
 | getPublicDocument | `GET /public/v1/documents/{token}` | Q | capability | — | `PUBLIC_LINK_INVALID` |
-| getPublicDocumentAsset | `GET /public/v1/documents/{token}/assets/{assetId}` | Q | capability | — | `PUBLIC_ASSET_NOT_EMBEDDED` |
 
 ## Discussion·Review·Inbox
 
