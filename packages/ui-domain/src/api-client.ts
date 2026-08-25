@@ -15,6 +15,21 @@ export type MutationResult = {
 };
 export type FileUploadView = components["schemas"]["FileUpload"];
 export type FileAssetView = components["schemas"]["FileAsset"];
+export type DiscussionView = components["schemas"]["Discussion"];
+export type DiscussionPage = components["schemas"]["DiscussionPage"];
+export type DiscussionDetail = components["schemas"]["DiscussionDetail"];
+export type RichMessage = components["schemas"]["RichMessage"];
+export type ReviewView = components["schemas"]["Review"];
+export type ReviewDecision = components["schemas"]["ReviewDecisionInput"];
+export type VersionPage = components["schemas"]["VersionPage"];
+export type DocumentDiff = components["schemas"]["DocumentDiff"];
+export type InboxPage = components["schemas"]["InboxPage"];
+export type InboxItem = components["schemas"]["InboxItem"];
+export type SearchPage = components["schemas"]["SearchPage"];
+export type ReferencePage = components["schemas"]["ReferencePage"];
+export type VocabularyPage = components["schemas"]["VocabularyPage"];
+export type VocabularyConcept = components["schemas"]["VocabularyConcept"];
+export type VocabularyTerm = components["schemas"]["VocabularyTerm"];
 
 export type ApiProblem = {
   code: string;
@@ -203,6 +218,217 @@ export class ApiClient {
     );
   }
 
+  discussions(
+    workspaceId: string,
+    documentId: string,
+    cursor?: string,
+    signal?: AbortSignal,
+  ): Promise<DiscussionPage> {
+    return this.#json<DiscussionPage>(
+      withQuery(`${resourcePath(workspaceId, "documents", documentId)}/discussions`, { cursor }),
+      { signal },
+    );
+  }
+
+  createDiscussion(
+    workspaceId: string,
+    documentId: string,
+    input: { title: string; message: RichMessage; topics: components["schemas"]["TopicInput"][] },
+    command: CommandHeaders,
+  ): Promise<DiscussionView> {
+    return this.#json(`${resourcePath(workspaceId, "documents", documentId)}/discussions`, {
+      method: "POST",
+      headers: commandHeaders(command),
+      body: JSON.stringify(input),
+    });
+  }
+
+  discussion(
+    workspaceId: string,
+    discussionId: string,
+    cursor?: string,
+    signal?: AbortSignal,
+  ): Promise<DiscussionDetail> {
+    return this.#json<DiscussionDetail>(
+      withQuery(resourcePath(workspaceId, "discussions", discussionId), { cursor }),
+      { signal },
+    );
+  }
+
+  createMessage(
+    workspaceId: string,
+    discussionId: string,
+    message: RichMessage,
+    command: CommandHeaders,
+  ): Promise<components["schemas"]["Message"]> {
+    return this.#json(`${resourcePath(workspaceId, "discussions", discussionId)}/messages`, {
+      method: "POST",
+      headers: commandHeaders(command),
+      body: JSON.stringify(message),
+    });
+  }
+
+  changeDiscussionStatus(
+    workspaceId: string,
+    discussionId: string,
+    revision: number,
+    action: "close" | "reopen",
+    reason: string,
+    command: CommandHeaders,
+  ): Promise<DiscussionView> {
+    return this.#json(`${resourcePath(workspaceId, "discussions", discussionId)}/${action}`, {
+      method: "POST",
+      headers: commandHeaders(command, revision),
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  requestReview(
+    workspaceId: string,
+    documentId: string,
+    draftRevision: number,
+    command: CommandHeaders,
+  ): Promise<ReviewView> {
+    return this.#json(`${resourcePath(workspaceId, "documents", documentId)}/reviews`, {
+      method: "POST",
+      headers: commandHeaders(command, draftRevision),
+    });
+  }
+
+  review(workspaceId: string, reviewId: string, signal?: AbortSignal): Promise<ReviewView> {
+    return this.#json<ReviewView>(resourcePath(workspaceId, "reviews", reviewId), { signal });
+  }
+
+  submitReviewDecision(
+    workspaceId: string,
+    reviewId: string,
+    revision: number,
+    decision: ReviewDecision,
+    command: CommandHeaders,
+  ): Promise<ReviewView> {
+    return this.#json(`${resourcePath(workspaceId, "reviews", reviewId)}/decisions`, {
+      method: "POST",
+      headers: commandHeaders(command, revision),
+      body: JSON.stringify(decision),
+    });
+  }
+
+  versions(
+    workspaceId: string,
+    documentId: string,
+    cursor?: string,
+    signal?: AbortSignal,
+  ): Promise<VersionPage> {
+    return this.#json<VersionPage>(
+      withQuery(`${resourcePath(workspaceId, "documents", documentId)}/versions`, { cursor }),
+      { signal },
+    );
+  }
+
+  versionDiff(
+    workspaceId: string,
+    documentId: string,
+    from: string,
+    to: string,
+    signal?: AbortSignal,
+  ): Promise<DocumentDiff> {
+    return this.#json<DocumentDiff>(
+      withQuery(`${resourcePath(workspaceId, "documents", documentId)}/version-diff`, { from, to }),
+      { signal },
+    );
+  }
+
+  backlinks(
+    workspaceId: string,
+    documentId: string,
+    cursor?: string,
+    signal?: AbortSignal,
+  ): Promise<ReferencePage> {
+    return this.#json<ReferencePage>(
+      withQuery(`${resourcePath(workspaceId, "documents", documentId)}/backlinks`, { cursor }),
+      { signal },
+    );
+  }
+
+  inbox(
+    workspaceId: string,
+    status: "UNREAD" | "ACTIONABLE" | "RESOLVED" | "ALL",
+    cursor?: string,
+    signal?: AbortSignal,
+  ): Promise<InboxPage> {
+    return this.#json<InboxPage>(
+      withQuery(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/inbox`, { status, cursor }),
+      { signal },
+    );
+  }
+
+  updateInboxItem(
+    workspaceId: string,
+    itemId: string,
+    action: "read" | "resolve",
+    command: CommandHeaders,
+  ): Promise<InboxItem> {
+    return this.#json(
+      `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/inbox/${encodeURIComponent(itemId)}/${action}`,
+      { method: "POST", headers: commandHeaders(command) },
+    );
+  }
+
+  search(
+    workspaceId: string,
+    query: string,
+    cursor?: string,
+    signal?: AbortSignal,
+  ): Promise<SearchPage> {
+    return this.#json<SearchPage>(
+      withQuery(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/search`, {
+        q: query,
+        includeDrafts: "true",
+        limit: "20",
+        cursor,
+      }),
+      { signal },
+    );
+  }
+
+  vocabulary(workspaceId: string, cursor?: string, signal?: AbortSignal): Promise<VocabularyPage> {
+    return this.#json<VocabularyPage>(
+      withQuery(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/vocabulary`, { cursor }),
+      { signal },
+    );
+  }
+
+  writeVocabulary(
+    workspaceId: string,
+    input: { canonicalTerm: string; definition: string; terms: VocabularyTerm[] },
+    command: CommandHeaders,
+    current?: Pick<VocabularyConcept, "id" | "revision">,
+  ): Promise<VocabularyConcept> {
+    const base = `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/vocabulary`;
+    return this.#json(current ? `${base}/${encodeURIComponent(current.id)}` : base, {
+      method: current ? "PUT" : "POST",
+      headers: commandHeaders(command, current?.revision),
+      body: JSON.stringify(input),
+    });
+  }
+
+  deprecateVocabulary(
+    workspaceId: string,
+    concept: Pick<VocabularyConcept, "id" | "revision">,
+    replacementConceptId: string | null,
+    reason: string,
+    command: CommandHeaders,
+  ): Promise<VocabularyConcept> {
+    return this.#json(
+      `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/vocabulary/${encodeURIComponent(concept.id)}/deprecate`,
+      {
+        method: "POST",
+        headers: commandHeaders(command, concept.revision),
+        body: JSON.stringify({ replacementConceptId, reason }),
+      },
+    );
+  }
+
   async #json<T>(path: string, init: RequestInit): Promise<T> {
     if (!path.startsWith("/api/v1/") || path.startsWith("//")) throw new Error("unsafe API path");
     const response = await this.#fetch(path, {
@@ -263,6 +489,13 @@ function leaseHeaders(
 
 function resourcePath(workspaceId: string, kind: string, resourceId: string): string {
   return `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/${kind}/${encodeURIComponent(resourceId)}`;
+}
+
+function withQuery(path: string, values: Record<string, string | undefined>): string {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(values)) if (value !== undefined) query.set(key, value);
+  const encoded = query.toString();
+  return encoded ? `${path}?${encoded}` : path;
 }
 
 function parseProblem(value: unknown): ApiProblem {

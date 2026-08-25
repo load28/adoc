@@ -3,14 +3,17 @@
   "$id": "https://adoc.local/contracts/document-content.schema.json",
   "x-document-id": "CONTRACT-01",
   "title": "DocumentContent",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["schemaVersion", "root"],
-  "properties": {
-    "schemaVersion": { "const": 1 },
-    "root": { "$ref": "#/$defs/doc" }
-  },
+  "$ref": "#/$defs/content",
   "$defs": {
+    "content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "root"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "root": { "$ref": "#/$defs/doc" }
+      }
+    },
     "id": { "type": "string", "format": "uuid" },
     "doc": {
       "type": "object", "additionalProperties": false,

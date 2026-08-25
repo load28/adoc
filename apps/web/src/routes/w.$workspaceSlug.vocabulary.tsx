@@ -1,7 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 
-import { ReservedScreen } from "../shell/reserved-screen";
+import { VocabularyScreen } from "../collaboration/collaboration-knowledge-screen";
 
 export const Route = createFileRoute("/w/$workspaceSlug/vocabulary")({
-  component: () => <ReservedScreen title="Vocabulary" />,
+  component: VocabularyRoute,
 });
+
+function VocabularyRoute() {
+  const workspace = getRouteApi("/w/$workspaceSlug").useLoaderData();
+  return <VocabularyScreen workspaceId={workspace.id} />;
+}

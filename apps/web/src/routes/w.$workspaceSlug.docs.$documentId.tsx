@@ -4,7 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getRouteApi } from "@tanstack/react-router";
 
 import { DocumentEditorScreen } from "../editor/document-editor-screen";
-import { ReservedScreen } from "../shell/reserved-screen";
+import { DocumentCollaborationPanel } from "../collaboration/collaboration-knowledge-screen";
 import { useTranslation } from "../shell/product-app-provider";
 
 export const Route = createFileRoute("/w/$workspaceSlug/docs/$documentId")({
@@ -14,9 +14,27 @@ export const Route = createFileRoute("/w/$workspaceSlug/docs/$documentId")({
 
 function DocumentScreen() {
   const t = useTranslation();
-  const { mode } = Route.useSearch();
-  const { documentId } = Route.useParams();
+  const { mode, panel, discussion, review } = Route.useSearch();
+  const { documentId, workspaceSlug } = Route.useParams();
   const workspace = getRouteApi("/w/$workspaceSlug").useLoaderData();
-  if (mode !== "draft") return <ReservedScreen title={t("route.document")} />;
-  return <DocumentEditorScreen workspaceId={workspace.id} documentId={documentId} />;
+  const selectedPanel = panel ?? "discussion";
+  return (
+    <>
+      {mode === "draft" ? (
+        <DocumentEditorScreen workspaceId={workspace.id} documentId={documentId} />
+      ) : (
+        <main className="resource-screen">
+          <h1>{t("route.document")}</h1>
+        </main>
+      )}
+      <DocumentCollaborationPanel
+        workspaceId={workspace.id}
+        workspaceSlug={workspaceSlug}
+        documentId={documentId}
+        panel={selectedPanel === "ai" ? "discussion" : selectedPanel}
+        discussionId={discussion}
+        reviewId={review}
+      />
+    </>
+  );
 }

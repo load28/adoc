@@ -1458,7 +1458,7 @@ export interface components {
             revision: number;
             schemaVersion: number;
             contentFingerprint: string;
-            content: components["schemas"]["document-content.schema"];
+            content: components["schemas"]["content"];
         };
         EditLease: {
             holderUserId: components["schemas"]["Id"];
@@ -1486,7 +1486,7 @@ export interface components {
             contentFingerprint: string;
             basedOnVersionId: components["schemas"]["NullableId"];
             sourceDraftRevision: number;
-            content: components["schemas"]["document-content.schema"];
+            content: components["schemas"]["content"];
             summary: string;
             reviewSnapshot: Record<string, never>;
             discussionIds: components["schemas"]["Id"][];
@@ -1534,7 +1534,7 @@ export interface components {
             url?: string;
         };
         RichMessage: {
-            body: components["schemas"]["document-content.schema"];
+            body: components["schemas"]["content"];
             mentionUserIds?: components["schemas"]["Id"][];
             attachmentIds?: components["schemas"]["Id"][];
         };
@@ -1550,7 +1550,7 @@ export interface components {
         Message: {
             id: components["schemas"]["Id"];
             authorId: components["schemas"]["Id"];
-            body: components["schemas"]["document-content.schema"];
+            body: components["schemas"]["content"];
             mentionUserIds: components["schemas"]["Id"][];
             revision: number;
             /** Format: date-time */
@@ -1866,7 +1866,7 @@ export interface components {
             /** Format: date-time */
             publishedAt: string;
             schemaVersion: number;
-            content: components["schemas"]["document-content.schema"];
+            content: components["schemas"]["content"];
         };
         Problem: {
             /** Format: uri */
@@ -2014,142 +2014,10 @@ export interface components {
             type: "doc";
             children: components["schemas"]["block"][];
         };
-        /** DocumentContent */
-        "document-content.schema": {
+        content: {
             /** @constant */
             schemaVersion: 1;
             root: components["schemas"]["doc"];
-            $defs: {
-                /** Format: uuid */
-                id: string;
-                doc: {
-                    /** @constant */
-                    type: "doc";
-                    children: components["schemas"]["block"][];
-                };
-                block: components["schemas"]["paragraph"] | components["schemas"]["heading"] | components["schemas"]["quote"] | components["schemas"]["callout"] | components["schemas"]["list"] | components["schemas"]["codeBlock"] | components["schemas"]["table"] | components["schemas"]["toggle"] | components["schemas"]["divider"] | components["schemas"]["image"] | components["schemas"]["file"];
-                inline: {
-                    /** @constant */
-                    type: "text";
-                    text: string;
-                    marks?: components["schemas"]["mark"][];
-                } | {
-                    /** @constant */
-                    type: "hardBreak";
-                };
-                mark: {
-                    /** @enum {unknown} */
-                    type: "bold" | "italic" | "underline" | "strike" | "code" | "subscript" | "superscript";
-                } | {
-                    /** @constant */
-                    type: "link";
-                    /** Format: uri */
-                    href: string;
-                    title?: string | null;
-                } | {
-                    /** @enum {unknown} */
-                    type: "highlight" | "textColor";
-                    token: string;
-                };
-                textChildren: components["schemas"]["inline"][];
-                paragraph: {
-                    id: components["schemas"]["id"];
-                    /** @constant */
-                    type: "paragraph";
-                    children: components["schemas"]["textChildren"];
-                };
-                heading: {
-                    id: components["schemas"]["id"];
-                    /** @constant */
-                    type: "heading";
-                    level: number;
-                    children: components["schemas"]["textChildren"];
-                };
-                quote: {
-                    id: components["schemas"]["id"];
-                    /** @constant */
-                    type: "quote";
-                    children: (components["schemas"]["paragraph"] | components["schemas"]["list"])[];
-                };
-                callout: {
-                    id: components["schemas"]["id"];
-                    /** @constant */
-                    type: "callout";
-                    /** @enum {unknown} */
-                    tone: "info" | "success" | "warning" | "danger" | "note";
-                    icon?: string | null;
-                    children: (components["schemas"]["paragraph"] | components["schemas"]["list"])[];
-                };
-                list: {
-                    id: components["schemas"]["id"];
-                    /** @enum {unknown} */
-                    type: "bulletList" | "orderedList" | "taskList";
-                    start?: number;
-                    items: components["schemas"]["listItem"][];
-                };
-                listItem: {
-                    id: components["schemas"]["id"];
-                    /** @constant */
-                    type: "listItem";
-                    checked?: boolean | null;
-                    children: (components["schemas"]["paragraph"] | components["schemas"]["list"])[];
-                };
-                codeBlock: {
-                    id: components["schemas"]["id"];
-                    /** @constant */
-                    type: "codeBlock";
-                    language?: string | null;
-                    text: string;
-                };
-                table: {
-                    id: components["schemas"]["id"];
-                    /** @constant */
-                    type: "table";
-                    rows: components["schemas"]["tableRow"][];
-                };
-                tableRow: {
-                    id: components["schemas"]["id"];
-                    /** @constant */
-                    type: "tableRow";
-                    cells: components["schemas"]["tableCell"][];
-                };
-                tableCell: {
-                    id: components["schemas"]["id"];
-                    /** @enum {unknown} */
-                    type: "tableCell" | "tableHeader";
-                    colspan?: number;
-                    rowspan?: number;
-                    children: (components["schemas"]["paragraph"] | components["schemas"]["list"] | components["schemas"]["codeBlock"])[];
-                };
-                toggle: {
-                    id: components["schemas"]["id"];
-                    /** @constant */
-                    type: "toggle";
-                    summary: components["schemas"]["textChildren"];
-                    children: components["schemas"]["block"][];
-                };
-                divider: {
-                    id: components["schemas"]["id"];
-                    /** @constant */
-                    type: "divider";
-                };
-                image: {
-                    id: components["schemas"]["id"];
-                    /** @constant */
-                    type: "image";
-                    assetId: components["schemas"]["id"];
-                    alt: string;
-                    caption?: string | null;
-                    width?: number | null;
-                };
-                file: {
-                    id: components["schemas"]["id"];
-                    /** @constant */
-                    type: "file";
-                    assetId: components["schemas"]["id"];
-                    caption?: string | null;
-                };
-            };
         };
         textAnchor: {
             offset: number;

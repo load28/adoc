@@ -18,5 +18,5 @@ export const Route = createFileRoute("/w/$workspaceSlug")({
 
 function WorkspaceRoute() {
   const workspace = Route.useLoaderData();
-  return <WorkspaceShell slug={workspace.slug} name={workspace.name} />;
+  return <WorkspaceShell id={workspace.id} slug={workspace.slug} name={workspace.name} />;
 }

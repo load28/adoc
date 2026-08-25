@@ -13,6 +13,7 @@ export type AdocContractBundle =
   | AiContracts_Result
   | AiContracts_Proposal
   | DocumentContent
+  | DocumentContent_Content
   | DocumentContent_Id
   | DocumentContent_Doc
   | DocumentContent_Block
@@ -1792,6 +1793,10 @@ export interface DocumentContent_Doc {
    */
   children: DocumentContent_Block[];
 }
+export interface DocumentContent_Content {
+  schemaVersion: 1;
+  root: DocumentContent_Doc;
+}
 export interface EventPayloads_EntityChanged {
   entityId: EventPayloads_Id;
   revision: EventPayloads_Revision;
@@ -1971,7 +1976,7 @@ export interface OpenApi__Draft {
   revision: number;
   schemaVersion: number;
   contentFingerprint: string;
-  content: DocumentContent;
+  content: DocumentContent_Content;
 }
 export interface OpenApi__PublishedVersion {
   id: OpenApi__Id;
@@ -1983,7 +1988,7 @@ export interface OpenApi__PublishedVersion {
   contentFingerprint: string;
   basedOnVersionId: OpenApi__NullableId;
   sourceDraftRevision: number;
-  content: DocumentContent;
+  content: DocumentContent_Content;
   summary: string;
   reviewSnapshot: {
     [k: string]: unknown;
@@ -2041,7 +2046,7 @@ export interface OpenApi__Topic {
   url?: string;
 }
 export interface OpenApi__RichMessage {
-  body: DocumentContent;
+  body: DocumentContent_Content;
   mentionUserIds?: OpenApi__Id[];
   attachmentIds?: OpenApi__Id[];
 }
@@ -2057,7 +2062,7 @@ export interface OpenApi__Discussion {
 export interface OpenApi__Message {
   id: OpenApi__Id;
   authorId: OpenApi__Id;
-  body: DocumentContent;
+  body: DocumentContent_Content;
   mentionUserIds: OpenApi__Id[];
   revision: number;
   createdAt: string;
@@ -2353,7 +2358,7 @@ export interface OpenApi__PublicDocument {
   versionNumber: number;
   publishedAt: string;
   schemaVersion: number;
-  content: DocumentContent;
+  content: DocumentContent_Content;
 }
 export interface OpenApi__Problem {
   type: string;

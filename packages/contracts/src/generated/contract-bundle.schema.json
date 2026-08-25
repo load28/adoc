@@ -40,6 +40,9 @@
       "$ref": "#/$defs/DocumentContent"
     },
     {
+      "$ref": "#/$defs/DocumentContent__content"
+    },
+    {
       "$ref": "#/$defs/DocumentContent__id"
     },
     {
@@ -1581,6 +1584,9 @@
     },
     "DocumentContent": {
       "title": "DocumentContent",
+      "$ref": "#/$defs/DocumentContent__content"
+    },
+    "DocumentContent__content": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -4123,7 +4129,7 @@
           "pattern": "^[a-f0-9]{64}$"
         },
         "content": {
-          "$ref": "#/$defs/DocumentContent"
+          "$ref": "#/$defs/DocumentContent__content"
         }
       }
     },
@@ -4246,7 +4252,7 @@
           "minimum": 0
         },
         "content": {
-          "$ref": "#/$defs/DocumentContent"
+          "$ref": "#/$defs/DocumentContent__content"
         },
         "summary": {
           "type": "string",
@@ -4443,7 +4449,7 @@
       ],
       "properties": {
         "body": {
-          "$ref": "#/$defs/DocumentContent"
+          "$ref": "#/$defs/DocumentContent__content"
         },
         "mentionUserIds": {
           "type": "array",
@@ -4517,7 +4523,7 @@
           "$ref": "#/$defs/OpenApi__Id"
         },
         "body": {
-          "$ref": "#/$defs/DocumentContent"
+          "$ref": "#/$defs/DocumentContent__content"
         },
         "mentionUserIds": {
           "type": "array",
@@ -5918,7 +5924,7 @@
           "type": "integer"
         },
         "content": {
-          "$ref": "#/$defs/DocumentContent"
+          "$ref": "#/$defs/DocumentContent__content"
         }
       }
     },

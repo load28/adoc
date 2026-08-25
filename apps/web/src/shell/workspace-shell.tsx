@@ -14,8 +14,14 @@ import { Box, Stack, Text } from "@atlaskit/primitives";
 import { Outlet, useLocation } from "@tanstack/react-router";
 
 import { useTranslation } from "./product-app-provider";
+import { useWorkspaceRealtime } from "../collaboration/workspace-realtime";
 
-export function WorkspaceShell({ slug, name }: Readonly<{ slug: string; name: string }>) {
+export function WorkspaceShell({
+  id,
+  slug,
+  name,
+}: Readonly<{ id: string; slug: string; name: string }>) {
+  useWorkspaceRealtime(id);
   const t = useTranslation();
   const location = useLocation();
   const base = `/w/${encodeURIComponent(slug)}`;

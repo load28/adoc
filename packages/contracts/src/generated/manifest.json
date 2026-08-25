@@ -7,10 +7,10 @@
     "typify": "0.7.0"
   },
   "sources": {
-    "docs/design/api/openapi.yaml": "5ff6dfddfb55a4429a450603724ad0d95f2582be8a09a8251daf76c2ed4fdd71",
+    "docs/design/api/openapi.yaml": "4d0b222376a0d3e6266348fa55ce2abda3c3451325cfb56d8645eae99c03dee3",
     "docs/design/api/asyncapi.yaml": "987f600805d0b851054058984978c1f0a6642063cf6d06a5eba7228a04af5ea1",
     "docs/design/contracts/ai-contracts.schema.json": "7c582f557477a2cac3a8b1fa48e270fcb538ef374d5eb8fb912eae33ca10fb46",
-    "docs/design/contracts/document-content.schema.json": "bb8eec6392aaa24c16740cfe5e823add8cb2bb3a925db2def1c15237ed0d0c7c",
+    "docs/design/contracts/document-content.schema.json": "cacd6550ccb28932f61e6638958fc4ad9f6d6fa80bacac74a44ccf7ae3e40bbf",
     "docs/design/contracts/document-operation.schema.json": "957d4da493d7354fb052d355253aca4a867aed87c4fcf4caceb0d0213aa224da",
     "docs/design/contracts/event-payloads.schema.json": "7686a4df58896bc7fba5200bc8a1bc2a56f47465150bed98a345a9a3ba788faa"
   },
@@ -18,6 +18,6 @@
     "openapiOperations": 108,
     "asyncapiOperations": 3,
     "asyncapiMessages": 2,
-    "definitions": 359
+    "definitions": 360
   }
 }

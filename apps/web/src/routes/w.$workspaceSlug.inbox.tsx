@@ -1,7 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 
-import { ReservedScreen } from "../shell/reserved-screen";
+import { InboxScreen } from "../collaboration/collaboration-knowledge-screen";
 
 export const Route = createFileRoute("/w/$workspaceSlug/inbox")({
-  component: () => <ReservedScreen title="Inbox" />,
+  component: InboxRoute,
 });
+
+function InboxRoute() {
+  const workspace = getRouteApi("/w/$workspaceSlug").useLoaderData();
+  return <InboxScreen workspaceId={workspace.id} />;
+}

@@ -72,6 +72,9 @@ pub mod error {
 ///      "$ref": "#/$defs/DocumentContent"
 ///    },
 ///    {
+///      "$ref": "#/$defs/DocumentContent__content"
+///    },
+///    {
 ///      "$ref": "#/$defs/DocumentContent__id"
 ///    },
 ///    {
@@ -1131,6 +1134,7 @@ pub enum AdocContractBundle {
     AiContractsResult(AiContractsResult),
     AiContractsProposal(AiContractsProposal),
     DocumentContent(DocumentContent),
+    DocumentContentContent(DocumentContentContent),
     DocumentContentId(DocumentContentId),
     DocumentContentDoc(DocumentContentDoc),
     DocumentContentBlock(DocumentContentBlock),
@@ -1537,6 +1541,11 @@ impl ::std::convert::From<AiContractsProposal> for AdocContractBundle {
 impl ::std::convert::From<DocumentContent> for AdocContractBundle {
     fn from(value: DocumentContent) -> Self {
         Self::DocumentContent(value)
+    }
+}
+impl ::std::convert::From<DocumentContentContent> for AdocContractBundle {
+    fn from(value: DocumentContentContent) -> Self {
+        Self::DocumentContentContent(value)
     }
 }
 impl ::std::convert::From<DocumentContentId> for AdocContractBundle {
@@ -5430,29 +5439,28 @@ pub struct AsyncApiWorkspaceEvent {
 /// ```json
 ///{
 ///  "title": "DocumentContent",
-///  "type": "object",
-///  "required": [
-///    "root",
-///    "schemaVersion"
-///  ],
-///  "properties": {
-///    "root": {
-///      "$ref": "#/$defs/DocumentContent__doc"
-///    },
-///    "schemaVersion": {
-///      "const": 1
-///    }
-///  },
-///  "additionalProperties": false
+///  "$ref": "#/$defs/DocumentContent__content"
 ///}
 /// ```
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-#[serde(deny_unknown_fields)]
-pub struct DocumentContent {
-    pub root: DocumentContentDoc,
-    #[serde(rename = "schemaVersion")]
-    pub schema_version: ::serde_json::Value,
+#[serde(transparent)]
+pub struct DocumentContent(pub DocumentContentContent);
+impl ::std::ops::Deref for DocumentContent {
+    type Target = DocumentContentContent;
+    fn deref(&self) -> &DocumentContentContent {
+        &self.0
+    }
+}
+impl ::std::convert::From<DocumentContent> for DocumentContentContent {
+    fn from(value: DocumentContent) -> Self {
+        value.0
+    }
+}
+impl ::std::convert::From<DocumentContentContent> for DocumentContent {
+    fn from(value: DocumentContentContent) -> Self {
+        Self(value)
+    }
 }
 ///`DocumentContentBlock`
 ///
@@ -6001,6 +6009,36 @@ impl<'de> ::serde::Deserialize<'de> for DocumentContentCodeBlockText {
                 <D::Error as ::serde::de::Error>::custom(e.to_string())
             })
     }
+}
+///`DocumentContentContent`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "object",
+///  "required": [
+///    "root",
+///    "schemaVersion"
+///  ],
+///  "properties": {
+///    "root": {
+///      "$ref": "#/$defs/DocumentContent__doc"
+///    },
+///    "schemaVersion": {
+///      "const": 1
+///    }
+///  },
+///  "additionalProperties": false
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct DocumentContentContent {
+    pub root: DocumentContentDoc,
+    #[serde(rename = "schemaVersion")]
+    pub schema_version: ::serde_json::Value,
 }
 ///`DocumentContentDivider`
 ///
@@ -14710,7 +14748,7 @@ pub struct OpenApiDocumentTreeNode {
 ///      "$ref": "#/$defs/OpenApi__NullableId"
 ///    },
 ///    "content": {
-///      "$ref": "#/$defs/DocumentContent"
+///      "$ref": "#/$defs/DocumentContent__content"
 ///    },
 ///    "contentFingerprint": {
 ///      "type": "string",
@@ -14740,7 +14778,7 @@ pub struct OpenApiDocumentTreeNode {
 pub struct OpenApiDraft {
     #[serde(rename = "baseVersionId")]
     pub base_version_id: OpenApiNullableId,
-    pub content: DocumentContent,
+    pub content: DocumentContentContent,
     #[serde(rename = "contentFingerprint")]
     pub content_fingerprint: OpenApiDraftContentFingerprint,
     #[serde(rename = "documentId")]
@@ -16289,7 +16327,7 @@ impl ::std::convert::TryFrom<::std::string::String> for OpenApiMembershipStatus 
 ///      "$ref": "#/$defs/OpenApi__Id"
 ///    },
 ///    "body": {
-///      "$ref": "#/$defs/DocumentContent"
+///      "$ref": "#/$defs/DocumentContent__content"
 ///    },
 ///    "createdAt": {
 ///      "type": "string",
@@ -16333,7 +16371,7 @@ impl ::std::convert::TryFrom<::std::string::String> for OpenApiMembershipStatus 
 pub struct OpenApiMessage {
     #[serde(rename = "authorId")]
     pub author_id: OpenApiId,
-    pub body: DocumentContent,
+    pub body: DocumentContentContent,
     #[serde(rename = "createdAt")]
     pub created_at: ::chrono::DateTime<::chrono::offset::Utc>,
     #[serde(
@@ -17262,7 +17300,7 @@ impl ::std::convert::From<AiContractsProposal> for OpenApiProposal {
 ///  ],
 ///  "properties": {
 ///    "content": {
-///      "$ref": "#/$defs/DocumentContent"
+///      "$ref": "#/$defs/DocumentContent__content"
 ///    },
 ///    "publishedAt": {
 ///      "type": "string",
@@ -17285,7 +17323,7 @@ impl ::std::convert::From<AiContractsProposal> for OpenApiProposal {
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct OpenApiPublicDocument {
-    pub content: DocumentContent,
+    pub content: DocumentContentContent,
     #[serde(rename = "publishedAt")]
     pub published_at: ::chrono::DateTime<::chrono::offset::Utc>,
     #[serde(rename = "schemaVersion")]
@@ -17544,7 +17582,7 @@ impl ::std::convert::TryFrom<::std::string::String> for OpenApiPublishPolicyMode
 ///      "$ref": "#/$defs/OpenApi__NullableId"
 ///    },
 ///    "content": {
-///      "$ref": "#/$defs/DocumentContent"
+///      "$ref": "#/$defs/DocumentContent__content"
 ///    },
 ///    "contentFingerprint": {
 ///      "type": "string",
@@ -17599,7 +17637,7 @@ impl ::std::convert::TryFrom<::std::string::String> for OpenApiPublishPolicyMode
 pub struct OpenApiPublishedVersion {
     #[serde(rename = "basedOnVersionId")]
     pub based_on_version_id: OpenApiNullableId,
-    pub content: DocumentContent,
+    pub content: DocumentContentContent,
     #[serde(rename = "contentFingerprint")]
     pub content_fingerprint: OpenApiPublishedVersionContentFingerprint,
     #[serde(rename = "discussionIds")]
@@ -18577,7 +18615,7 @@ pub enum OpenApiReviewerRule {
 ///      "uniqueItems": true
 ///    },
 ///    "body": {
-///      "$ref": "#/$defs/DocumentContent"
+///      "$ref": "#/$defs/DocumentContent__content"
 ///    },
 ///    "mentionUserIds": {
 ///      "type": "array",
@@ -18600,7 +18638,7 @@ pub struct OpenApiRichMessage {
         skip_serializing_if = "::std::option::Option::is_none"
     )]
     pub attachment_ids: ::std::option::Option<Vec<OpenApiId>>,
-    pub body: DocumentContent,
+    pub body: DocumentContentContent,
     #[serde(
         rename = "mentionUserIds",
         default,
