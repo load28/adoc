@@ -6,8 +6,9 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 
 import { PRODUCT_NAME } from "../product";
-import { ProductAppProvider, themeBootstrapScript } from "../shell/product-app-provider";
+import { ProductAppProvider } from "../shell/product-app-provider";
 import { loadShellBootstrap } from "../shell/server-bootstrap";
+import themeBootstrapUrl from "../shell/theme-bootstrap.js?url";
 
 export const Route = createRootRoute({
   loader: () => loadShellBootstrap(),
@@ -44,7 +45,7 @@ function RootDocument({
     <html lang={locale} data-theme-preference={theme}>
       <head>
         <HeadContent />
-        <script>{themeBootstrapScript}</script>
+        <script src={themeBootstrapUrl} />
       </head>
       <body>
         {children}

@@ -288,7 +288,7 @@ async fn logout(
         .map_err(Problem::from)?;
     let mut response = StatusCode::NO_CONTENT.into_response();
     append_set_cookie(&mut response, clear_cookie(SESSION_COOKIE, "/"))?;
-    append_set_cookie(&mut response, clear_cookie(CSRF_COOKIE, "/api/v1"))?;
+    append_set_cookie(&mut response, clear_cookie(CSRF_COOKIE, "/"))?;
     Ok(response)
 }
 
@@ -400,9 +400,7 @@ fn session_cookie(token: &str, max_age_seconds: u64) -> String {
 }
 
 fn csrf_cookie(token: &str, max_age_seconds: u64) -> String {
-    format!(
-        "{CSRF_COOKIE}={token}; Path=/api/v1; Max-Age={max_age_seconds}; Secure; SameSite=Strict"
-    )
+    format!("{CSRF_COOKIE}={token}; Path=/; Max-Age={max_age_seconds}; Secure; SameSite=Strict")
 }
 
 fn login_cookie(token: &str) -> String {
@@ -581,7 +579,9 @@ mod tests {
         assert!(cookie.contains("Secure"));
         assert!(cookie.contains("HttpOnly"));
         assert!(cookie.contains("SameSite=Lax"));
-        assert!(!csrf_cookie("csrf", 43_200).contains("HttpOnly"));
+        let csrf = csrf_cookie("csrf", 43_200);
+        assert!(!csrf.contains("HttpOnly"));
+        assert!(csrf.contains("Path=/;"));
     }
 
     #[test]

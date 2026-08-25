@@ -3,14 +3,17 @@
   "$id": "https://adoc.local/contracts/document-operation.schema.json",
   "x-document-id": "CONTRACT-02",
   "title": "DocumentOperation",
-  "oneOf": [
-    { "$ref": "#/$defs/insertBlock" }, { "$ref": "#/$defs/deleteBlock" },
-    { "$ref": "#/$defs/moveBlock" }, { "$ref": "#/$defs/replaceText" },
-    { "$ref": "#/$defs/setBlockAttrs" }, { "$ref": "#/$defs/setMarks" },
-    { "$ref": "#/$defs/replaceRegion" }, { "$ref": "#/$defs/addReference" },
-    { "$ref": "#/$defs/removeReference" }
-  ],
+  "$ref": "#/$defs/operation",
   "$defs": {
+    "operation": {
+      "oneOf": [
+        { "$ref": "#/$defs/insertBlock" }, { "$ref": "#/$defs/deleteBlock" },
+        { "$ref": "#/$defs/moveBlock" }, { "$ref": "#/$defs/replaceText" },
+        { "$ref": "#/$defs/setBlockAttrs" }, { "$ref": "#/$defs/setMarks" },
+        { "$ref": "#/$defs/replaceRegion" }, { "$ref": "#/$defs/addReference" },
+        { "$ref": "#/$defs/removeReference" }
+      ]
+    },
     "id": { "type": "string", "format": "uuid" },
     "base": {
       "type": "object",

@@ -103,6 +103,9 @@
       "$ref": "#/$defs/DocumentOperation"
     },
     {
+      "$ref": "#/$defs/DocumentOperation__operation"
+    },
+    {
       "$ref": "#/$defs/DocumentOperation__id"
     },
     {
@@ -2201,6 +2204,9 @@
     },
     "DocumentOperation": {
       "title": "DocumentOperation",
+      "$ref": "#/$defs/DocumentOperation__operation"
+    },
+    "DocumentOperation__operation": {
       "oneOf": [
         {
           "$ref": "#/$defs/DocumentOperation__insertBlock"
@@ -4154,7 +4160,7 @@
       }
     },
     "OpenApi__DocumentOperation": {
-      "$ref": "#/$defs/DocumentOperation"
+      "$ref": "#/$defs/DocumentOperation__operation"
     },
     "OpenApi__MutationResult": {
       "type": "object",

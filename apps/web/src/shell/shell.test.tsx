@@ -1,10 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import axe from "axe-core";
+import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { RouteEmpty } from "./common-states";
-import { ProductAppProvider, themeBootstrapScript, toColorMode } from "./product-app-provider";
+import { ProductAppProvider, toColorMode } from "./product-app-provider";
 
 describe("TanStack Atlaskit shell", () => {
   test("renders the same locale and theme inputs on the server", () => {
@@ -20,6 +21,10 @@ describe("TanStack Atlaskit shell", () => {
   });
 
   test("keeps the pre-hydration theme bootstrap closed to fixed preferences", () => {
+    const themeBootstrapScript = readFileSync(
+      new URL("./theme-bootstrap.js", import.meta.url),
+      "utf8",
+    );
     expect(themeBootstrapScript).not.toContain("innerHTML");
     expect(themeBootstrapScript).toContain("themePreference");
     expect(themeBootstrapScript).toContain("prefers-color-scheme");

@@ -199,6 +199,7 @@
 | PLAN-26 | `design/implementation/AI-CONTEXT-RUNTIME-ADAPTERS.md` | AI Context·Runtime Adapter 구현 계약 | 구현 기준 |
 | PLAN-27 | `design/implementation/AI-RESULT-PROPOSAL-RULES.md` | AI Result 검증·Proposal 적용·Writing Rules 구현 계약 | 구현 기준 |
 | PLAN-28 | `design/implementation/TANSTACK-ATLASKIT-SHELL.md` | TanStack SSR shell·Atlaskit·route·theme·i18n 구현 계약 | 구현 기준 |
+| PLAN-29 | `design/implementation/DOCUMENT-EDITOR-UX.md` | Tiptap adapter·lease·operation buffer·암호화 복구 구현 계약 | 구현 기준 |
 | PLAN-15 | `design/implementation/CONTENT-OPERATION-REDUCER.md` | Content·Region·Operation reducer 구현 계약 | 구현 기준 |
 | PLAN-16 | `design/implementation/DOCUMENT-TREE-DRAFT-LEASE.md` | Document Tree·Draft·Lease 구현 계약 | 구현 기준 |
 

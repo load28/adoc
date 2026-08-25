@@ -1,0 +1,70 @@
+.adoc-editor-layout {
+  display: grid;
+  gap: var(--ds-space-200, 16px);
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--ds-space-300, 24px);
+}
+
+.adoc-editor-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-050, 4px);
+  padding: var(--ds-space-100, 8px);
+  background: var(--ds-surface, #fff);
+  border: 1px solid var(--ds-border, #091e4224);
+  border-radius: var(--ds-border-radius-200, 8px);
+}
+
+.adoc-editor-canvas {
+  min-height: 60vh;
+  padding: var(--ds-space-300, 24px);
+  color: var(--ds-text, #172b4d);
+  background: var(--ds-surface, #fff);
+  border: 1px solid var(--ds-border, #091e4224);
+  border-radius: var(--ds-border-radius-200, 8px);
+}
+
+.adoc-editor-canvas:focus-within {
+  border-color: var(--ds-border-focused, #0c66e4);
+  box-shadow: 0 0 0 1px var(--ds-border-focused, #0c66e4);
+}
+
+.adoc-editor-canvas .tiptap {
+  min-height: 55vh;
+  outline: none;
+  line-height: 1.6;
+}
+
+.adoc-editor-canvas table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.adoc-editor-canvas th,
+.adoc-editor-canvas td {
+  min-width: 120px;
+  padding: var(--ds-space-100, 8px);
+  border: 1px solid var(--ds-border, #091e4224);
+}
+
+.adoc-editor-canvas [data-callout] {
+  padding: var(--ds-space-200, 16px);
+  background: var(--ds-background-information, #e9f2ff);
+  border-inline-start: 4px solid var(--ds-border-information, #0c66e4);
+}
+
+@media (max-width: 600px) {
+  .adoc-editor-layout {
+    padding: var(--ds-space-150, 12px);
+  }
+
+  .adoc-editor-canvas {
+    padding: var(--ds-space-200, 16px);
+  }
+}

@@ -135,6 +135,9 @@ pub mod error {
 ///      "$ref": "#/$defs/DocumentOperation"
 ///    },
 ///    {
+///      "$ref": "#/$defs/DocumentOperation__operation"
+///    },
+///    {
 ///      "$ref": "#/$defs/DocumentOperation__id"
 ///    },
 ///    {
@@ -1149,6 +1152,7 @@ pub enum AdocContractBundle {
     DocumentContentImage(DocumentContentImage),
     DocumentContentFile(DocumentContentFile),
     DocumentOperation(DocumentOperation),
+    DocumentOperationOperation(DocumentOperationOperation),
     DocumentOperationId(DocumentOperationId),
     DocumentOperationBase(DocumentOperationBase),
     DocumentOperationPrecondition(DocumentOperationPrecondition),
@@ -1638,6 +1642,11 @@ impl ::std::convert::From<DocumentContentFile> for AdocContractBundle {
 impl ::std::convert::From<DocumentOperation> for AdocContractBundle {
     fn from(value: DocumentOperation) -> Self {
         Self::DocumentOperation(value)
+    }
+}
+impl ::std::convert::From<DocumentOperationOperation> for AdocContractBundle {
+    fn from(value: DocumentOperationOperation) -> Self {
+        Self::DocumentOperationOperation(value)
     }
 }
 impl ::std::convert::From<DocumentOperationId> for AdocContractBundle {
@@ -7727,94 +7736,27 @@ pub struct DocumentContentToggle {
 /// ```json
 ///{
 ///  "title": "DocumentOperation",
-///  "oneOf": [
-///    {
-///      "$ref": "#/$defs/DocumentOperation__insertBlock"
-///    },
-///    {
-///      "$ref": "#/$defs/DocumentOperation__deleteBlock"
-///    },
-///    {
-///      "$ref": "#/$defs/DocumentOperation__moveBlock"
-///    },
-///    {
-///      "$ref": "#/$defs/DocumentOperation__replaceText"
-///    },
-///    {
-///      "$ref": "#/$defs/DocumentOperation__setBlockAttrs"
-///    },
-///    {
-///      "$ref": "#/$defs/DocumentOperation__setMarks"
-///    },
-///    {
-///      "$ref": "#/$defs/DocumentOperation__replaceRegion"
-///    },
-///    {
-///      "$ref": "#/$defs/DocumentOperation__addReference"
-///    },
-///    {
-///      "$ref": "#/$defs/DocumentOperation__removeReference"
-///    }
-///  ]
+///  "$ref": "#/$defs/DocumentOperation__operation"
 ///}
 /// ```
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-#[serde(untagged)]
-pub enum DocumentOperation {
-    InsertBlock(DocumentOperationInsertBlock),
-    DeleteBlock(DocumentOperationDeleteBlock),
-    MoveBlock(DocumentOperationMoveBlock),
-    ReplaceText(DocumentOperationReplaceText),
-    SetBlockAttrs(DocumentOperationSetBlockAttrs),
-    SetMarks(DocumentOperationSetMarks),
-    ReplaceRegion(DocumentOperationReplaceRegion),
-    AddReference(DocumentOperationAddReference),
-    RemoveReference(DocumentOperationRemoveReference),
-}
-impl ::std::convert::From<DocumentOperationInsertBlock> for DocumentOperation {
-    fn from(value: DocumentOperationInsertBlock) -> Self {
-        Self::InsertBlock(value)
+#[serde(transparent)]
+pub struct DocumentOperation(pub DocumentOperationOperation);
+impl ::std::ops::Deref for DocumentOperation {
+    type Target = DocumentOperationOperation;
+    fn deref(&self) -> &DocumentOperationOperation {
+        &self.0
     }
 }
-impl ::std::convert::From<DocumentOperationDeleteBlock> for DocumentOperation {
-    fn from(value: DocumentOperationDeleteBlock) -> Self {
-        Self::DeleteBlock(value)
+impl ::std::convert::From<DocumentOperation> for DocumentOperationOperation {
+    fn from(value: DocumentOperation) -> Self {
+        value.0
     }
 }
-impl ::std::convert::From<DocumentOperationMoveBlock> for DocumentOperation {
-    fn from(value: DocumentOperationMoveBlock) -> Self {
-        Self::MoveBlock(value)
-    }
-}
-impl ::std::convert::From<DocumentOperationReplaceText> for DocumentOperation {
-    fn from(value: DocumentOperationReplaceText) -> Self {
-        Self::ReplaceText(value)
-    }
-}
-impl ::std::convert::From<DocumentOperationSetBlockAttrs> for DocumentOperation {
-    fn from(value: DocumentOperationSetBlockAttrs) -> Self {
-        Self::SetBlockAttrs(value)
-    }
-}
-impl ::std::convert::From<DocumentOperationSetMarks> for DocumentOperation {
-    fn from(value: DocumentOperationSetMarks) -> Self {
-        Self::SetMarks(value)
-    }
-}
-impl ::std::convert::From<DocumentOperationReplaceRegion> for DocumentOperation {
-    fn from(value: DocumentOperationReplaceRegion) -> Self {
-        Self::ReplaceRegion(value)
-    }
-}
-impl ::std::convert::From<DocumentOperationAddReference> for DocumentOperation {
-    fn from(value: DocumentOperationAddReference) -> Self {
-        Self::AddReference(value)
-    }
-}
-impl ::std::convert::From<DocumentOperationRemoveReference> for DocumentOperation {
-    fn from(value: DocumentOperationRemoveReference) -> Self {
-        Self::RemoveReference(value)
+impl ::std::convert::From<DocumentOperationOperation> for DocumentOperation {
+    fn from(value: DocumentOperationOperation) -> Self {
+        Self(value)
     }
 }
 ///`DocumentOperationAddReference`
@@ -8565,6 +8507,102 @@ impl ::std::convert::TryFrom<::std::string::String> for DocumentOperationMoveBlo
         value: ::std::string::String,
     ) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
+    }
+}
+///`DocumentOperationOperation`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "oneOf": [
+///    {
+///      "$ref": "#/$defs/DocumentOperation__insertBlock"
+///    },
+///    {
+///      "$ref": "#/$defs/DocumentOperation__deleteBlock"
+///    },
+///    {
+///      "$ref": "#/$defs/DocumentOperation__moveBlock"
+///    },
+///    {
+///      "$ref": "#/$defs/DocumentOperation__replaceText"
+///    },
+///    {
+///      "$ref": "#/$defs/DocumentOperation__setBlockAttrs"
+///    },
+///    {
+///      "$ref": "#/$defs/DocumentOperation__setMarks"
+///    },
+///    {
+///      "$ref": "#/$defs/DocumentOperation__replaceRegion"
+///    },
+///    {
+///      "$ref": "#/$defs/DocumentOperation__addReference"
+///    },
+///    {
+///      "$ref": "#/$defs/DocumentOperation__removeReference"
+///    }
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(untagged)]
+pub enum DocumentOperationOperation {
+    InsertBlock(DocumentOperationInsertBlock),
+    DeleteBlock(DocumentOperationDeleteBlock),
+    MoveBlock(DocumentOperationMoveBlock),
+    ReplaceText(DocumentOperationReplaceText),
+    SetBlockAttrs(DocumentOperationSetBlockAttrs),
+    SetMarks(DocumentOperationSetMarks),
+    ReplaceRegion(DocumentOperationReplaceRegion),
+    AddReference(DocumentOperationAddReference),
+    RemoveReference(DocumentOperationRemoveReference),
+}
+impl ::std::convert::From<DocumentOperationInsertBlock> for DocumentOperationOperation {
+    fn from(value: DocumentOperationInsertBlock) -> Self {
+        Self::InsertBlock(value)
+    }
+}
+impl ::std::convert::From<DocumentOperationDeleteBlock> for DocumentOperationOperation {
+    fn from(value: DocumentOperationDeleteBlock) -> Self {
+        Self::DeleteBlock(value)
+    }
+}
+impl ::std::convert::From<DocumentOperationMoveBlock> for DocumentOperationOperation {
+    fn from(value: DocumentOperationMoveBlock) -> Self {
+        Self::MoveBlock(value)
+    }
+}
+impl ::std::convert::From<DocumentOperationReplaceText> for DocumentOperationOperation {
+    fn from(value: DocumentOperationReplaceText) -> Self {
+        Self::ReplaceText(value)
+    }
+}
+impl ::std::convert::From<DocumentOperationSetBlockAttrs> for DocumentOperationOperation {
+    fn from(value: DocumentOperationSetBlockAttrs) -> Self {
+        Self::SetBlockAttrs(value)
+    }
+}
+impl ::std::convert::From<DocumentOperationSetMarks> for DocumentOperationOperation {
+    fn from(value: DocumentOperationSetMarks) -> Self {
+        Self::SetMarks(value)
+    }
+}
+impl ::std::convert::From<DocumentOperationReplaceRegion> for DocumentOperationOperation {
+    fn from(value: DocumentOperationReplaceRegion) -> Self {
+        Self::ReplaceRegion(value)
+    }
+}
+impl ::std::convert::From<DocumentOperationAddReference> for DocumentOperationOperation {
+    fn from(value: DocumentOperationAddReference) -> Self {
+        Self::AddReference(value)
+    }
+}
+impl ::std::convert::From<DocumentOperationRemoveReference> for DocumentOperationOperation {
+    fn from(value: DocumentOperationRemoveReference) -> Self {
+        Self::RemoveReference(value)
     }
 }
 ///`DocumentOperationPrecondition`
@@ -14447,26 +14485,26 @@ pub struct OpenApiDocumentDiff {
 ///
 /// ```json
 ///{
-///  "$ref": "#/$defs/DocumentOperation"
+///  "$ref": "#/$defs/DocumentOperation__operation"
 ///}
 /// ```
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[serde(transparent)]
-pub struct OpenApiDocumentOperation(pub DocumentOperation);
+pub struct OpenApiDocumentOperation(pub DocumentOperationOperation);
 impl ::std::ops::Deref for OpenApiDocumentOperation {
-    type Target = DocumentOperation;
-    fn deref(&self) -> &DocumentOperation {
+    type Target = DocumentOperationOperation;
+    fn deref(&self) -> &DocumentOperationOperation {
         &self.0
     }
 }
-impl ::std::convert::From<OpenApiDocumentOperation> for DocumentOperation {
+impl ::std::convert::From<OpenApiDocumentOperation> for DocumentOperationOperation {
     fn from(value: OpenApiDocumentOperation) -> Self {
         value.0
     }
 }
-impl ::std::convert::From<DocumentOperation> for OpenApiDocumentOperation {
-    fn from(value: DocumentOperation) -> Self {
+impl ::std::convert::From<DocumentOperationOperation> for OpenApiDocumentOperation {
+    fn from(value: DocumentOperationOperation) -> Self {
         Self(value)
     }
 }

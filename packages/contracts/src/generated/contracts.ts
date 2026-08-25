@@ -33,7 +33,8 @@ export type AdocContractBundle =
   | DocumentContent_Divider
   | DocumentContent_Image
   | DocumentContent_File
-  | DocumentOperation
+  | DocumentOperation1
+  | DocumentOperation_Operation
   | DocumentOperation_Id
   | DocumentOperation_Base
   | DocumentOperation_Precondition
@@ -535,6 +536,26 @@ export type DocumentOperation_RemoveReference = DocumentOperation_Base & {
   target: DocumentOperation_ReferenceTarget;
   [k: string]: unknown;
 };
+export type DocumentOperation1 =
+  | DocumentOperation_InsertBlock
+  | DocumentOperation_DeleteBlock
+  | DocumentOperation_MoveBlock
+  | DocumentOperation_ReplaceText
+  | DocumentOperation_SetBlockAttrs
+  | DocumentOperation_SetMarks
+  | DocumentOperation_ReplaceRegion
+  | DocumentOperation_AddReference
+  | DocumentOperation_RemoveReference;
+export type DocumentOperation_Operation =
+  | DocumentOperation_InsertBlock
+  | DocumentOperation_DeleteBlock
+  | DocumentOperation_MoveBlock
+  | DocumentOperation_ReplaceText
+  | DocumentOperation_SetBlockAttrs
+  | DocumentOperation_SetMarks
+  | DocumentOperation_ReplaceRegion
+  | DocumentOperation_AddReference
+  | DocumentOperation_RemoveReference;
 export type EventEnvelope = {
   [k: string]: unknown;
 };
@@ -1749,7 +1770,7 @@ export interface AiContracts_Proposal {
    * @minItems 1
    * @maxItems 500
    */
-  operations: [DocumentOperation, ...DocumentOperation[]];
+  operations: [DocumentOperation1, ...DocumentOperation1[]];
   status: "OPEN" | "APPLIED" | "REJECTED" | "STALE" | "CANCELLED";
   revision: number;
   appliedRevision?: number | null;
@@ -1980,7 +2001,7 @@ export interface OpenApi__MutationResult {
   revision: number;
   contentFingerprint: string;
   appliedOperationIds: OpenApi__Id[];
-  inverseOperations: DocumentOperation[];
+  inverseOperations: DocumentOperation_Operation[];
 }
 export interface OpenApi__VersionPage {
   items: OpenApi__PublishedVersion[];
@@ -1989,7 +2010,7 @@ export interface OpenApi__VersionPage {
 export interface OpenApi__DocumentDiff {
   fromVersionId: OpenApi__Id;
   toVersionId: OpenApi__Id;
-  operations: DocumentOperation[];
+  operations: DocumentOperation1[];
 }
 export interface OpenApi__MoveDocumentInput {
   newParentId: OpenApi__NullableId;
@@ -2838,7 +2859,7 @@ export interface Operation__ApplyDraftOperationsRequest {
     /**
      * @minItems 1
      */
-    operations: [DocumentOperation, ...DocumentOperation[]];
+    operations: [DocumentOperation_Operation, ...DocumentOperation_Operation[]];
     [k: string]: unknown;
   };
 }

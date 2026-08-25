@@ -50,5 +50,3 @@ export function toColorMode(theme: ThemePreference): "light" | "dark" | "auto" {
   if (theme === "DARK") return "dark";
   return "auto";
 }
-
-export const themeBootstrapScript = `(function(){var p=document.documentElement.dataset.themePreference;var m=p==='DARK'?'dark':p==='LIGHT'?'light':window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.colorMode=m;})();`;

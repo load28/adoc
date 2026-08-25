@@ -111,7 +111,7 @@ cookie 계약은 다음과 같다.
 | Cookie | 값 | 속성 |
 |---|---|---|
 | `adoc_session` | opaque token | `Secure; HttpOnly; SameSite=Lax; Path=/; Max-Age=43200` |
-| `adoc_csrf` | random token+MAC | `Secure; SameSite=Strict; Path=/api/v1; Max-Age=43200` |
+| `adoc_csrf` | random token+MAC | `Secure; SameSite=Strict; Path=/; Max-Age=43200`, SPA가 double-submit header를 구성하도록 HttpOnly 미사용 |
 | `adoc_login` | flow marker | `Secure; HttpOnly; SameSite=Lax; Path=/api/v1/auth/google; Max-Age=600` |
 
 logout은 session row를 idempotent revoke하고 세 cookie를 `Max-Age=0`으로 제거한다. session 원문,

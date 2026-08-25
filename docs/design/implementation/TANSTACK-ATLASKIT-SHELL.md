@@ -93,8 +93,8 @@ denied/not-found, blocking error, loading, empty, ready 중 하나만 렌더링�
 한 번 import한다. theme preference는 `LIGHT|DARK|SYSTEM`, locale은 `ko|en`의 폐쇄형 값이다.
 
 SSR은 preference 또는 anonymous default `SYSTEM`을 `data-color-mode`와 초기 theme bootstrap에
-반영한다. hydration 전 실행되는 bootstrap은 고정된 세 값만 해석하고 임의 문자열이나 HTML을
-삽입하지 않는다. client는 `setGlobalTheme`로 같은 값을 적용하고 System이면
+반영한다. hydration 전 실행되는 bootstrap은 same-origin 정적 script file이며 고정된 세 값만
+해석하고 임의 문자열이나 HTML을 삽입하지 않는다. client는 `setGlobalTheme`로 같은 값을 적용하고 System이면
 `prefers-color-scheme` 변경을 구독한다. locale은 `<html lang>`과 translator context에 동시에
 적용한다.
 
