@@ -41,7 +41,15 @@
 | TASK-035 | Settings·Audit·Public UX 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-035](TASK-035-settings-audit-public-ux.md) |
 | TASK-036 | System Hardening | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-036](TASK-036-system-hardening.md) |
 | TASK-037 | Full Acceptance Release | 구현·운영 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-037](TASK-037-full-acceptance-release.md) |
+| TASK-038 | 전체 설계·구현 완료 감사 | 조사·품질 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-038](TASK-038-full-implementation-completion-audit.md) |
+| TASK-039 | Workspace·Document Tree 사용자 여정 완성 | 구현 | 대기 | — | — | [TASK-039](TASK-039-workspace-document-tree-journeys.md) |
+| TASK-040 | Editor·Publish·Version 사용자 여정 완성 | 구현 | 대기 | — | — | [TASK-040](TASK-040-editor-publish-version-journeys.md) |
+| TASK-041 | Collaboration·Knowledge·Governance 사용자 여정 완성 | 구현 | 대기 | — | — | [TASK-041](TASK-041-collaboration-knowledge-governance-journeys.md) |
+| TASK-042 | Web API client·화면 계약 완전성 | 구현·품질 | 대기 | — | — | [TASK-042](TASK-042-web-api-screen-contract-completeness.md) |
+| TASK-043 | Operation·Event·State exact contract coverage | 품질 | 대기 | — | — | [TASK-043](TASK-043-exact-contract-coverage.md) |
+| TASK-044 | Browser E2E·접근성·시각·호환성 검증 | 품질 | 대기 | — | — | [TASK-044](TASK-044-browser-quality-gates.md) |
+| TASK-045 | 운영 hardening·최종 release 재검증 | 구현·운영 | 대기 | — | — | [TASK-045](TASK-045-operations-final-release.md) |
 
 ## 다음 태스크 번호
 
-**TASK-038**
+**TASK-046**

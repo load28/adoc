@@ -15,7 +15,7 @@
   "scripts": {
     "build": "cargo build --workspace --all-targets && bun run --sequential --workspaces --if-present build",
     "check": "bun run check:toolchains && bun run contracts:check && bun run migrations:check && bun run check:compose && bun run check:hardening && bun run check:acceptance && bun run format:check && bun run lint && bun run typecheck && bun run test && bun run build && bun run check:security && bun run check:licenses",
-    "check:acceptance": "node scripts/check-acceptance.mjs --self-test",
+    "check:acceptance": "node scripts/check-acceptance.mjs --self-test && node scripts/check-completion-audit.mjs",
     "check:boundaries": "node scripts/check-boundaries.mjs",
     "check:boundaries:self-test": "node scripts/check-boundaries.mjs --self-test",
     "check:cargo-licenses": "node scripts/check-cargo-licenses.mjs",
