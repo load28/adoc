@@ -517,3 +517,87 @@ fn validate_payload(event_type: &str, payload: &Value) -> Result<(), JobExecutio
 fn transient(_: sqlx::Error) -> JobExecutionError {
     JobExecutionError::Transient("DATABASE_UNAVAILABLE")
 }
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::{normalize_event_type, validate_payload};
+
+    #[test]
+    fn event_registry_accepts_every_stream_type_and_exact_payload_shape() {
+        let events = [
+            ("WorkspaceChanged.v1", "WORKSPACE_CHANGED"),
+            ("MembershipChanged.v1", "MEMBERSHIP_CHANGED"),
+            ("InvitationChanged.v1", "INVITATION_CHANGED"),
+            ("GroupChanged.v1", "GROUP_CHANGED"),
+            ("PermissionChanged.v1", "PERMISSION_CHANGED"),
+            ("PublishPolicyChanged.v1", "PUBLISH_POLICY_CHANGED"),
+            ("DocumentChanged.v1", "DOCUMENT_CHANGED"),
+            ("DocumentMoved.v1", "DOCUMENT_MOVED"),
+            ("DraftChanged.v1", "DRAFT_CHANGED"),
+            ("LeaseChanged.v1", "LEASE_CHANGED"),
+            ("VersionPublished.v1", "VERSION_PUBLISHED"),
+            ("DiscussionChanged.v1", "DISCUSSION_CHANGED"),
+            ("MessageChanged.v1", "MESSAGE_CHANGED"),
+            ("ReviewChanged.v1", "REVIEW_CHANGED"),
+            ("InboxChanged.v1", "INBOX_CHANGED"),
+            ("ReferenceChanged.v1", "REFERENCE_CHANGED"),
+            ("VocabularyChanged.v1", "VOCABULARY_CHANGED"),
+            ("AIJobChanged.v1", "AI_JOB_CHANGED"),
+            ("ProposalApplied.v1", "PROPOSAL_APPLIED"),
+            ("FileChanged.v1", "FILE_CHANGED"),
+            ("PublicLinkChanged.v1", "PUBLIC_LINK_CHANGED"),
+            ("PurgeChanged.v1", "PURGE_CHANGED"),
+        ];
+        for (wire, canonical) in events {
+            let normalized = normalize_event_type(wire.to_owned()).expect("registered event");
+            assert_eq!(normalized, canonical, "{wire}");
+            let payload = match normalized {
+                "DOCUMENT_CHANGED" => {
+                    json!({"documentId":"id","revision":1,"treeRevision":2,"action":"UPDATED"})
+                }
+                "DOCUMENT_MOVED" => {
+                    json!({"documentId":"id","beforeParentId":null,"afterParentId":"parent","revision":1,"treeRevision":2})
+                }
+                "DRAFT_CHANGED" => {
+                    json!({"documentId":"id","draftId":"draft","revision":1,"operationIds":[]})
+                }
+                "LEASE_CHANGED" => {
+                    json!({"documentId":"id","holderUserId":null,"expiresAt":null,"revision":1})
+                }
+                "VERSION_PUBLISHED" => {
+                    json!({"documentId":"id","versionId":"version","number":1,"sourceDraftRevision":1})
+                }
+                "AI_JOB_CHANGED" => json!({"jobId":"id","status":"RUNNING","jobSequence":1}),
+                "PROPOSAL_APPLIED" => {
+                    json!({"proposalId":"id","documentId":"document","appliedOperationIds":[],"resultRevision":1})
+                }
+                "PURGE_CHANGED" => {
+                    json!({"targetKind":"DOCUMENT","targetId":"id","step":"COMPLETED","status":"COMPLETED"})
+                }
+                _ => json!({"entityId":"id","revision":1,"action":"UPDATED"}),
+            };
+            validate_payload(normalized, &payload).expect("canonical payload");
+        }
+    }
+
+    #[test]
+    fn event_registry_rejects_unknown_type_and_payload_drift() {
+        assert!(normalize_event_type("Unknown.v1".to_owned()).is_err());
+        assert!(
+            validate_payload(
+                "DOCUMENT_CHANGED",
+                &json!({"documentId":"id","revision":1,"treeRevision":2})
+            )
+            .is_err()
+        );
+        assert!(
+            validate_payload(
+                "AI_JOB_CHANGED",
+                &json!({"jobId":"id","status":"RUNNING","jobSequence":1,"secret":"forbidden"})
+            )
+            .is_err()
+        );
+    }
+}

@@ -19,12 +19,15 @@
 | DiscussionChanged | Collaboration | Inbox, AI context invalidator | discussionId, revision, action |
 | MessageChanged | Collaboration | Discussion SSE, AI context invalidator | messageId, revision, action |
 | ReviewChanged | Collaboration | Inbox, publish gate cache | reviewId, draftRevision, status |
+| InboxChanged | Collaboration | SSE | inboxItemId, revision, action |
+| ReferenceChanged | Document | backlink projection, SSE | referenceId, revision, action |
 | VocabularyChanged | Knowledge | index, AI rule cache | conceptId, revision |
 | SearchProjectionRepairScheduled | Knowledge retrieval | Search projection | documentId, detected fingerprint |
 | AIJobChanged | Writing Intelligence | SSE, usage metrics | jobId, sequence, status |
 | ProposalApplied | Writing Intelligence | Audit, Discussion UI | proposalId, documentId, revision |
 | FileChanged | Operations | preview, UI | assetId, status |
 | PublicLinkChanged | Document | public cache | linkId, documentId, status |
+| PurgeChanged | Operations | purge worker, operator stream | targetKind, targetId, step, status |
 
 ## 규칙
 

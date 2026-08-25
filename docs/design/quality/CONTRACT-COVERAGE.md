@@ -10,7 +10,7 @@
 | Content Schema | C-EMPTY, C-FULL, C-KO | depth, duplicate ID, unknown attr, unsafe URL | Rust·TypeScript validator 동일 판정 |
 | Operation Schema | 9 kind×각 Region | missing precondition, dependency cycle, stale hash | reducer property+API 422/409 |
 | AI Contracts | 6 Task kind, 4 Result status | ungrounded claim, invalid Source, unsafe Operation | adapter contract |
-| Event Schema | 19 type별 payload | type/payload mismatch, old/out-of-order sequence | producer·consumer contract |
+| Event Schema | 23 type별 payload | type/payload mismatch, old/out-of-order sequence | producer·consumer contract |
 | OpenAPI | 정본의 모든 `operationId` | bad auth, field, revision, idempotency | request/response snapshot |
 | PostgreSQL DDL | 모든 table·constraint·trigger | tenant mismatch, immutable update, duplicate key | PostgreSQL 16 integration |
 | OpenSearch mapping | Published·Draft projection | dynamic field, wrong dimension, stale fingerprint | real OpenSearch contract |
@@ -19,9 +19,10 @@
 
 Catalog의 모든 Query는 `success`, `AUTH_REQUIRED`, cross-tenant not-found, insufficient permission과
 pagination/filter 경계를 실행한다. 모든 Command는 여기에 valid commit, field validation,
-duplicate idempotency same body, reused key different body, stale revision, transaction rollback,
-Audit 1개와 Outbox 1개를 추가한다. Lease command는 expired·other holder, asynchronous command는
-cancel·timeout·redelivery도 추가한다.
+duplicate idempotency same body, reused key different body, stale revision과 transaction rollback을
+추가한다. Audit·Outbox는 Event Catalog와 Audit action registry가 선언한 exact count를 검증하며
+부작용이 없는 Command는 0개임을 검증한다. Lease command는 expired·other holder, asynchronous
+command는 cancel·timeout·redelivery도 추가한다.
 
 ## Requirement coverage
 

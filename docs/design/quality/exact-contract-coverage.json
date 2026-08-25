@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "operationSuites": [
+    {
+      "id": "identity-session",
+      "file": "crates/adapters/tests/identity_session.rs",
+      "test": "identity_session_postgres_contract",
+      "operations": ["getSession", "beginGoogleLogin", "completeGoogleLogin", "logout", "getUserPreferences", "updateUserPreferences"]
+    },
+    {
+      "id": "workspace-governance",
+      "file": "crates/adapters/tests/workspace_governance.rs",
+      "test": "workspace_governance_postgres_contract",
+      "operations": ["listWorkspaces", "createWorkspace", "getWorkspace", "updateWorkspace", "scheduleWorkspaceDeletion", "cancelWorkspaceDeletion", "listMembers", "updateMemberRole", "removeMember", "listInvitations", "inviteMember", "revokeInvitation", "getInvitationPreview", "acceptInvitation", "listGroups", "createGroup", "getGroup", "updateGroup", "deleteGroup", "addGroupMember", "removeGroupMember"]
+    },
+    {
+      "id": "document-core",
+      "file": "crates/adapters/tests/document_core.rs",
+      "test": "document_tree_draft_lease_postgres_contract",
+      "operations": ["createDocument", "getDocumentTree", "listTrashedDocuments", "getDocument", "updateDocumentMetadata", "purgeDocument", "trashDocument", "restoreDocument", "previewDocumentMove", "moveDocument", "getDraft", "createOrGetDraft", "acquireEditLease", "releaseEditLease", "renewEditLease", "applyDraftOperations"]
+    },
+    {
+      "id": "permission-policy",
+      "file": "crates/adapters/tests/permission_policy.rs",
+      "test": "permission_policy_postgres_redis_contract",
+      "operations": ["getDocumentPermissions", "setDocumentPermission", "deleteDocumentPermission", "explainEffectivePermission", "getPublishPolicy", "setPublishPolicy"]
+    },
+    {
+      "id": "publishing-version",
+      "file": "crates/adapters/tests/publishing_version.rs",
+      "test": "publish_version_public_link_postgres_contract",
+      "operations": ["listVersions", "getVersion", "restoreVersionToDraft", "compareVersions", "publishDocument", "listPublicLinks", "createPublicLink", "revokePublicLink", "getPublicDocument", "downloadPublicFile"]
+    },
+    {
+      "id": "collaboration-inbox",
+      "file": "crates/adapters/tests/collaboration_inbox.rs",
+      "test": "discussion_message_inbox_postgres_contract",
+      "operations": ["listDiscussions", "createDiscussion", "getDiscussion", "updateDiscussion", "closeDiscussion", "reopenDiscussion", "addDiscussionTopic", "removeDiscussionTopic", "createMessage", "updateMessage", "deleteMessage", "listInbox", "markInboxItemRead", "markAllInboxRead", "resolveInboxItem"]
+    },
+    {
+      "id": "review-approval",
+      "file": "crates/adapters/tests/review_approval.rs",
+      "test": "review_threshold_history_and_publish_gate_postgres_contract",
+      "operations": ["requestReview", "submitReviewDecision", "getReview", "cancelReview"]
+    },
+    {
+      "id": "reference-vocabulary",
+      "file": "crates/adapters/tests/reference_vocabulary.rs",
+      "test": "reference_and_vocabulary_postgres_contract",
+      "operations": ["listBacklinks", "createReference", "deleteReference", "listVocabulary", "createVocabularyConcept", "getVocabularyConcept", "updateVocabularyConcept", "deprecateVocabularyConcept"]
+    },
+    {
+      "id": "search-projection",
+      "file": "crates/adapters/tests/search_projection.rs",
+      "test": "search_projection_prefilter_ordering_and_tombstone_contract",
+      "operations": ["searchKnowledge"]
+    },
+    {
+      "id": "ai-context-runtime",
+      "file": "crates/adapters/tests/ai_context_runtime.rs",
+      "test": "ai_context_admission_is_permission_safe_and_payload_bounded",
+      "operations": ["listAIJobs", "createAIJob", "getAIJob", "cancelAIJob", "previewAIContext", "getAIConfiguration", "updateAIConfiguration", "getAIUsage", "getAIProviderHealth"]
+    },
+    {
+      "id": "ai-result-proposal",
+      "file": "crates/adapters/tests/ai_result_proposal.rs",
+      "test": "proposal_apply_is_atomic_dependency_closed_and_idempotent",
+      "operations": ["applyProposal", "getProposal", "rejectProposal", "getWritingConfiguration", "updateWritingConfiguration"]
+    },
+    {
+      "id": "file-object-storage",
+      "file": "crates/adapters/tests/file_object_storage.rs",
+      "test": "file_storage_postgres_contract",
+      "operations": ["createFileUpload", "completeFileUpload", "getFile", "deleteFile", "uploadFileContent", "downloadFile"]
+    },
+    {
+      "id": "audit-retention",
+      "file": "crates/adapters/tests/audit_retention.rs",
+      "test": "audit_retention_postgres_contract",
+      "operations": ["listAuditEvents"]
+    },
+    {
+      "id": "job-stream",
+      "file": "crates/adapters/tests/job_stream.rs",
+      "test": "job_runtime_and_resumable_stream_contract",
+      "operations": ["openWorkspaceStream"]
+    }
+  ],
+  "profileOverrides": {
+    "beginGoogleLogin": "navigation",
+    "completeGoogleLogin": "callback",
+    "openWorkspaceStream": "stream",
+    "downloadFile": "binary",
+    "downloadPublicFile": "binary",
+    "acquireEditLease": "lease-command",
+    "releaseEditLease": "lease-command",
+    "renewEditLease": "lease-command",
+    "applyDraftOperations": "lease-command",
+    "createReference": "lease-command",
+    "deleteReference": "lease-command",
+    "applyProposal": "lease-command",
+    "createAIJob": "async-command",
+    "cancelAIJob": "async-command",
+    "purgeDocument": "async-command"
+  },
+  "eventEvidence": [
+    { "id": "WORKSPACE_CHANGED", "producer": ["crates/adapters/src/postgres/governance.rs", "crates/adapters/tests/workspace_governance.rs", "workspace_governance_postgres_contract"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "MEMBERSHIP_CHANGED", "producer": ["crates/adapters/src/postgres/governance.rs", "crates/adapters/tests/workspace_governance.rs", "workspace_governance_postgres_contract"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "INVITATION_CHANGED", "producer": ["crates/adapters/src/postgres/governance.rs", "crates/adapters/tests/workspace_governance.rs", "workspace_governance_postgres_contract"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "GROUP_CHANGED", "producer": ["crates/adapters/src/postgres/governance.rs", "crates/adapters/tests/workspace_governance.rs", "workspace_governance_postgres_contract"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "PERMISSION_CHANGED", "producer": ["crates/adapters/src/postgres/permission.rs", "crates/adapters/tests/permission_policy.rs", "permission_policy_postgres_redis_contract"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "PUBLISH_POLICY_CHANGED", "producer": ["crates/adapters/src/postgres/permission.rs", "crates/adapters/tests/permission_policy.rs", "permission_policy_postgres_redis_contract"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "DOCUMENT_CHANGED", "producer": ["crates/adapters/src/postgres/document.rs", "crates/adapters/tests/document_core.rs", "document_tree_draft_lease_postgres_contract"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "DOCUMENT_MOVED", "producer": ["crates/adapters/src/postgres/document.rs", "crates/adapters/tests/document_core.rs", "document_tree_draft_lease_postgres_contract"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "DRAFT_CHANGED", "producer": ["crates/adapters/src/postgres/document.rs", "crates/adapters/tests/document_core.rs", "document_tree_draft_lease_postgres_contract"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "LEASE_CHANGED", "producer": ["crates/adapters/src/postgres/document.rs", "crates/adapters/tests/document_core.rs", "document_tree_draft_lease_postgres_contract"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "VERSION_PUBLISHED", "producer": ["crates/adapters/src/postgres/publishing.rs", "crates/adapters/tests/publishing_version.rs", "publish_version_public_link_postgres_contract"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "DISCUSSION_CHANGED", "producer": ["crates/adapters/src/postgres/collaboration.rs", "crates/adapters/tests/collaboration_inbox.rs", "discussion_message_inbox_postgres_contract"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "MESSAGE_CHANGED", "producer": ["crates/adapters/src/postgres/collaboration.rs", "crates/adapters/tests/collaboration_inbox.rs", "discussion_message_inbox_postgres_contract"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "REVIEW_CHANGED", "producer": ["crates/adapters/src/postgres/collaboration.rs", "crates/adapters/tests/review_approval.rs", "review_threshold_history_and_publish_gate_postgres_contract"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "INBOX_CHANGED", "producer": ["crates/adapters/src/postgres/collaboration.rs", "crates/adapters/tests/collaboration_inbox.rs", "discussion_message_inbox_postgres_contract"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "REFERENCE_CHANGED", "producer": ["crates/adapters/src/postgres/document.rs", "crates/adapters/tests/reference_vocabulary.rs", "reference_and_vocabulary_postgres_contract"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "VOCABULARY_CHANGED", "producer": ["crates/adapters/src/postgres/knowledge.rs", "crates/adapters/tests/reference_vocabulary.rs", "reference_and_vocabulary_postgres_contract"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "SEARCH_PROJECTION_REPAIR_SCHEDULED", "producer": ["crates/adapters/src/postgres/retrieval.rs", "crates/adapters/tests/search_projection.rs", "search_projection_prefilter_ordering_and_tombstone_contract"], "consumer": ["crates/adapters/src/postgres/search.rs", "crates/adapters/tests/search_projection.rs", "search_projection_prefilter_ordering_and_tombstone_contract"] },
+    { "id": "AI_JOB_CHANGED", "producer": ["crates/adapters/src/postgres/ai.rs", "crates/adapters/tests/ai_context_runtime.rs", "ai_context_admission_is_permission_safe_and_payload_bounded"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "PROPOSAL_APPLIED", "producer": ["crates/adapters/src/postgres/proposal.rs", "crates/adapters/tests/ai_result_proposal.rs", "proposal_apply_is_atomic_dependency_closed_and_idempotent"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "FILE_CHANGED", "producer": ["crates/adapters/src/postgres/file.rs", "crates/adapters/tests/file_object_storage.rs", "file_storage_postgres_contract"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "PUBLIC_LINK_CHANGED", "producer": ["crates/adapters/src/postgres/publishing.rs", "crates/adapters/tests/publishing_version.rs", "publish_version_public_link_postgres_contract"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] },
+    { "id": "PURGE_CHANGED", "producer": ["crates/adapters/src/postgres/retention.rs", "crates/adapters/tests/audit_retention.rs", "audit_retention_postgres_contract"], "consumer": ["crates/adapters/src/postgres/jobs.rs", "crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"] }
+  ],
+  "stateSuites": {
+    "Workspace": ["crates/adapters/tests/workspace_governance.rs", "workspace_governance_postgres_contract"],
+    "Membership": ["crates/adapters/tests/workspace_governance.rs", "workspace_governance_postgres_contract"],
+    "Document": ["crates/adapters/tests/document_core.rs", "document_tree_draft_lease_postgres_contract"],
+    "Draft": ["crates/adapters/tests/document_core.rs", "document_tree_draft_lease_postgres_contract"],
+    "Lease": ["crates/adapters/tests/document_core.rs", "document_tree_draft_lease_postgres_contract"],
+    "Version": ["crates/adapters/tests/publishing_version.rs", "publish_version_public_link_postgres_contract"],
+    "Discussion": ["crates/adapters/tests/collaboration_inbox.rs", "discussion_message_inbox_postgres_contract"],
+    "Message": ["crates/adapters/tests/collaboration_inbox.rs", "discussion_message_inbox_postgres_contract"],
+    "Review": ["crates/adapters/tests/review_approval.rs", "review_threshold_history_and_publish_gate_postgres_contract"],
+    "Vocabulary": ["crates/adapters/tests/reference_vocabulary.rs", "reference_and_vocabulary_postgres_contract"],
+    "AI Job": ["crates/adapters/tests/ai_context_runtime.rs", "ai_context_admission_is_permission_safe_and_payload_bounded"],
+    "Proposal": ["crates/adapters/tests/ai_result_proposal.rs", "proposal_apply_is_atomic_dependency_closed_and_idempotent"],
+    "File": ["crates/adapters/tests/file_object_storage.rs", "file_storage_postgres_contract"],
+    "Job": ["crates/adapters/tests/job_stream.rs", "job_runtime_and_resumable_stream_contract"]
+  }
+}

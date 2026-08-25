@@ -26,7 +26,7 @@
     "check:security": "node scripts/check-secrets.mjs",
     "check:hardening": "node scripts/check-performance-smoke.mjs --self-test && node scripts/check-release-inputs.mjs",
     "check:toolchains": "node scripts/check-toolchains.mjs",
-    "contracts:check": "cargo run --quiet -p adoc-contract-codegen -- --check && bun run packages/contracts/scripts/generate.mjs --self-test && node scripts/check-contracts.mjs && node scripts/check-web-contract-coverage.mjs --self-test && bun run --cwd packages/contracts test",
+    "contracts:check": "cargo run --quiet -p adoc-contract-codegen -- --check && bun run packages/contracts/scripts/generate.mjs --self-test && node scripts/check-contracts.mjs && node scripts/check-web-contract-coverage.mjs --self-test && node scripts/check-exact-contract-coverage.mjs --self-test && bun run --cwd packages/contracts test",
     "contracts:generate": "cargo run --quiet -p adoc-contract-codegen",
     "migrations:check": "node scripts/generate-migrations.mjs --check",
     "migrations:generate": "node scripts/generate-migrations.mjs",
