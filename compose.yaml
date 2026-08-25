@@ -79,7 +79,7 @@ services:
     build:
       context: .
       target: api
-      args: {ADOC_RELEASE_SHA: "${ADOC_RELEASE_SHA:-local}"}
+      args: {ADOC_RELEASE_SHA: "${ADOC_RELEASE_SHA:-local}", ADOC_RELEASE_VERSION: "${ADOC_RELEASE_VERSION:-1.0.0}"}
     command: [--migrate]
     environment:
       ADOC_ENV: development
@@ -96,7 +96,7 @@ services:
     build:
       context: .
       target: api
-      args: {ADOC_RELEASE_SHA: "${ADOC_RELEASE_SHA:-local}"}
+      args: {ADOC_RELEASE_SHA: "${ADOC_RELEASE_SHA:-local}", ADOC_RELEASE_VERSION: "${ADOC_RELEASE_VERSION:-1.0.0}"}
     environment:
       <<: *app-environment
       ADOC_HTTP_BIND: 0.0.0.0:8081
@@ -121,7 +121,7 @@ services:
     build:
       context: .
       target: worker
-      args: {ADOC_RELEASE_SHA: "${ADOC_RELEASE_SHA:-local}"}
+      args: {ADOC_RELEASE_SHA: "${ADOC_RELEASE_SHA:-local}", ADOC_RELEASE_VERSION: "${ADOC_RELEASE_VERSION:-1.0.0}"}
     environment: *app-environment
     secrets: *app-secrets
     volumes:
@@ -143,7 +143,7 @@ services:
     build:
       context: .
       target: web
-      args: {ADOC_RELEASE_SHA: "${ADOC_RELEASE_SHA:-local}"}
+      args: {ADOC_RELEASE_SHA: "${ADOC_RELEASE_SHA:-local}", ADOC_RELEASE_VERSION: "${ADOC_RELEASE_VERSION:-1.0.0}"}
     environment:
       ADOC_ENV: development
       ADOC_RELEASE_SHA: ${ADOC_RELEASE_SHA:-local}

@@ -164,6 +164,34 @@ async fn discussion_message_inbox_postgres_contract() {
         closed.status,
         adoc_application::collaboration::DiscussionStatus::Closed
     );
+    let reopened = service
+        .reopen(
+            actor,
+            workspace,
+            discussion.id,
+            closed.revision,
+            "discussion-reopen1",
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        reopened.status,
+        adoc_application::collaboration::DiscussionStatus::Open
+    );
+    let history = service
+        .get_discussion(actor, workspace, discussion.id, None)
+        .await
+        .unwrap();
+    assert_eq!(history.messages.len(), 1);
+    let lifecycle_audit: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM audit_events WHERE workspace_id=$1 AND target_json->>'id'=$2 AND action IN ('DISCUSSION_CLOSED','DISCUSSION_REOPENED')",
+    )
+    .bind(workspace)
+    .bind(discussion.id.to_string())
+    .fetch_one(store.pool())
+    .await
+    .unwrap();
+    assert_eq!(lifecycle_audit, 2);
     let outsider = Uuid::now_v7();
     sqlx::query(
         "INSERT INTO users(id,google_subject,email,display_name) VALUES($1,$2,$3,'Outsider')",

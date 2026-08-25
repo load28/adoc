@@ -3,13 +3,17 @@ use std::{env, fs, sync::Arc};
 use adoc_adapters::{
     identity::{SystemClock, SystemSecureRandom},
     postgres::{
-        DatabaseSettings, PostgresCollaborationRepository, PostgresPublishingRepository,
-        PostgresStore,
+        DatabaseSettings, PostgresCollaborationRepository, PostgresDocumentRepository,
+        PostgresPublishingRepository, PostgresStore,
     },
 };
 use adoc_application::{
     collaboration::{
         CollaborationService, ReviewDecisionInput, ReviewDecisionInputKind, ReviewStatus,
+    },
+    document::{
+        AcquireLeaseInput, ApplyOperationsInput, ApplyOperationsRequest, DocumentOperation,
+        DocumentService,
     },
     governance::GovernanceError,
     publishing::{PublishDocumentInput, PublishingService},
@@ -137,6 +141,91 @@ async fn review_threshold_history_and_publish_gate_postgres_contract() {
         .unwrap(),
         1
     );
+    let documents = DocumentService::new(
+        Arc::new(PostgresDocumentRepository::new(&store)),
+        Arc::new(SystemClock),
+        Arc::new(SystemSecureRandom),
+    );
+    let draft = documents
+        .create_draft(requester, workspace, document, "review-second-draft")
+        .await
+        .unwrap();
+    let invalidated_review = collaboration
+        .request_review(
+            requester,
+            workspace,
+            document,
+            draft.revision,
+            "review-invalidation-request",
+        )
+        .await
+        .unwrap();
+    let invalidated_review = collaboration
+        .submit_review_decision(
+            reviewer,
+            workspace,
+            invalidated_review.id,
+            invalidated_review.revision,
+            "review-invalidation-approve",
+            ReviewDecisionInput {
+                decision: ReviewDecisionInputKind::Approve,
+                discussion_id: None,
+            },
+        )
+        .await
+        .unwrap();
+    let document_revision: i64 = sqlx::query_scalar("SELECT revision FROM documents WHERE id=$1")
+        .bind(document)
+        .fetch_one(store.pool())
+        .await
+        .unwrap();
+    let client = Uuid::now_v7();
+    let lease = documents
+        .acquire_lease(
+            requester,
+            workspace,
+            document,
+            document_revision,
+            AcquireLeaseInput {
+                client_instance_id: client,
+                force: false,
+                reason: None,
+            },
+            "review-invalidation-lease",
+        )
+        .await
+        .unwrap();
+    let operation: DocumentOperation = serde_json::from_value(json!({
+        "opId": Uuid::now_v7(),
+        "kind": "INSERT_BLOCK",
+        "scope": {"kind":"DOCUMENT"},
+        "precondition": {"draftRevision":draft.revision,"targetHash":null},
+        "dependsOn": [],
+        "parentId": null,
+        "index": 1,
+        "block": {"id":Uuid::now_v7(),"type":"paragraph","children":[{"type":"text","text":"changed"}]}
+    }))
+    .unwrap();
+    documents
+        .apply_operations(ApplyOperationsRequest {
+            actor_id: requester,
+            workspace_id: workspace,
+            document_id: document,
+            client_instance_id: client,
+            expected_revision: draft.revision,
+            token: lease.token.as_deref().unwrap(),
+            input: ApplyOperationsInput {
+                operations: vec![operation],
+            },
+            idempotency_key: "review-invalidation-save",
+        })
+        .await
+        .unwrap();
+    let invalidated = collaboration
+        .get_review(requester, workspace, invalidated_review.id)
+        .await
+        .unwrap();
+    assert_eq!(invalidated.status, ReviewStatus::Invalidated);
     store.close().await;
 }
 

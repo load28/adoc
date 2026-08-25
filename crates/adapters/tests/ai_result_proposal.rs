@@ -100,6 +100,34 @@ async fn proposal_apply_is_atomic_dependency_closed_and_idempotent() {
         .unwrap();
     assert_eq!(view.status, ProposalStatus::Applied);
     assert_eq!(view.applied_revision, Some(1));
+    let stale_operations = vec![insert_operation(Uuid::now_v7(), 3, Vec::new())];
+    let stale_proposal =
+        insert_proposal(&store, owner, workspace, document, &stale_operations).await;
+    let stale = service
+        .apply_proposal(ApplyProposalRequest {
+            actor_id: owner,
+            workspace_id: workspace,
+            proposal_id: stale_proposal,
+            client_instance_id: client,
+            expected_revision: 0,
+            token: &token,
+            input: ApplyProposalInput {
+                operation_ids: None,
+            },
+            idempotency_key: "proposal-apply-stale-0001",
+        })
+        .await;
+    assert!(matches!(
+        stale,
+        Err(adoc_application::governance::GovernanceError::ProposalStale)
+    ));
+    let draft_revision: i64 =
+        sqlx::query_scalar("SELECT revision FROM drafts WHERE document_id=$1")
+            .bind(document)
+            .fetch_one(store.pool())
+            .await
+            .unwrap();
+    assert_eq!(draft_revision, 1);
     store.close().await;
 }
 

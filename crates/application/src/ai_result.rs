@@ -174,6 +174,13 @@ pub fn validate_dependency_selection(
     operations: &[DocumentOperation],
     selected: Option<&BTreeSet<Uuid>>,
 ) -> Result<(), AiResultValidationError> {
+    if operations.is_empty() {
+        return if selected.is_none_or(BTreeSet::is_empty) {
+            Ok(())
+        } else {
+            Err(AiResultValidationError::Dependency)
+        };
+    }
     let all: BTreeSet<_> = operations.iter().map(|value| value.base().op_id).collect();
     if all.len() != operations.len() {
         return Err(AiResultValidationError::Dependency);
@@ -305,5 +312,50 @@ mod tests {
             prohibited_term_in_content(&serde_json::json!({"label":"금지 용어"}), &terms),
             None
         );
+    }
+
+    #[test]
+    fn knowledge_query_without_sources_cannot_claim_supported_organization_facts() {
+        let task = AiTask {
+            kind: AiTaskKind::KnowledgeQuery,
+            workspace_id: Uuid::from_u128(1),
+            actor_id: Uuid::from_u128(2),
+            target: AiTarget::WorkspaceQuery {
+                question: "조직의 인증 정책은 무엇인가?".to_owned(),
+            },
+            expected_revision: 0,
+            external_web_enabled: false,
+            instruction: None,
+        };
+        let unsupported = serde_json::json!({
+            "schemaVersion": 1,
+            "taskKind": "KNOWLEDGE_QUERY",
+            "status": "READY",
+            "operations": [],
+            "findings": [],
+            "claims": [{"text":"정책이 있다","sourceIds":[],"certainty":"SUPPORTED"}],
+            "uncertainties": [],
+            "conflicts": [],
+            "usedSourceIds": []
+        });
+        assert_eq!(
+            validate_result(unsupported, &task, &BTreeSet::new()),
+            Err(AiResultValidationError::Status)
+        );
+        let insufficient = serde_json::json!({
+            "schemaVersion": 1,
+            "taskKind": "KNOWLEDGE_QUERY",
+            "status": "INSUFFICIENT_CONTEXT",
+            "operations": [],
+            "findings": [],
+            "claims": [{"text":"확인할 수 없다","sourceIds":[],"certainty":"INSUFFICIENT"}],
+            "uncertainties": ["허용된 Source가 없다"],
+            "conflicts": [],
+            "usedSourceIds": []
+        });
+        let (validated, application) =
+            validate_result(insufficient, &task, &BTreeSet::new()).unwrap();
+        assert_eq!(validated.status, AiResultStatus::InsufficientContext);
+        assert_eq!(application, ResultApplication::None);
     }
 }

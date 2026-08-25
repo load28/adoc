@@ -1,6 +1,6 @@
 {
   "name": "adoc",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "license": "Apache-2.0",
   "packageManager": "bun@1.3.13",
@@ -14,7 +14,8 @@
   ],
   "scripts": {
     "build": "cargo build --workspace --all-targets && bun run --sequential --workspaces --if-present build",
-    "check": "bun run check:toolchains && bun run contracts:check && bun run migrations:check && bun run check:compose && bun run check:hardening && bun run format:check && bun run lint && bun run typecheck && bun run test && bun run build && bun run check:security && bun run check:licenses",
+    "check": "bun run check:toolchains && bun run contracts:check && bun run migrations:check && bun run check:compose && bun run check:hardening && bun run check:acceptance && bun run format:check && bun run lint && bun run typecheck && bun run test && bun run build && bun run check:security && bun run check:licenses",
+    "check:acceptance": "node scripts/check-acceptance.mjs --self-test",
     "check:boundaries": "node scripts/check-boundaries.mjs",
     "check:boundaries:self-test": "node scripts/check-boundaries.mjs --self-test",
     "check:cargo-licenses": "node scripts/check-cargo-licenses.mjs",
@@ -30,6 +31,7 @@
     "migrations:check": "node scripts/generate-migrations.mjs --check",
     "migrations:generate": "node scripts/generate-migrations.mjs",
     "migrations:seal": "node scripts/generate-migrations.mjs",
+    "release:candidate": "node scripts/build-release-bundle.mjs --verify",
     "compose:bootstrap": "sh infra/docker/bootstrap-local.sh",
     "compose:integration": "sh scripts/check-compose-integration.sh",
     "ci": "bun run check",

@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "featureDocument": "docs/design/quality/acceptance.feature",
+  "workstreams": [
+    {"id":"W-01","gate":"bun run check"},
+    {"id":"W-02","gate":"bun run compose:integration"},
+    {"id":"W-03","gate":"bun run compose:integration"},
+    {"id":"W-04","gate":"bun run compose:integration"},
+    {"id":"W-05","gate":"bun run compose:integration"},
+    {"id":"W-06","gate":"bun run compose:integration"},
+    {"id":"W-07","gate":"bun run compose:integration"},
+    {"id":"W-08","gate":"bun run check"},
+    {"id":"W-09","gate":"bun run compose:integration"}
+  ],
+  "scenarios": [
+    {
+      "id":"ACC-01",
+      "title":"가장 가까운 개인 권한이 같은 위치의 그룹 거부보다 우선한다",
+      "evidence":[{"execution":"compose","path":"crates/adapters/tests/permission_policy.rs","test":"permission_policy_postgres_redis_contract"}]
+    },
+    {
+      "id":"ACC-02",
+      "title":"관리자는 문서 권한을 우회하지 못한다",
+      "evidence":[
+        {"execution":"compose","path":"crates/adapters/tests/permission_policy.rs","test":"permission_policy_postgres_redis_contract"},
+        {"execution":"compose","path":"crates/adapters/tests/search_projection.rs","test":"search_projection_prefilter_ordering_and_tombstone_contract"},
+        {"execution":"compose","path":"crates/adapters/tests/ai_context_runtime.rs","test":"ai_context_admission_is_permission_safe_and_payload_bounded"}
+      ]
+    },
+    {
+      "id":"ACC-03",
+      "title":"하나의 편집 lease만 Draft를 변경한다",
+      "evidence":[{"execution":"compose","path":"crates/adapters/tests/document_core.rs","test":"document_tree_draft_lease_postgres_contract"}]
+    },
+    {
+      "id":"ACC-04",
+      "title":"Draft 변경은 기존 승인을 무효화한다",
+      "evidence":[{"execution":"compose","path":"crates/adapters/tests/review_approval.rs","test":"review_threshold_history_and_publish_gate_postgres_contract"}]
+    },
+    {
+      "id":"ACC-05",
+      "title":"검토 정책을 충족한 exact Draft만 발행한다",
+      "evidence":[
+        {"execution":"compose","path":"crates/adapters/tests/review_approval.rs","test":"review_threshold_history_and_publish_gate_postgres_contract"},
+        {"execution":"compose","path":"crates/adapters/tests/file_object_storage.rs","test":"file_storage_postgres_contract"},
+        {"execution":"compose","path":"crates/adapters/tests/ai_result_proposal.rs","test":"writing_configuration_has_a_closed_versioned_registry"}
+      ]
+    },
+    {
+      "id":"ACC-06",
+      "title":"발행 버전은 일반 application role로 변경할 수 없다",
+      "evidence":[{"execution":"compose","path":"crates/adapters/tests/publishing_version.rs","test":"publish_version_public_link_postgres_contract"}]
+    },
+    {
+      "id":"ACC-07",
+      "title":"토론은 닫고 다시 열어도 Message history를 유지한다",
+      "evidence":[{"execution":"compose","path":"crates/adapters/tests/collaboration_inbox.rs","test":"discussion_message_inbox_postgres_contract"}]
+    },
+    {
+      "id":"ACC-08",
+      "title":"검색은 권한 밖 후보를 순위 계산 전에 제외한다",
+      "evidence":[{"execution":"compose","path":"crates/adapters/tests/search_projection.rs","test":"search_projection_prefilter_ordering_and_tombstone_contract"}]
+    },
+    {
+      "id":"ACC-09",
+      "title":"조직 사실에 Source가 없으면 AI가 답을 꾸미지 않는다",
+      "evidence":[{"execution":"root","path":"crates/application/src/ai_result.rs","test":"knowledge_query_without_sources_cannot_claim_supported_organization_facts"}]
+    },
+    {
+      "id":"ACC-10",
+      "title":"큰 AI 변경은 사람 승인 전 Draft를 바꾸지 않는다",
+      "evidence":[{"execution":"compose","path":"crates/adapters/tests/ai_result_proposal.rs","test":"proposal_apply_is_atomic_dependency_closed_and_idempotent"}]
+    },
+    {
+      "id":"ACC-11",
+      "title":"stale Proposal은 부분적으로도 적용되지 않는다",
+      "evidence":[{"execution":"compose","path":"crates/adapters/tests/ai_result_proposal.rs","test":"proposal_apply_is_atomic_dependency_closed_and_idempotent"}]
+    },
+    {
+      "id":"ACC-12",
+      "title":"발행 버전이 참조하는 File은 Draft에서 제거해도 보존한다",
+      "evidence":[{"execution":"compose","path":"crates/adapters/tests/file_object_storage.rs","test":"file_storage_postgres_contract"}]
+    },
+    {
+      "id":"ACC-13",
+      "title":"공개 Viewer는 최신 단일 발행 문서의 embedded File만 본다",
+      "evidence":[
+        {"execution":"compose","path":"crates/adapters/tests/publishing_version.rs","test":"publish_version_public_link_postgres_contract"},
+        {"execution":"compose","path":"crates/adapters/tests/file_object_storage.rs","test":"file_storage_postgres_contract"}
+      ]
+    },
+    {
+      "id":"ACC-14",
+      "title":"휴지통 30일 전에는 복구하고 이후에는 구조적으로 purge한다",
+      "evidence":[{"execution":"compose","path":"crates/adapters/tests/audit_retention.rs","test":"audit_retention_postgres_contract"}]
+    },
+    {
+      "id":"ACC-15",
+      "title":"Redis 유실 뒤 PostgreSQL Job과 Outbox로 복구한다",
+      "evidence":[{"execution":"compose","path":"crates/adapters/tests/job_stream.rs","test":"job_runtime_and_resumable_stream_contract"}]
+    }
+  ]
+}

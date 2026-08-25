@@ -28,24 +28,27 @@ USER 10001:10001
 
 FROM rust-runtime AS api
 ARG ADOC_RELEASE_SHA=development
+ARG ADOC_RELEASE_VERSION=1.0.0
 LABEL org.opencontainers.image.revision=$ADOC_RELEASE_SHA \
-      org.opencontainers.image.version="container-contract-v1" \
+      org.opencontainers.image.version=$ADOC_RELEASE_VERSION \
       org.opencontainers.image.title="adoc-api"
 COPY --from=rust-builder /workspace/target/release/adoc-api /usr/local/bin/adoc-api
 ENTRYPOINT ["/usr/local/bin/adoc-api"]
 
 FROM rust-runtime AS worker
 ARG ADOC_RELEASE_SHA=development
+ARG ADOC_RELEASE_VERSION=1.0.0
 LABEL org.opencontainers.image.revision=$ADOC_RELEASE_SHA \
-      org.opencontainers.image.version="container-contract-v1" \
+      org.opencontainers.image.version=$ADOC_RELEASE_VERSION \
       org.opencontainers.image.title="adoc-worker"
 COPY --from=rust-builder /workspace/target/release/adoc-worker /usr/local/bin/adoc-worker
 ENTRYPOINT ["/usr/local/bin/adoc-worker"]
 
 FROM oven/bun:1.3.13-debian AS web
 ARG ADOC_RELEASE_SHA=development
+ARG ADOC_RELEASE_VERSION=1.0.0
 LABEL org.opencontainers.image.revision=$ADOC_RELEASE_SHA \
-      org.opencontainers.image.version="container-contract-v1" \
+      org.opencontainers.image.version=$ADOC_RELEASE_VERSION \
       org.opencontainers.image.title="adoc-web"
 WORKDIR /app
 COPY --from=web-builder --chown=bun:bun /workspace/apps/web/dist ./dist

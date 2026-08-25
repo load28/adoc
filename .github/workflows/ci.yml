@@ -33,3 +33,6 @@ jobs:
 
       - name: Verify repository
         run: bun run ci
+
+      - name: Verify full acceptance in containers
+        run: bun run compose:integration

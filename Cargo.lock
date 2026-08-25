@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "adoc-adapters"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "adoc-application",
  "adoc-ports",
@@ -35,7 +35,7 @@ dependencies = [
 
 [[package]]
 name = "adoc-api"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "adoc-adapters",
  "adoc-application",
@@ -53,7 +53,7 @@ dependencies = [
 
 [[package]]
 name = "adoc-application"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "adoc-collaboration",
  "adoc-document",
@@ -84,7 +84,7 @@ dependencies = [
 
 [[package]]
 name = "adoc-collaboration"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "adoc-kernel",
  "chrono",
@@ -95,7 +95,7 @@ dependencies = [
 
 [[package]]
 name = "adoc-configuration"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "humantime",
  "ipnet",
@@ -109,7 +109,7 @@ dependencies = [
 
 [[package]]
 name = "adoc-contract-codegen"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "prettyplease",
@@ -122,7 +122,7 @@ dependencies = [
 
 [[package]]
 name = "adoc-contracts"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -135,7 +135,7 @@ dependencies = [
 
 [[package]]
 name = "adoc-document"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "adoc-kernel",
  "chrono",
@@ -151,7 +151,7 @@ dependencies = [
 
 [[package]]
 name = "adoc-governance"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "adoc-kernel",
  "chrono",
@@ -164,7 +164,7 @@ dependencies = [
 
 [[package]]
 name = "adoc-identity"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "adoc-kernel",
  "chrono",
@@ -176,11 +176,11 @@ dependencies = [
 
 [[package]]
 name = "adoc-kernel"
-version = "0.1.0"
+version = "1.0.0"
 
 [[package]]
 name = "adoc-knowledge"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "adoc-kernel",
  "chrono",
@@ -194,7 +194,7 @@ dependencies = [
 
 [[package]]
 name = "adoc-operations"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "adoc-kernel",
  "chrono",
@@ -205,7 +205,7 @@ dependencies = [
 
 [[package]]
 name = "adoc-ports"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "adoc-kernel",
  "thiserror",
@@ -213,7 +213,7 @@ dependencies = [
 
 [[package]]
 name = "adoc-telemetry"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "adoc-configuration",
  "serde_json",
@@ -224,7 +224,7 @@ dependencies = [
 
 [[package]]
 name = "adoc-test-support"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "adoc-adapters",
  "adoc-application",
@@ -242,7 +242,7 @@ dependencies = [
 
 [[package]]
 name = "adoc-worker"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "adoc-adapters",
  "adoc-application",
@@ -256,7 +256,7 @@ dependencies = [
 
 [[package]]
 name = "adoc-writing-intelligence"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "adoc-kernel",
  "chrono",
