@@ -1,5 +1,10 @@
 import { parseLocale } from "@adoc/i18n";
-import { ApiClient, ApiProblemError, type SessionView } from "@adoc/ui-domain";
+import {
+  ApiClient,
+  ApiProblemError,
+  type InvitationPreview,
+  type SessionView,
+} from "@adoc/ui-domain";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest, getRequestHeader } from "@tanstack/react-start/server";
 
@@ -41,6 +46,19 @@ export const loadShellBootstrap = createServerFn({ method: "GET" }).handler(
     }
   },
 );
+
+export const loadInvitationPreview = createServerFn({ method: "GET" })
+  .validator((input: { token: string }) => input)
+  .handler(async ({ data }): Promise<InvitationPreview> => {
+    const request = getRequest();
+    const cookie = getRequestHeader("cookie") ?? "";
+    const client = new ApiClient((input, init) => {
+      const headers = new Headers(init?.headers);
+      headers.set("cookie", cookie);
+      return fetch(new URL(String(input), request.url), { ...init, headers });
+    });
+    return client.invitationPreview(data.token);
+  });
 
 function anonymousBootstrap(): ShellBootstrap {
   return { authenticated: false, locale: "ko", theme: "SYSTEM" };

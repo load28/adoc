@@ -1,7 +1,7 @@
 use std::{fmt, sync::Arc};
 
 pub use adoc_governance::{
-    CreateGroupInput, CreateWorkspaceInput, Group, GroupName, Invitation, InvitationRole,
+    Access, CreateGroupInput, CreateWorkspaceInput, Group, GroupName, Invitation, InvitationRole,
     InvitationStatus, InviteMemberInput, Membership, MembershipRole, MembershipStatus, PublishMode,
     ReasonInput, UpdateGroupInput, UpdateMemberRoleInput, UpdateWorkspaceInput, Workspace,
     WorkspaceName, WorkspaceStatus, may_change_role, normalized_email, normalized_member_ids,
@@ -91,6 +91,24 @@ pub struct InvitationAcceptance {
     pub token_hash: TokenHash,
     pub verified_email: String,
     pub command: Command,
+}
+
+#[derive(Clone, Debug)]
+pub struct InvitationPreviewQuery {
+    pub invitation_id: Uuid,
+    pub token_hash: TokenHash,
+    pub verified_email: String,
+    pub now: DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, serde::Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InvitationPreview {
+    pub workspace_id: Uuid,
+    pub workspace_name: String,
+    pub workspace_slug: String,
+    pub role: InvitationRole,
+    pub expires_at: DateTime<Utc>,
 }
 
 #[derive(Clone, Debug)]
@@ -216,6 +234,10 @@ pub trait GovernanceRepository: Send + Sync {
         &'a self,
         input: InvitationChange,
     ) -> BoxFuture<'a, Result<Invitation, GovernanceError>>;
+    fn preview_invitation<'a>(
+        &'a self,
+        input: InvitationPreviewQuery,
+    ) -> BoxFuture<'a, Result<InvitationPreview, GovernanceError>>;
     fn accept_invitation<'a>(
         &'a self,
         input: InvitationAcceptance,
@@ -525,22 +547,32 @@ impl GovernanceService {
         token: &str,
         key: &str,
     ) -> Result<Membership, GovernanceError> {
-        let bytes = URL_SAFE_NO_PAD
-            .decode(token)
-            .map_err(|_| GovernanceError::InvitationInvalid)?;
-        if bytes.len() != 48 {
-            return Err(GovernanceError::InvitationInvalid);
-        }
-        let invitation_id =
-            Uuid::from_slice(&bytes[..16]).map_err(|_| GovernanceError::InvitationInvalid)?;
+        let (invitation_id, token_hash) = invitation_token(token)?;
         let now = self.clock.now();
         self.repository
             .accept_invitation(InvitationAcceptance {
                 invitation_id,
-                token_hash: TokenHash(Sha256::digest(&bytes).into()),
+                token_hash,
                 verified_email: normalized_email(verified_email)
                     .map_err(|_| GovernanceError::InvitationInvalid)?,
                 command: command(actor, "acceptInvitation", key, &token, now)?,
+            })
+            .await
+    }
+
+    pub async fn preview_invitation(
+        &self,
+        verified_email: &str,
+        token: &str,
+    ) -> Result<InvitationPreview, GovernanceError> {
+        let (invitation_id, token_hash) = invitation_token(token)?;
+        self.repository
+            .preview_invitation(InvitationPreviewQuery {
+                invitation_id,
+                token_hash,
+                verified_email: normalized_email(verified_email)
+                    .map_err(|_| GovernanceError::InvitationInvalid)?,
+                now: self.clock.now(),
             })
             .await
     }
@@ -687,6 +719,18 @@ impl GovernanceService {
             )
             .await
     }
+}
+
+fn invitation_token(token: &str) -> Result<(Uuid, TokenHash), GovernanceError> {
+    let bytes = URL_SAFE_NO_PAD
+        .decode(token)
+        .map_err(|_| GovernanceError::InvitationInvalid)?;
+    if bytes.len() != 48 {
+        return Err(GovernanceError::InvitationInvalid);
+    }
+    let invitation_id =
+        Uuid::from_slice(&bytes[..16]).map_err(|_| GovernanceError::InvitationInvalid)?;
+    Ok((invitation_id, TokenHash(Sha256::digest(&bytes).into())))
 }
 
 fn command<T: Serialize>(

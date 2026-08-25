@@ -226,6 +226,9 @@
       "$ref": "#/$defs/OpenApi__Invitation"
     },
     {
+      "$ref": "#/$defs/OpenApi__InvitationPreview"
+    },
+    {
       "$ref": "#/$defs/OpenApi__InvitationPage"
     },
     {
@@ -530,6 +533,12 @@
     },
     {
       "$ref": "#/$defs/Operation__RevokeInvitationResponse"
+    },
+    {
+      "$ref": "#/$defs/Operation__GetInvitationPreviewRequest"
+    },
+    {
+      "$ref": "#/$defs/Operation__GetInvitationPreviewResponse"
     },
     {
       "$ref": "#/$defs/Operation__AcceptInvitationRequest"
@@ -3632,6 +3641,43 @@
         }
       }
     },
+    "OpenApi__InvitationPreview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workspaceId",
+        "workspaceName",
+        "workspaceSlug",
+        "role",
+        "expiresAt"
+      ],
+      "properties": {
+        "workspaceId": {
+          "$ref": "#/$defs/OpenApi__Id"
+        },
+        "workspaceName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "workspaceSlug": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "MEMBER",
+            "ADMIN"
+          ]
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "OpenApi__InvitationPage": {
       "type": "object",
       "additionalProperties": false,
@@ -4029,11 +4075,15 @@
       "additionalProperties": false,
       "required": [
         "document",
+        "effectiveAccess",
         "children"
       ],
       "properties": {
         "document": {
           "$ref": "#/$defs/OpenApi__Document"
+        },
+        "effectiveAccess": {
+          "$ref": "#/$defs/OpenApi__Access"
         },
         "children": {
           "type": "array",
@@ -7259,6 +7309,64 @@
             },
             "body": {
               "$ref": "#/$defs/OpenApi__Invitation"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "body"
+          ],
+          "properties": {
+            "status": {
+              "const": "default"
+            },
+            "body": {
+              "$ref": "#/$defs/OpenApi__Problem"
+            }
+          }
+        }
+      ]
+    },
+    "Operation__GetInvitationPreviewRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "token": {
+              "type": "string",
+              "minLength": 32
+            }
+          },
+          "required": [
+            "token"
+          ]
+        }
+      },
+      "required": [
+        "path"
+      ]
+    },
+    "Operation__GetInvitationPreviewResponse": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "body"
+          ],
+          "properties": {
+            "status": {
+              "const": "200"
+            },
+            "body": {
+              "$ref": "#/$defs/OpenApi__InvitationPreview"
             }
           }
         },

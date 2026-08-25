@@ -215,7 +215,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["getInvitationPreview"];
         put?: never;
         post: operations["acceptInvitation"];
         delete?: never;
@@ -1352,6 +1352,15 @@ export interface components {
             expiresAt: string;
             revision: number;
         };
+        InvitationPreview: {
+            workspaceId: components["schemas"]["Id"];
+            workspaceName: string;
+            workspaceSlug: string;
+            /** @enum {string} */
+            role: "MEMBER" | "ADMIN";
+            /** Format: date-time */
+            expiresAt: string;
+        };
         InvitationPage: {
             items: components["schemas"]["Invitation"][];
             nextCursor?: string | null;
@@ -1440,6 +1449,7 @@ export interface components {
         };
         DocumentTreeNode: {
             document: components["schemas"]["Document"];
+            effectiveAccess: components["schemas"]["Access"];
             children: components["schemas"]["DocumentTreeNode"][];
         };
         JobReference: {
@@ -2864,6 +2874,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Invitation"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getInvitationPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Invitation preview for the verified email */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationPreview"];
                 };
             };
             default: components["responses"]["Problem"];

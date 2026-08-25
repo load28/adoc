@@ -28,7 +28,8 @@ Google과 OpenAI의 실제 credential 검증, registry signing, production traff
 
 ## 계약·화면 증거
 
-- OpenAPI 정본은 108개 operation이다. Web API client는 61개 public method이고 현재 Web은 서로
+- 감사 시점 OpenAPI 정본은 108개 operation이었고 TASK-039의 invitation preview 계약 추가 뒤
+  109개다. Web API client는 감사 시점 61개 public method이고 현재 Web은 서로
   다른 47개 method를 호출한다. 전체 사용자 흐름에 필요한 createWorkspace, acceptInvitation,
   createDocument, moveDocument, publishDocument, compareVersions 등의 client/UI 경계가 빠져 있다.
 - SCR-01~22 중 SCR-02와 SCR-04는 `ReservedScreen`이다. SCR-03은 생성 action이 없고 SCR-05의

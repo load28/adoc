@@ -8,7 +8,7 @@
 
 | Screen | Query Operation | Command Operation |
 |---|---|---|
-| SCR-01~03 Identity | `getSession`, `listWorkspaces` | `beginGoogleLogin`, `completeGoogleLogin`, `logout`, `createWorkspace`, `acceptInvitation` |
+| SCR-01~03 Identity | `getSession`, `listWorkspaces`, `getInvitationPreview` | `beginGoogleLogin`, `completeGoogleLogin`, `logout`, `createWorkspace`, `acceptInvitation` |
 | SCR-04 Workspace home | `getWorkspace`, `getDocumentTree` | `createDocument` |
 | SCR-05 Published Document | `getDocument`, `getPublishPolicy`, `listPublicLinks` | `createOrGetDraft`, `publishDocument`, `createPublicLink`, `revokePublicLink`, `trashDocument` |
 | SCR-06 Draft Editor | `getDocument`, `getDraft` | `acquireEditLease`, `renewEditLease`, `releaseEditLease`, `applyDraftOperations`, `createReference`, `deleteReference`, `createFileUpload`, `completeFileUpload` |

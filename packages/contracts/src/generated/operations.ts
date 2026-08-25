@@ -127,6 +127,13 @@ export const operations = [
     "response": "Operation__RevokeInvitationResponse"
   },
   {
+    "operationId": "getInvitationPreview",
+    "method": "GET",
+    "path": "/invitations/{token}/accept",
+    "request": "Operation__GetInvitationPreviewRequest",
+    "response": "Operation__GetInvitationPreviewResponse"
+  },
+  {
     "operationId": "acceptInvitation",
     "method": "POST",
     "path": "/invitations/{token}/accept",

@@ -75,7 +75,10 @@ pub(crate) fn governance_routes() -> Router<HealthState> {
             "/workspaces/{workspace_id}/invitations/{invitation_id}",
             delete(revoke_invitation),
         )
-        .route("/invitations/{token}/accept", post(accept_invitation))
+        .route(
+            "/invitations/{token}/accept",
+            get(preview_invitation).post(accept_invitation),
+        )
         .route(
             "/workspaces/{workspace_id}/groups",
             get(list_groups).post(create_group),
@@ -346,6 +349,21 @@ async fn accept_invitation(
         .await
         .map_err(Problem::from)?;
     Ok((StatusCode::CREATED, Json(value)).into_response())
+}
+
+async fn preview_invitation(
+    State(state): State<HealthState>,
+    auth: Authenticated,
+    Path(token): Path<String>,
+) -> Result<Json<serde_json::Value>, Problem> {
+    json_value(
+        state
+            .governance
+            .service
+            .preview_invitation(&auth.principal.user.email, &token)
+            .await
+            .map_err(Problem::from)?,
+    )
 }
 async fn list_groups(
     State(state): State<HealthState>,

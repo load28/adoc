@@ -162,6 +162,14 @@ paths:
         '200': {description: Revoked, content: {application/json: {schema: {$ref: '#/components/schemas/Invitation'}}}}
         default: {$ref: '#/components/responses/Problem'}
   /invitations/{token}/accept:
+    get:
+      tags: [Governance]
+      operationId: getInvitationPreview
+      parameters:
+        - {name: token, in: path, required: true, schema: {type: string, minLength: 32}}
+      responses:
+        '200': {description: Invitation preview for the verified email, content: {application/json: {schema: {$ref: '#/components/schemas/InvitationPreview'}}}}
+        default: {$ref: '#/components/responses/Problem'}
     post:
       tags: [Governance]
       operationId: acceptInvitation
@@ -1071,6 +1079,7 @@ components:
     Workspace: {type: object, additionalProperties: false, required: [id, name, slug, status, revision], properties: {id: {$ref: '#/components/schemas/Id'}, name: {type: string}, slug: {type: string}, status: {type: string, enum: [ACTIVE, DELETION_SCHEDULED, PURGING, DELETED]}, revision: {type: integer, minimum: 0}}}
     Membership: {type: object, additionalProperties: false, required: [userId, role, status, revision], properties: {userId: {$ref: '#/components/schemas/Id'}, role: {type: string, enum: [MEMBER, ADMIN, OWNER]}, status: {type: string, enum: [ACTIVE, SUSPENDED, REMOVED]}, revision: {type: integer, minimum: 0}}}
     Invitation: {type: object, additionalProperties: false, required: [id, email, role, status, expiresAt, revision], properties: {id: {$ref: '#/components/schemas/Id'}, email: {type: string, format: email}, role: {type: string, enum: [MEMBER, ADMIN]}, status: {type: string, enum: [PENDING, ACCEPTED, REVOKED, EXPIRED]}, expiresAt: {type: string, format: date-time}, revision: {type: integer, minimum: 0}}}
+    InvitationPreview: {type: object, additionalProperties: false, required: [workspaceId, workspaceName, workspaceSlug, role, expiresAt], properties: {workspaceId: {$ref: '#/components/schemas/Id'}, workspaceName: {type: string, minLength: 1, maxLength: 200}, workspaceSlug: {type: string, minLength: 1, maxLength: 200}, role: {type: string, enum: [MEMBER, ADMIN]}, expiresAt: {type: string, format: date-time}}}
     InvitationPage: {type: object, additionalProperties: false, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/Invitation'}}, nextCursor: {type: [string, 'null']}}}
     Group: {type: object, additionalProperties: false, required: [id, name, memberIds, revision], properties: {id: {$ref: '#/components/schemas/Id'}, name: {type: string}, memberIds: {type: array, items: {$ref: '#/components/schemas/Id'}}, revision: {type: integer, minimum: 0}}}
     Access: {type: string, enum: [NO_ACCESS, VIEWER, CONTRIBUTOR, EDITOR]}
@@ -1084,7 +1093,7 @@ components:
     Document: {type: object, additionalProperties: false, required: [id, title, parentId, status, currentVersionId, revision], properties: {id: {$ref: '#/components/schemas/Id'}, title: {type: string}, parentId: {$ref: '#/components/schemas/NullableId'}, status: {type: string, enum: [ACTIVE, TRASHED, PURGING]}, currentVersionId: {$ref: '#/components/schemas/NullableId'}, revision: {type: integer, minimum: 0}}}
     DocumentPage: {type: object, additionalProperties: false, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/Document'}}, nextCursor: {type: [string, 'null']}}}
     DocumentTree: {type: object, additionalProperties: false, required: [nodes, watermark], properties: {nodes: {type: array, items: {$ref: '#/components/schemas/DocumentTreeNode'}}, watermark: {type: integer, minimum: 0}}}
-    DocumentTreeNode: {type: object, additionalProperties: false, required: [document, children], properties: {document: {$ref: '#/components/schemas/Document'}, children: {type: array, items: {$ref: '#/components/schemas/DocumentTreeNode'}}}}
+    DocumentTreeNode: {type: object, additionalProperties: false, required: [document, effectiveAccess, children], properties: {document: {$ref: '#/components/schemas/Document'}, effectiveAccess: {$ref: '#/components/schemas/Access'}, children: {type: array, items: {$ref: '#/components/schemas/DocumentTreeNode'}}}}
     JobReference: {type: object, additionalProperties: false, required: [jobId, status], properties: {jobId: {$ref: '#/components/schemas/Id'}, status: {type: string, enum: [QUEUED]}}}
     DocumentDetail: {allOf: [{$ref: '#/components/schemas/Document'}, {type: object, properties: {draft: {oneOf: [{$ref: '#/components/schemas/Draft'}, {type: 'null'}]}, publishedVersion: {oneOf: [{$ref: '#/components/schemas/PublishedVersion'}, {type: 'null'}]}}}]}
     Draft: {type: object, additionalProperties: false, required: [id, documentId, baseVersionId, revision, schemaVersion, contentFingerprint, content], properties: {id: {$ref: '#/components/schemas/Id'}, documentId: {$ref: '#/components/schemas/Id'}, baseVersionId: {$ref: '#/components/schemas/NullableId'}, revision: {type: integer, minimum: 0}, schemaVersion: {type: integer, minimum: 1}, contentFingerprint: {type: string, pattern: '^[a-f0-9]{64}$'}, content: {$ref: '../contracts/document-content.schema.json#/$defs/content'}}}

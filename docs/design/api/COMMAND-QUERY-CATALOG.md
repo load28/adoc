@@ -33,7 +33,8 @@ type은 [OpenAPI](openapi.yaml), 오류 의미는 [Error Catalog](ERROR-CATALOG.
 | inviteMember | `POST /workspaces/{workspaceId}/invitations` | C | Admin | key | `INVITATION_EXISTS` |
 | listInvitations | `GET /workspaces/{workspaceId}/invitations` | Q | Admin | cursor | — |
 | revokeInvitation | `DELETE /workspaces/{workspaceId}/invitations/{invitationId}` | C | Admin | R | `INVITATION_STATE_INVALID` |
-| acceptInvitation | `POST /invitations/{token}/accept` | C | session | token 1회 | `INVITATION_INVALID` |
+| getInvitationPreview | `GET /invitations/{token}/accept` | Q | session+동일 verified email | token hash·expiry | `INVITATION_INVALID` |
+| acceptInvitation | `POST /invitations/{token}/accept` | C | session+동일 verified email | token 1회 | `INVITATION_INVALID` |
 | updateMemberRole | `PUT /workspaces/{workspaceId}/members/{userId}/role` | C | Owner | R | `LAST_OWNER` |
 | removeMember | `DELETE /workspaces/{workspaceId}/members/{userId}` | C | Admin | R | `LAST_OWNER` |
 | listGroups | `GET /workspaces/{workspaceId}/groups` | Q | Member | cursor | — |

@@ -63,6 +63,10 @@ async fn document_tree_draft_lease_postgres_contract() {
         .unwrap();
     let tree = service.tree(actor, workspace).await.unwrap();
     assert_eq!(tree.nodes[0].children[0].document.id, child.id);
+    assert_eq!(
+        tree.nodes[0].effective_access,
+        adoc_application::governance::Access::Editor
+    );
     assert!(matches!(
         service
             .preview_move(

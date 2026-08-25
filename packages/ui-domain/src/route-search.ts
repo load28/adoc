@@ -7,6 +7,20 @@ type DocumentPanel = (typeof documentPanels)[number];
 export type SettingsSection = (typeof settingsSections)[number];
 export type SettingsSearch = { document?: string; subject?: string; cursor?: string };
 
+export function canonicalReturnTo(value: unknown): string {
+  if (typeof value !== "string" || value.length === 0 || value.length > 2048) return "/workspaces";
+  if (!value.startsWith("/") || value.startsWith("//") || value.includes("\\"))
+    return "/workspaces";
+  try {
+    const url = new URL(value, "https://adoc.invalid");
+    if (url.origin !== "https://adoc.invalid" || !url.pathname.startsWith("/"))
+      return "/workspaces";
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return "/workspaces";
+  }
+}
+
 export type DocumentSearch = {
   mode: DocumentMode;
   panel?: DocumentPanel;

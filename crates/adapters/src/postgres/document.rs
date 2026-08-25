@@ -58,8 +58,8 @@ impl DocumentRepository for PostgresDocumentRepository {
             let resolved =
                 compile_permission_scope(&snapshot.nodes).map_err(|_| GovernanceError::Internal)?;
             let accessible = resolved
-                .into_iter()
-                .filter_map(|(id, permission)| permission.access.can_view().then_some(id))
+                .iter()
+                .filter_map(|(id, permission)| permission.access.can_view().then_some(*id))
                 .collect::<BTreeSet<_>>();
             let rows = sqlx::query("SELECT id,parent_id,title,status::text,current_version_id,revision FROM documents WHERE workspace_id=$1 AND status='ACTIVE' ORDER BY rank COLLATE \"C\",id")
                 .bind(workspace).fetch_all(&mut *tx).await.map_err(map_store)?;
@@ -71,7 +71,11 @@ impl DocumentRepository for PostgresDocumentRepository {
             .await
             .map_err(map_store)?
             .ok_or(GovernanceError::WorkspaceNotFound)?;
-            let nodes = build_tree(&rows, &accessible)?;
+            let access = resolved
+                .into_iter()
+                .map(|(id, permission)| (id, permission.access))
+                .collect::<BTreeMap<_, _>>();
+            let nodes = build_tree(&rows, &accessible, &access)?;
             tx.commit().await.map_err(map_store)?;
             Ok(DocumentTree { nodes, watermark })
         })
@@ -1252,6 +1256,7 @@ async fn append_document_changed(
 fn build_tree(
     rows: &[PgRow],
     accessible: &BTreeSet<Uuid>,
+    access: &BTreeMap<Uuid, Access>,
 ) -> Result<Vec<DocumentTreeNode>, GovernanceError> {
     let mut docs = BTreeMap::new();
     let mut children: BTreeMap<Option<Uuid>, Vec<Uuid>> = BTreeMap::new();
@@ -1266,6 +1271,7 @@ fn build_tree(
         parent: Option<Uuid>,
         docs: &BTreeMap<Uuid, Document>,
         children: &BTreeMap<Option<Uuid>, Vec<Uuid>>,
+        access: &BTreeMap<Uuid, Access>,
     ) -> Vec<DocumentTreeNode> {
         children
             .get(&parent)
@@ -1273,13 +1279,14 @@ fn build_tree(
             .flatten()
             .filter_map(|id| {
                 docs.get(id).cloned().map(|document| DocumentTreeNode {
+                    effective_access: access.get(id).copied().unwrap_or(Access::NoAccess),
                     document,
-                    children: build(Some(*id), docs, children),
+                    children: build(Some(*id), docs, children, access),
                 })
             })
             .collect()
     }
-    Ok(build(None, &docs, &children))
+    Ok(build(None, &docs, &children, access))
 }
 async fn audit_document(
     tx: &mut Transaction<'_, Postgres>,

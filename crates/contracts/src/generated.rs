@@ -258,6 +258,9 @@ pub mod error {
 ///      "$ref": "#/$defs/OpenApi__Invitation"
 ///    },
 ///    {
+///      "$ref": "#/$defs/OpenApi__InvitationPreview"
+///    },
+///    {
 ///      "$ref": "#/$defs/OpenApi__InvitationPage"
 ///    },
 ///    {
@@ -562,6 +565,12 @@ pub mod error {
 ///    },
 ///    {
 ///      "$ref": "#/$defs/Operation__RevokeInvitationResponse"
+///    },
+///    {
+///      "$ref": "#/$defs/Operation__GetInvitationPreviewRequest"
+///    },
+///    {
+///      "$ref": "#/$defs/Operation__GetInvitationPreviewResponse"
 ///    },
 ///    {
 ///      "$ref": "#/$defs/Operation__AcceptInvitationRequest"
@@ -1196,6 +1205,7 @@ pub enum AdocContractBundle {
     OpenApiWorkspace(OpenApiWorkspace),
     OpenApiMembership(OpenApiMembership),
     OpenApiInvitation(OpenApiInvitation),
+    OpenApiInvitationPreview(OpenApiInvitationPreview),
     OpenApiInvitationPage(OpenApiInvitationPage),
     OpenApiGroup(OpenApiGroup),
     OpenApiAccess(OpenApiAccess),
@@ -1298,6 +1308,8 @@ pub enum AdocContractBundle {
     OperationInviteMemberResponse(OperationInviteMemberResponse),
     OperationRevokeInvitationRequest(OperationRevokeInvitationRequest),
     OperationRevokeInvitationResponse(OperationRevokeInvitationResponse),
+    OperationGetInvitationPreviewRequest(OperationGetInvitationPreviewRequest),
+    OperationGetInvitationPreviewResponse(OperationGetInvitationPreviewResponse),
     OperationAcceptInvitationRequest(OperationAcceptInvitationRequest),
     OperationAcceptInvitationResponse(OperationAcceptInvitationResponse),
     OperationListGroupsRequest(OperationListGroupsRequest),
@@ -1853,6 +1865,11 @@ impl ::std::convert::From<OpenApiInvitation> for AdocContractBundle {
         Self::OpenApiInvitation(value)
     }
 }
+impl ::std::convert::From<OpenApiInvitationPreview> for AdocContractBundle {
+    fn from(value: OpenApiInvitationPreview) -> Self {
+        Self::OpenApiInvitationPreview(value)
+    }
+}
 impl ::std::convert::From<OpenApiInvitationPage> for AdocContractBundle {
     fn from(value: OpenApiInvitationPage) -> Self {
         Self::OpenApiInvitationPage(value)
@@ -2361,6 +2378,16 @@ impl ::std::convert::From<OperationRevokeInvitationRequest> for AdocContractBund
 impl ::std::convert::From<OperationRevokeInvitationResponse> for AdocContractBundle {
     fn from(value: OperationRevokeInvitationResponse) -> Self {
         Self::OperationRevokeInvitationResponse(value)
+    }
+}
+impl ::std::convert::From<OperationGetInvitationPreviewRequest> for AdocContractBundle {
+    fn from(value: OperationGetInvitationPreviewRequest) -> Self {
+        Self::OperationGetInvitationPreviewRequest(value)
+    }
+}
+impl ::std::convert::From<OperationGetInvitationPreviewResponse> for AdocContractBundle {
+    fn from(value: OperationGetInvitationPreviewResponse) -> Self {
+        Self::OperationGetInvitationPreviewResponse(value)
     }
 }
 impl ::std::convert::From<OperationAcceptInvitationRequest> for AdocContractBundle {
@@ -14704,7 +14731,8 @@ pub struct OpenApiDocumentTree {
 ///  "type": "object",
 ///  "required": [
 ///    "children",
-///    "document"
+///    "document",
+///    "effectiveAccess"
 ///  ],
 ///  "properties": {
 ///    "children": {
@@ -14715,6 +14743,9 @@ pub struct OpenApiDocumentTree {
 ///    },
 ///    "document": {
 ///      "$ref": "#/$defs/OpenApi__Document"
+///    },
+///    "effectiveAccess": {
+///      "$ref": "#/$defs/OpenApi__Access"
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -14726,6 +14757,8 @@ pub struct OpenApiDocumentTree {
 pub struct OpenApiDocumentTreeNode {
     pub children: ::std::vec::Vec<OpenApiDocumentTreeNode>,
     pub document: OpenApiDocument,
+    #[serde(rename = "effectiveAccess")]
+    pub effective_access: OpenApiAccess,
 }
 ///`OpenApiDraft`
 ///
@@ -15847,6 +15880,279 @@ pub struct OpenApiInvitationPage {
         skip_serializing_if = "::std::option::Option::is_none"
     )]
     pub next_cursor: ::std::option::Option<::std::string::String>,
+}
+///`OpenApiInvitationPreview`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "object",
+///  "required": [
+///    "expiresAt",
+///    "role",
+///    "workspaceId",
+///    "workspaceName",
+///    "workspaceSlug"
+///  ],
+///  "properties": {
+///    "expiresAt": {
+///      "type": "string",
+///      "format": "date-time"
+///    },
+///    "role": {
+///      "type": "string",
+///      "enum": [
+///        "MEMBER",
+///        "ADMIN"
+///      ]
+///    },
+///    "workspaceId": {
+///      "$ref": "#/$defs/OpenApi__Id"
+///    },
+///    "workspaceName": {
+///      "type": "string",
+///      "maxLength": 200,
+///      "minLength": 1
+///    },
+///    "workspaceSlug": {
+///      "type": "string",
+///      "maxLength": 200,
+///      "minLength": 1
+///    }
+///  },
+///  "additionalProperties": false
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct OpenApiInvitationPreview {
+    #[serde(rename = "expiresAt")]
+    pub expires_at: ::chrono::DateTime<::chrono::offset::Utc>,
+    pub role: OpenApiInvitationPreviewRole,
+    #[serde(rename = "workspaceId")]
+    pub workspace_id: OpenApiId,
+    #[serde(rename = "workspaceName")]
+    pub workspace_name: OpenApiInvitationPreviewWorkspaceName,
+    #[serde(rename = "workspaceSlug")]
+    pub workspace_slug: OpenApiInvitationPreviewWorkspaceSlug,
+}
+///`OpenApiInvitationPreviewRole`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "enum": [
+///    "MEMBER",
+///    "ADMIN"
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum OpenApiInvitationPreviewRole {
+    #[serde(rename = "MEMBER")]
+    Member,
+    #[serde(rename = "ADMIN")]
+    Admin,
+}
+impl ::std::fmt::Display for OpenApiInvitationPreviewRole {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Member => f.write_str("MEMBER"),
+            Self::Admin => f.write_str("ADMIN"),
+        }
+    }
+}
+impl ::std::str::FromStr for OpenApiInvitationPreviewRole {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "MEMBER" => Ok(Self::Member),
+            "ADMIN" => Ok(Self::Admin),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for OpenApiInvitationPreviewRole {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for OpenApiInvitationPreviewRole {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OpenApiInvitationPreviewRole {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`OpenApiInvitationPreviewWorkspaceName`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 200,
+///  "minLength": 1
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OpenApiInvitationPreviewWorkspaceName(::std::string::String);
+impl ::std::ops::Deref for OpenApiInvitationPreviewWorkspaceName {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OpenApiInvitationPreviewWorkspaceName> for ::std::string::String {
+    fn from(value: OpenApiInvitationPreviewWorkspaceName) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OpenApiInvitationPreviewWorkspaceName {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 200usize {
+            return Err("longer than 200 characters".into());
+        }
+        if value.chars().count() < 1usize {
+            return Err("shorter than 1 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OpenApiInvitationPreviewWorkspaceName {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for OpenApiInvitationPreviewWorkspaceName {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OpenApiInvitationPreviewWorkspaceName {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OpenApiInvitationPreviewWorkspaceName {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OpenApiInvitationPreviewWorkspaceSlug`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 200,
+///  "minLength": 1
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OpenApiInvitationPreviewWorkspaceSlug(::std::string::String);
+impl ::std::ops::Deref for OpenApiInvitationPreviewWorkspaceSlug {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OpenApiInvitationPreviewWorkspaceSlug> for ::std::string::String {
+    fn from(value: OpenApiInvitationPreviewWorkspaceSlug) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OpenApiInvitationPreviewWorkspaceSlug {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 200usize {
+            return Err("longer than 200 characters".into());
+        }
+        if value.chars().count() < 1usize {
+            return Err("shorter than 1 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OpenApiInvitationPreviewWorkspaceSlug {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for OpenApiInvitationPreviewWorkspaceSlug {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OpenApiInvitationPreviewWorkspaceSlug {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OpenApiInvitationPreviewWorkspaceSlug {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
 }
 ///`OpenApiInvitationRole`
 ///
@@ -36604,6 +36910,198 @@ impl ::std::convert::From<OpenApiGroup> for OperationGetGroupResponse {
     }
 }
 impl ::std::convert::From<OpenApiProblem> for OperationGetGroupResponse {
+    fn from(value: OpenApiProblem) -> Self {
+        Self::Default(value)
+    }
+}
+///`OperationGetInvitationPreviewRequest`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "object",
+///  "required": [
+///    "path"
+///  ],
+///  "properties": {
+///    "path": {
+///      "type": "object",
+///      "required": [
+///        "token"
+///      ],
+///      "properties": {
+///        "token": {
+///          "type": "string",
+///          "minLength": 32
+///        }
+///      },
+///      "additionalProperties": false
+///    }
+///  },
+///  "additionalProperties": false
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct OperationGetInvitationPreviewRequest {
+    pub path: OperationGetInvitationPreviewRequestPath,
+}
+///`OperationGetInvitationPreviewRequestPath`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "object",
+///  "required": [
+///    "token"
+///  ],
+///  "properties": {
+///    "token": {
+///      "type": "string",
+///      "minLength": 32
+///    }
+///  },
+///  "additionalProperties": false
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct OperationGetInvitationPreviewRequestPath {
+    pub token: OperationGetInvitationPreviewRequestPathToken,
+}
+///`OperationGetInvitationPreviewRequestPathToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "minLength": 32
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationGetInvitationPreviewRequestPathToken(::std::string::String);
+impl ::std::ops::Deref for OperationGetInvitationPreviewRequestPathToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationGetInvitationPreviewRequestPathToken> for ::std::string::String {
+    fn from(value: OperationGetInvitationPreviewRequestPathToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationGetInvitationPreviewRequestPathToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() < 32usize {
+            return Err("shorter than 32 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationGetInvitationPreviewRequestPathToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationGetInvitationPreviewRequestPathToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationGetInvitationPreviewRequestPathToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationGetInvitationPreviewRequestPathToken {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationGetInvitationPreviewResponse`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "oneOf": [
+///    {
+///      "type": "object",
+///      "required": [
+///        "body",
+///        "status"
+///      ],
+///      "properties": {
+///        "body": {
+///          "$ref": "#/$defs/OpenApi__InvitationPreview"
+///        },
+///        "status": {
+///          "const": "200"
+///        }
+///      },
+///      "additionalProperties": false
+///    },
+///    {
+///      "type": "object",
+///      "required": [
+///        "body",
+///        "status"
+///      ],
+///      "properties": {
+///        "body": {
+///          "$ref": "#/$defs/OpenApi__Problem"
+///        },
+///        "status": {
+///          "const": "default"
+///        }
+///      },
+///      "additionalProperties": false
+///    }
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(tag = "status", content = "body")]
+pub enum OperationGetInvitationPreviewResponse {
+    #[serde(rename = "200")]
+    X200(OpenApiInvitationPreview),
+    #[serde(rename = "default")]
+    Default(OpenApiProblem),
+}
+impl ::std::convert::From<OpenApiInvitationPreview> for OperationGetInvitationPreviewResponse {
+    fn from(value: OpenApiInvitationPreview) -> Self {
+        Self::X200(value)
+    }
+}
+impl ::std::convert::From<OpenApiProblem> for OperationGetInvitationPreviewResponse {
     fn from(value: OpenApiProblem) -> Self {
         Self::Default(value)
     }

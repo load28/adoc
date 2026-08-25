@@ -1,9 +1,9 @@
 use adoc_application::governance::{
     Command, GovernanceError, GovernanceRepository, Group, GroupChange, GroupOperation, Invitation,
-    InvitationAcceptance, InvitationChange, InvitationPage, InvitationRole, InvitationStatus,
-    Membership, MembershipChange, MembershipRole, MembershipStatus, NewGroup, NewInvitation,
-    NewWorkspace, PersistedInvitation, PublishMode, Workspace, WorkspaceChange, WorkspaceDeletion,
-    WorkspaceStatus, may_change_role,
+    InvitationAcceptance, InvitationChange, InvitationPage, InvitationPreview,
+    InvitationPreviewQuery, InvitationRole, InvitationStatus, Membership, MembershipChange,
+    MembershipRole, MembershipStatus, NewGroup, NewInvitation, NewWorkspace, PersistedInvitation,
+    PublishMode, Workspace, WorkspaceChange, WorkspaceDeletion, WorkspaceStatus, may_change_role,
 };
 use adoc_application::operations::{
     AuditAction, AuditEventInput, AuditTarget, AuditTargetKind, EventAudience,
@@ -521,6 +521,43 @@ impl GovernanceRepository for PostgresGovernanceRepository {
             complete_user(&mut tx, &input.command, &result).await?;
             tx.commit().await.map_err(map_store)?;
             Ok(result)
+        })
+    }
+
+    fn preview_invitation<'a>(
+        &'a self,
+        input: InvitationPreviewQuery,
+    ) -> BoxFuture<'a, Result<InvitationPreview, GovernanceError>> {
+        Box::pin(async move {
+            let row = sqlx::query("SELECT i.email_normalized,i.role::text,i.token_hash,i.expires_at,i.accepted_at,i.revoked_at,w.id AS workspace_id,w.name AS workspace_name,w.slug AS workspace_slug,w.status::text AS workspace_status FROM invitations i JOIN workspaces w ON w.id=i.workspace_id WHERE i.id=$1")
+                .bind(input.invitation_id)
+                .fetch_optional(&self.pool)
+                .await
+                .map_err(map_store)?
+                .ok_or(GovernanceError::InvitationInvalid)?;
+            let stored: Vec<u8> = row
+                .try_get("token_hash")
+                .map_err(|_| GovernanceError::Internal)?;
+            let expires_at: DateTime<Utc> = row.get("expires_at");
+            let accepted_at: Option<DateTime<Utc>> = row.get("accepted_at");
+            let revoked_at: Option<DateTime<Utc>> = row.get("revoked_at");
+            if stored.len() != 32
+                || stored.ct_eq(&input.token_hash.0).unwrap_u8() != 1
+                || row.get::<String, _>("email_normalized") != input.verified_email
+                || accepted_at.is_some()
+                || revoked_at.is_some()
+                || expires_at <= input.now
+                || row.get::<String, _>("workspace_status") != "ACTIVE"
+            {
+                return Err(GovernanceError::InvitationInvalid);
+            }
+            Ok(InvitationPreview {
+                workspace_id: row.get("workspace_id"),
+                workspace_name: row.get("workspace_name"),
+                workspace_slug: row.get("workspace_slug"),
+                role: parse_invitation_role(row.get::<String, _>("role").as_str())?,
+                expires_at,
+            })
         })
     }
 
@@ -1102,6 +1139,13 @@ fn invitation_role(role: InvitationRole) -> &'static str {
     match role {
         InvitationRole::Member => "MEMBER",
         InvitationRole::Admin => "ADMIN",
+    }
+}
+fn parse_invitation_role(value: &str) -> Result<InvitationRole, GovernanceError> {
+    match value {
+        "MEMBER" => Ok(InvitationRole::Member),
+        "ADMIN" => Ok(InvitationRole::Admin),
+        _ => Err(GovernanceError::Internal),
     }
 }
 fn publish_mode(mode: PublishMode) -> &'static str {

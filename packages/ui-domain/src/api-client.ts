@@ -4,6 +4,11 @@ import type { components } from "@adoc/contracts/openapi";
 export type SessionView = components["schemas"]["SessionView"];
 export type UserPreferences = components["schemas"]["UserPreferences"];
 export type WorkspaceView = components["schemas"]["Workspace"];
+export type InvitationPreview = components["schemas"]["InvitationPreview"];
+export type DocumentView = components["schemas"]["Document"];
+export type DocumentTree = components["schemas"]["DocumentTree"];
+export type DocumentTreeNode = components["schemas"]["DocumentTreeNode"];
+export type ImpactPreview = components["schemas"]["ImpactPreview"];
 export type DocumentDetail = components["schemas"]["DocumentDetail"];
 export type DraftView = components["schemas"]["Draft"];
 export type EditLeaseView = components["schemas"]["EditLease"];
@@ -88,6 +93,114 @@ export class ApiClient {
 
   workspaces(signal?: AbortSignal): Promise<WorkspaceView[]> {
     return this.#json<WorkspaceView[]>("/api/v1/workspaces", { signal });
+  }
+
+  createWorkspace(name: string, command: CommandHeaders): Promise<WorkspaceView> {
+    return this.#json<WorkspaceView>("/api/v1/workspaces", {
+      method: "POST",
+      headers: commandHeaders(command),
+      body: JSON.stringify({ name }),
+    });
+  }
+
+  invitationPreview(token: string, signal?: AbortSignal): Promise<InvitationPreview> {
+    return this.#json<InvitationPreview>(
+      `/api/v1/invitations/${encodeURIComponent(token)}/accept`,
+      { signal },
+    );
+  }
+
+  acceptInvitation(token: string, command: CommandHeaders): Promise<Membership> {
+    return this.#json<Membership>(`/api/v1/invitations/${encodeURIComponent(token)}/accept`, {
+      method: "POST",
+      headers: commandHeaders(command),
+    });
+  }
+
+  documentTree(workspaceId: string, signal?: AbortSignal): Promise<DocumentTree> {
+    return this.#json<DocumentTree>(
+      `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/documents/tree`,
+      { signal },
+    );
+  }
+
+  createDocument(
+    workspaceId: string,
+    title: string,
+    parentId: string | null,
+    afterDocumentId: string | null,
+    command: CommandHeaders,
+  ): Promise<DocumentView> {
+    return this.#json<DocumentView>(
+      `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/documents`,
+      {
+        method: "POST",
+        headers: commandHeaders(command),
+        body: JSON.stringify({ title, parentId, afterDocumentId }),
+      },
+    );
+  }
+
+  renameDocument(
+    workspaceId: string,
+    documentId: string,
+    revision: number,
+    title: string,
+    command: CommandHeaders,
+  ): Promise<DocumentView> {
+    return this.#json<DocumentView>(resourcePath(workspaceId, "documents", documentId), {
+      method: "PUT",
+      headers: commandHeaders(command, revision),
+      body: JSON.stringify({ title }),
+    });
+  }
+
+  previewDocumentMove(
+    workspaceId: string,
+    documentId: string,
+    revision: number,
+    newParentId: string | null,
+    afterDocumentId: string | null,
+    csrfToken: string,
+  ): Promise<ImpactPreview> {
+    return this.#json<ImpactPreview>(
+      `${resourcePath(workspaceId, "documents", documentId)}/move-preview`,
+      {
+        method: "POST",
+        headers: previewHeaders(csrfToken, revision),
+        body: JSON.stringify({ newParentId, afterDocumentId }),
+      },
+    );
+  }
+
+  moveDocument(
+    workspaceId: string,
+    documentId: string,
+    revision: number,
+    newParentId: string | null,
+    afterDocumentId: string | null,
+    previewToken: string,
+    command: CommandHeaders,
+  ): Promise<DocumentView> {
+    return this.#json<DocumentView>(`${resourcePath(workspaceId, "documents", documentId)}/move`, {
+      method: "POST",
+      headers: commandHeaders(command, revision),
+      body: JSON.stringify({ newParentId, afterDocumentId, previewToken }),
+    });
+  }
+
+  trashDocument(
+    workspaceId: string,
+    documentId: string,
+    revision: number,
+    reason: string,
+    command: CommandHeaders,
+  ): Promise<DocumentView> {
+    return this.#json<DocumentView>(`${resourcePath(workspaceId, "documents", documentId)}/trash`, {
+      method: "POST",
+      headers: commandHeaders(command, revision),
+      body: JSON.stringify({ reason }),
+    });
   }
 
   document(workspaceId: string, documentId: string, signal?: AbortSignal): Promise<DocumentDetail> {
@@ -826,6 +939,14 @@ function commandHeaders(command: CommandHeaders, revision?: number): Headers {
   });
   if (revision !== undefined) headers.set("if-match", String(revision));
   return headers;
+}
+
+function previewHeaders(csrfToken: string, revision: number): Headers {
+  return new Headers({
+    "content-type": "application/json",
+    "x-csrf-token": csrfToken,
+    "if-match": String(revision),
+  });
 }
 
 function leaseHeaders(

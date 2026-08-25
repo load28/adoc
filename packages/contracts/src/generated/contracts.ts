@@ -75,6 +75,7 @@ export type AdocContractBundle =
   | OpenApi__Workspace
   | OpenApi__Membership
   | OpenApi__Invitation
+  | OpenApi__InvitationPreview
   | OpenApi__InvitationPage
   | OpenApi__Group
   | OpenApi__Access
@@ -175,6 +176,8 @@ export type AdocContractBundle =
   | Operation__InviteMemberResponse
   | Operation__RevokeInvitationRequest
   | Operation__RevokeInvitationResponse
+  | Operation__GetInvitationPreviewRequest
+  | Operation__GetInvitationPreviewResponse
   | Operation__AcceptInvitationRequest
   | Operation__AcceptInvitationResponse
   | Operation__ListGroupsRequest
@@ -752,6 +755,15 @@ export type Operation__RevokeInvitationResponse =
   | {
       status: "200";
       body: OpenApi__Invitation;
+    }
+  | {
+      status: "default";
+      body: OpenApi__Problem;
+    };
+export type Operation__GetInvitationPreviewResponse =
+  | {
+      status: "200";
+      body: OpenApi__InvitationPreview;
     }
   | {
       status: "default";
@@ -1894,6 +1906,13 @@ export interface OpenApi__Invitation {
   expiresAt: string;
   revision: number;
 }
+export interface OpenApi__InvitationPreview {
+  workspaceId: OpenApi__Id;
+  workspaceName: string;
+  workspaceSlug: string;
+  role: "MEMBER" | "ADMIN";
+  expiresAt: string;
+}
 export interface OpenApi__InvitationPage {
   items: OpenApi__Invitation[];
   nextCursor?: string | null;
@@ -1963,6 +1982,7 @@ export interface OpenApi__DocumentTree {
 }
 export interface OpenApi__DocumentTreeNode {
   document: OpenApi__Document;
+  effectiveAccess: OpenApi__Access;
   children: OpenApi__DocumentTreeNode[];
 }
 export interface OpenApi__JobReference {
@@ -2521,6 +2541,11 @@ export interface Operation__RevokeInvitationRequest {
     "If-Match": string;
     "Idempotency-Key": string;
     "X-CSRF-Token": string;
+  };
+}
+export interface Operation__GetInvitationPreviewRequest {
+  path: {
+    token: string;
   };
 }
 export interface Operation__AcceptInvitationRequest {

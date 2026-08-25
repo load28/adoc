@@ -20,13 +20,16 @@ Member 제거와 Workspace purge는 revoke한다.
 - `CreateWorkspace(name, idempotencyKey)` → owner Admin Membership
 - `InviteMember(workspaceId, email, role, expiresAt, expectedRevision)`
 - `AcceptInvitation(token)` → 동일 normalized Google email 요구
+- `PreviewInvitation(token)` → 동일 normalized Google email과 유효한 token일 때 Workspace 이름·role·만료만 반환
 - `RemoveMember(userId, expectedRevision)` → active lease·review·group cleanup event
 - `CreateGroup`, `RenameGroup`, `SetGroupMembers`, `DeleteGroup`
 
 ## Invariant
 
 Workspace는 최소 한 명의 active Admin을 가져야 한다. 마지막 Admin 제거·강등은 거부한다.
-Group Member는 active Workspace Member여야 한다. 초대 token은 single-use다.
+Group Member는 active Workspace Member여야 한다. 초대 token은 single-use다. preview는 token을
+소비하지 않으며 email·token·상태가 하나라도 맞지 않으면 accept와 같은 `INVITATION_INVALID`를
+반환해 대상 Workspace와 초대 email 존재를 노출하지 않는다.
 
 ## Errors
 

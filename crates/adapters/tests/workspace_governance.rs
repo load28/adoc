@@ -71,6 +71,19 @@ async fn workspace_governance_postgres_contract() {
     assert_eq!(invitation.delivery_token(), replay.delivery_token());
     assert!(matches!(
         service
+            .preview_invitation(&user_email(outsider), invitation.delivery_token())
+            .await,
+        Err(GovernanceError::InvitationInvalid)
+    ));
+    let preview = service
+        .preview_invitation(&user_email(invited), invitation.delivery_token())
+        .await
+        .unwrap();
+    assert_eq!(preview.workspace_id, workspace.id);
+    assert_eq!(preview.workspace_name, workspace.name);
+    assert_eq!(preview.workspace_slug, workspace.slug);
+    assert!(matches!(
+        service
             .accept_invitation(
                 outsider,
                 &user_email(outsider),
@@ -90,6 +103,12 @@ async fn workspace_governance_postgres_contract() {
         .await
         .unwrap();
     assert_eq!(membership.role, MembershipRole::Member);
+    assert!(matches!(
+        service
+            .preview_invitation(&user_email(invited), invitation.delivery_token())
+            .await,
+        Err(GovernanceError::InvitationInvalid)
+    ));
 
     let promoted = service
         .update_member_role(

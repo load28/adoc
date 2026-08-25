@@ -7,7 +7,7 @@
     "typify": "0.7.0"
   },
   "sources": {
-    "docs/design/api/openapi.yaml": "4d0b222376a0d3e6266348fa55ce2abda3c3451325cfb56d8645eae99c03dee3",
+    "docs/design/api/openapi.yaml": "0d28839b69590b57ff2cfa9980fb8e569f3a97313980402b589b969d84a3bb77",
     "docs/design/api/asyncapi.yaml": "987f600805d0b851054058984978c1f0a6642063cf6d06a5eba7228a04af5ea1",
     "docs/design/contracts/ai-contracts.schema.json": "7c582f557477a2cac3a8b1fa48e270fcb538ef374d5eb8fb912eae33ca10fb46",
     "docs/design/contracts/document-content.schema.json": "cacd6550ccb28932f61e6638958fc4ad9f6d6fa80bacac74a44ccf7ae3e40bbf",
@@ -15,9 +15,9 @@
     "docs/design/contracts/event-payloads.schema.json": "7686a4df58896bc7fba5200bc8a1bc2a56f47465150bed98a345a9a3ba788faa"
   },
   "counts": {
-    "openapiOperations": 108,
+    "openapiOperations": 109,
     "asyncapiOperations": 3,
     "asyncapiMessages": 2,
-    "definitions": 360
+    "definitions": 363
   }
 }

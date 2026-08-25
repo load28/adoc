@@ -1,14 +1,29 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import YAML from "yaml";
 
 const root = resolve(import.meta.dirname, "..");
 const generated = resolve(root, "packages/contracts/src/generated");
 const bundle = JSON.parse(readFileSync(resolve(generated, "contract-bundle.schema.json"), "utf8"));
 const manifest = JSON.parse(readFileSync(resolve(generated, "manifest.json"), "utf8"));
+const openapi = YAML.parse(readFileSync(resolve(root, "docs/design/api/openapi.yaml"), "utf8"));
 
-if (manifest.counts.openapiOperations !== 108)
-  throw new Error(`expected 108 OpenAPI operations; found ${manifest.counts.openapiOperations}`);
+const httpMethods = new Set(["get", "put", "post", "delete", "options", "head", "patch", "trace"]);
+const operationIds = Object.values(openapi.paths ?? {}).flatMap((path) =>
+  Object.entries(path)
+    .filter(([method]) => httpMethods.has(method))
+    .map(([, operation]) => operation.operationId),
+);
+if (
+  operationIds.some((id) => typeof id !== "string") ||
+  new Set(operationIds).size !== operationIds.length
+)
+  throw new Error("OpenAPI operation IDs are missing or duplicated");
+if (manifest.counts.openapiOperations !== operationIds.length)
+  throw new Error(
+    `generated OpenAPI operation count differs: source ${operationIds.length}, manifest ${manifest.counts.openapiOperations}`,
+  );
 if (manifest.counts.asyncapiOperations !== 3 || manifest.counts.asyncapiMessages !== 2)
   throw new Error("AsyncAPI operation or message coverage drifted");
 

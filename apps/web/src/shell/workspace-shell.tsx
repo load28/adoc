@@ -15,6 +15,7 @@ import { Outlet, useLocation } from "@tanstack/react-router";
 
 import { useTranslation } from "./product-app-provider";
 import { useWorkspaceRealtime } from "../collaboration/workspace-realtime";
+import { DocumentTreeNavigation } from "../workspace/document-tree-navigation";
 
 export function WorkspaceShell({
   id,
@@ -77,6 +78,7 @@ export function WorkspaceShell({
                   {label}
                 </LinkButton>
               ))}
+              <DocumentTreeNavigation workspaceId={id} workspaceSlug={slug} />
             </Stack>
           </Box>
         </SideNavBody>

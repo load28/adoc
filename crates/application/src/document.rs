@@ -76,6 +76,7 @@ pub struct ApplyOperationsInput {
 #[serde(rename_all = "camelCase")]
 pub struct DocumentTreeNode {
     pub document: Document,
+    pub effective_access: crate::governance::Access,
     pub children: Vec<DocumentTreeNode>,
 }
 

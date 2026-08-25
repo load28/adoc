@@ -6,7 +6,8 @@ import { WorkspaceShell } from "../shell/workspace-shell";
 export const Route = createFileRoute("/w/$workspaceSlug")({
   loader: async ({ params }) => {
     const bootstrap = await loadShellBootstrap();
-    if (!bootstrap.authenticated || !bootstrap.session) throw redirect({ to: "/login" });
+    if (!bootstrap.authenticated || !bootstrap.session)
+      throw redirect({ to: "/login", search: { returnTo: `/w/${params.workspaceSlug}/home` } });
     const workspace = bootstrap.session.workspaces.find(
       (item) => item.slug === params.workspaceSlug,
     );

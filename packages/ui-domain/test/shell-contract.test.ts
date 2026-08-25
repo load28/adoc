@@ -4,6 +4,7 @@ import {
   ApiClient,
   ApiProblemError,
   beginCommand,
+  canonicalReturnTo,
   parseDocumentSearch,
   parseSettingsSearch,
 } from "../src";
@@ -20,6 +21,13 @@ describe("frontend shell contracts", () => {
       phase: "VALIDATING",
       idempotencyKey: "018f4f0c-8f4d-7cc8-9ca6-8e8b4c8a3451",
     });
+  });
+
+  test("accepts only same-origin relative login return paths", () => {
+    expect(canonicalReturnTo("/invites/token?from=email")).toBe("/invites/token?from=email");
+    expect(canonicalReturnTo("https://attacker.test/invites/token")).toBe("/workspaces");
+    expect(canonicalReturnTo("//attacker.test/invites/token")).toBe("/workspaces");
+    expect(canonicalReturnTo("/\\attacker.test/invites/token")).toBe("/workspaces");
   });
 
   test("uses same-origin credentials and normalizes Problem responses", async () => {
