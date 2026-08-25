@@ -34,8 +34,8 @@ backend를 대체하지 않으며 Web production runtime은 배포 adapter의 No
 
 ## Build compatibility
 
-TanStack Start의 Vite build와 `@vitejs/plugin-react` Babel 설정에서 Atlaskit distributed CSS와
-`@atlaskit/tokens/babel-plugin`을 사용한다. ADS Compiled source를 자체 작성하지 않고 public
+TanStack Start의 Vite build는 Atlaskit distributed CSS를 처리하고 Vite 8의 공식
+`@rolldown/plugin-babel`에서 `@atlaskit/tokens/babel-plugin`을 실행한다. ADS Compiled source를 자체 작성하지 않고 public
 prebuilt component·primitive를 사용한다. React 18.2 peer dependency와 SSR matrix를 dependency
 upgrade gate에서 검증한다.
 

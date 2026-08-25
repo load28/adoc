@@ -1,3 +1,4 @@
+import babel from "@rolldown/plugin-babel";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
@@ -9,5 +10,8 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
-  plugins: [tanstackStart(), viteReact()],
+  ssr: {
+    noExternal: [/^@atlaskit\//],
+  },
+  plugins: [tanstackStart(), babel({ plugins: ["@atlaskit/tokens/babel-plugin"] }), viteReact()],
 });

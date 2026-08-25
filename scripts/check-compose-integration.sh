@@ -18,6 +18,11 @@ docker compose -p "$project" config --quiet
 docker compose -p "$project" up --build --wait
 curl --fail --silent http://127.0.0.1:18081/health/ready >/dev/null
 curl --fail --silent http://127.0.0.1:18080/health/live >/dev/null
+curl --fail --silent http://127.0.0.1:18080/login >"$response_file"
+grep -q '<html lang="ko"' "$response_file"
+grep -q 'data-theme-preference="SYSTEM"' "$response_file"
+grep -q 'document.documentElement.dataset.colorMode' "$response_file"
+grep -q 'Google' "$response_file"
 status=$(curl --silent --output "$response_file" --write-out '%{http_code}' \
   http://127.0.0.1:18080/api/v1/session)
 test "$status" = 401

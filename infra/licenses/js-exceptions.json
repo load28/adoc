@@ -1,0 +1,10 @@
+[
+  {
+    "package": "@atlaskit/navigation-system",
+    "version": "10.16.1",
+    "license": "Apache-2.0",
+    "repository": "https://bitbucket.org/atlassian/atlassian-frontend-mirror",
+    "licenseUrl": "https://bitbucket.org/atlassian/atlassian-frontend-mirror/raw/master/LICENSE",
+    "reason": "The published package omits license metadata; the package repository root is Apache-2.0."
+  }
+]

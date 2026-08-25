@@ -50,4 +50,4 @@ LABEL org.opencontainers.image.revision=$ADOC_RELEASE_SHA \
 WORKDIR /app
 COPY --from=web-builder --chown=bun:bun /workspace/apps/web/dist ./dist
 USER bun
-CMD ["bun", "run", "dist/runtime.js"]
+CMD ["bun", "run", "dist/web-runtime/runtime.js"]

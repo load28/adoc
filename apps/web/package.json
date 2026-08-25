@@ -8,7 +8,7 @@
     "layer": "web"
   },
   "scripts": {
-    "build": "vite build && bun build src/server/runtime.ts --target=bun --outfile=dist/runtime.js",
+    "build": "vite build && bun build src/server/runtime.ts --target=bun --outdir=dist/web-runtime",
     "dev": "vite dev",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
@@ -18,17 +18,37 @@
     "@adoc/editor-schema": "workspace:*",
     "@adoc/i18n": "workspace:*",
     "@adoc/ui-domain": "workspace:*",
+    "@atlaskit/app-provider": "5.4.0",
+    "@atlaskit/button": "25.2.0",
+    "@atlaskit/css-reset": "8.3.1",
+    "@atlaskit/drawer": "14.2.0",
+    "@atlaskit/empty-state": "12.1.0",
+    "@atlaskit/icon": "37.5.0",
+    "@atlaskit/inline-message": "16.3.0",
+    "@atlaskit/link": "5.1.0",
+    "@atlaskit/navigation-system": "10.16.1",
+    "@atlaskit/platform-feature-flags": "2.1.1",
+    "@atlaskit/primitives": "22.4.0",
+    "@atlaskit/skeleton": "4.3.0",
+    "@atlaskit/spinner": "20.3.0",
+    "@atlaskit/tokens": "16.8.0",
+    "@tanstack/react-query": "5.102.3",
     "@tanstack/react-router": "1.170.18",
     "@tanstack/react-start": "1.168.30",
     "react": "18.2.0",
     "react-dom": "18.2.0"
   },
   "devDependencies": {
+    "@babel/core": "7.29.7",
+    "@rolldown/plugin-babel": "0.2.3",
     "@types/bun": "1.4.0",
+    "@types/jsdom": "21.1.7",
     "@types/node": "24.13.3",
     "@types/react": "18.2.79",
     "@types/react-dom": "18.2.25",
     "@vitejs/plugin-react": "6.1.0",
+    "axe-core": "4.13.0",
+    "jsdom": "30.0.1",
     "typescript": "6.0.3",
     "vite": "8.2.2"
   }

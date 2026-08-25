@@ -10,33 +10,189 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as WorkspacesRouteImport } from './routes/workspaces'
+import { Route as InvitesTokenRouteImport } from './routes/invites.$token'
+import { Route as PPublicTokenRouteImport } from './routes/p.$publicToken'
+import { Route as WWorkspaceSlugRouteImport } from './routes/w.$workspaceSlug'
+import { Route as WWorkspaceSlugHomeRouteImport } from './routes/w.$workspaceSlug.home'
+import { Route as WWorkspaceSlugInboxRouteImport } from './routes/w.$workspaceSlug.inbox'
+import { Route as WWorkspaceSlugSearchRouteImport } from './routes/w.$workspaceSlug.search'
+import { Route as WWorkspaceSlugTrashRouteImport } from './routes/w.$workspaceSlug.trash'
+import { Route as WWorkspaceSlugVocabularyRouteImport } from './routes/w.$workspaceSlug.vocabulary'
+import { Route as WWorkspaceSlugDocsDocumentIdRouteImport } from './routes/w.$workspaceSlug.docs.$documentId'
+import { Route as WWorkspaceSlugSettingsSectionRouteImport } from './routes/w.$workspaceSlug.settings.$section'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspacesRoute = WorkspacesRouteImport.update({
+  id: '/workspaces',
+  path: '/workspaces',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvitesTokenRoute = InvitesTokenRouteImport.update({
+  id: '/invites/$token',
+  path: '/invites/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PPublicTokenRoute = PPublicTokenRouteImport.update({
+  id: '/p/$publicToken',
+  path: '/p/$publicToken',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WWorkspaceSlugRoute = WWorkspaceSlugRouteImport.update({
+  id: '/w/$workspaceSlug',
+  path: '/w/$workspaceSlug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WWorkspaceSlugHomeRoute = WWorkspaceSlugHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => WWorkspaceSlugRoute,
+} as any)
+const WWorkspaceSlugInboxRoute = WWorkspaceSlugInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => WWorkspaceSlugRoute,
+} as any)
+const WWorkspaceSlugSearchRoute = WWorkspaceSlugSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => WWorkspaceSlugRoute,
+} as any)
+const WWorkspaceSlugTrashRoute = WWorkspaceSlugTrashRouteImport.update({
+  id: '/trash',
+  path: '/trash',
+  getParentRoute: () => WWorkspaceSlugRoute,
+} as any)
+const WWorkspaceSlugVocabularyRoute =
+  WWorkspaceSlugVocabularyRouteImport.update({
+    id: '/vocabulary',
+    path: '/vocabulary',
+    getParentRoute: () => WWorkspaceSlugRoute,
+  } as any)
+const WWorkspaceSlugDocsDocumentIdRoute =
+  WWorkspaceSlugDocsDocumentIdRouteImport.update({
+    id: '/docs/$documentId',
+    path: '/docs/$documentId',
+    getParentRoute: () => WWorkspaceSlugRoute,
+  } as any)
+const WWorkspaceSlugSettingsSectionRoute =
+  WWorkspaceSlugSettingsSectionRouteImport.update({
+    id: '/settings/$section',
+    path: '/settings/$section',
+    getParentRoute: () => WWorkspaceSlugRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/workspaces': typeof WorkspacesRoute
+  '/invites/$token': typeof InvitesTokenRoute
+  '/p/$publicToken': typeof PPublicTokenRoute
+  '/w/$workspaceSlug': typeof WWorkspaceSlugRouteWithChildren
+  '/w/$workspaceSlug/home': typeof WWorkspaceSlugHomeRoute
+  '/w/$workspaceSlug/inbox': typeof WWorkspaceSlugInboxRoute
+  '/w/$workspaceSlug/search': typeof WWorkspaceSlugSearchRoute
+  '/w/$workspaceSlug/trash': typeof WWorkspaceSlugTrashRoute
+  '/w/$workspaceSlug/vocabulary': typeof WWorkspaceSlugVocabularyRoute
+  '/w/$workspaceSlug/docs/$documentId': typeof WWorkspaceSlugDocsDocumentIdRoute
+  '/w/$workspaceSlug/settings/$section': typeof WWorkspaceSlugSettingsSectionRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/workspaces': typeof WorkspacesRoute
+  '/invites/$token': typeof InvitesTokenRoute
+  '/p/$publicToken': typeof PPublicTokenRoute
+  '/w/$workspaceSlug': typeof WWorkspaceSlugRouteWithChildren
+  '/w/$workspaceSlug/home': typeof WWorkspaceSlugHomeRoute
+  '/w/$workspaceSlug/inbox': typeof WWorkspaceSlugInboxRoute
+  '/w/$workspaceSlug/search': typeof WWorkspaceSlugSearchRoute
+  '/w/$workspaceSlug/trash': typeof WWorkspaceSlugTrashRoute
+  '/w/$workspaceSlug/vocabulary': typeof WWorkspaceSlugVocabularyRoute
+  '/w/$workspaceSlug/docs/$documentId': typeof WWorkspaceSlugDocsDocumentIdRoute
+  '/w/$workspaceSlug/settings/$section': typeof WWorkspaceSlugSettingsSectionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/workspaces': typeof WorkspacesRoute
+  '/invites/$token': typeof InvitesTokenRoute
+  '/p/$publicToken': typeof PPublicTokenRoute
+  '/w/$workspaceSlug': typeof WWorkspaceSlugRouteWithChildren
+  '/w/$workspaceSlug/home': typeof WWorkspaceSlugHomeRoute
+  '/w/$workspaceSlug/inbox': typeof WWorkspaceSlugInboxRoute
+  '/w/$workspaceSlug/search': typeof WWorkspaceSlugSearchRoute
+  '/w/$workspaceSlug/trash': typeof WWorkspaceSlugTrashRoute
+  '/w/$workspaceSlug/vocabulary': typeof WWorkspaceSlugVocabularyRoute
+  '/w/$workspaceSlug/docs/$documentId': typeof WWorkspaceSlugDocsDocumentIdRoute
+  '/w/$workspaceSlug/settings/$section': typeof WWorkspaceSlugSettingsSectionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/workspaces'
+    | '/invites/$token'
+    | '/p/$publicToken'
+    | '/w/$workspaceSlug'
+    | '/w/$workspaceSlug/home'
+    | '/w/$workspaceSlug/inbox'
+    | '/w/$workspaceSlug/search'
+    | '/w/$workspaceSlug/trash'
+    | '/w/$workspaceSlug/vocabulary'
+    | '/w/$workspaceSlug/docs/$documentId'
+    | '/w/$workspaceSlug/settings/$section'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/workspaces'
+    | '/invites/$token'
+    | '/p/$publicToken'
+    | '/w/$workspaceSlug'
+    | '/w/$workspaceSlug/home'
+    | '/w/$workspaceSlug/inbox'
+    | '/w/$workspaceSlug/search'
+    | '/w/$workspaceSlug/trash'
+    | '/w/$workspaceSlug/vocabulary'
+    | '/w/$workspaceSlug/docs/$documentId'
+    | '/w/$workspaceSlug/settings/$section'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/workspaces'
+    | '/invites/$token'
+    | '/p/$publicToken'
+    | '/w/$workspaceSlug'
+    | '/w/$workspaceSlug/home'
+    | '/w/$workspaceSlug/inbox'
+    | '/w/$workspaceSlug/search'
+    | '/w/$workspaceSlug/trash'
+    | '/w/$workspaceSlug/vocabulary'
+    | '/w/$workspaceSlug/docs/$documentId'
+    | '/w/$workspaceSlug/settings/$section'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
+  WorkspacesRoute: typeof WorkspacesRoute
+  InvitesTokenRoute: typeof InvitesTokenRoute
+  PPublicTokenRoute: typeof PPublicTokenRoute
+  WWorkspaceSlugRoute: typeof WWorkspaceSlugRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +204,124 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workspaces': {
+      id: '/workspaces'
+      path: '/workspaces'
+      fullPath: '/workspaces'
+      preLoaderRoute: typeof WorkspacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invites/$token': {
+      id: '/invites/$token'
+      path: '/invites/$token'
+      fullPath: '/invites/$token'
+      preLoaderRoute: typeof InvitesTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/p/$publicToken': {
+      id: '/p/$publicToken'
+      path: '/p/$publicToken'
+      fullPath: '/p/$publicToken'
+      preLoaderRoute: typeof PPublicTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/w/$workspaceSlug': {
+      id: '/w/$workspaceSlug'
+      path: '/w/$workspaceSlug'
+      fullPath: '/w/$workspaceSlug'
+      preLoaderRoute: typeof WWorkspaceSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/w/$workspaceSlug/home': {
+      id: '/w/$workspaceSlug/home'
+      path: '/home'
+      fullPath: '/w/$workspaceSlug/home'
+      preLoaderRoute: typeof WWorkspaceSlugHomeRouteImport
+      parentRoute: typeof WWorkspaceSlugRoute
+    }
+    '/w/$workspaceSlug/inbox': {
+      id: '/w/$workspaceSlug/inbox'
+      path: '/inbox'
+      fullPath: '/w/$workspaceSlug/inbox'
+      preLoaderRoute: typeof WWorkspaceSlugInboxRouteImport
+      parentRoute: typeof WWorkspaceSlugRoute
+    }
+    '/w/$workspaceSlug/search': {
+      id: '/w/$workspaceSlug/search'
+      path: '/search'
+      fullPath: '/w/$workspaceSlug/search'
+      preLoaderRoute: typeof WWorkspaceSlugSearchRouteImport
+      parentRoute: typeof WWorkspaceSlugRoute
+    }
+    '/w/$workspaceSlug/trash': {
+      id: '/w/$workspaceSlug/trash'
+      path: '/trash'
+      fullPath: '/w/$workspaceSlug/trash'
+      preLoaderRoute: typeof WWorkspaceSlugTrashRouteImport
+      parentRoute: typeof WWorkspaceSlugRoute
+    }
+    '/w/$workspaceSlug/vocabulary': {
+      id: '/w/$workspaceSlug/vocabulary'
+      path: '/vocabulary'
+      fullPath: '/w/$workspaceSlug/vocabulary'
+      preLoaderRoute: typeof WWorkspaceSlugVocabularyRouteImport
+      parentRoute: typeof WWorkspaceSlugRoute
+    }
+    '/w/$workspaceSlug/docs/$documentId': {
+      id: '/w/$workspaceSlug/docs/$documentId'
+      path: '/docs/$documentId'
+      fullPath: '/w/$workspaceSlug/docs/$documentId'
+      preLoaderRoute: typeof WWorkspaceSlugDocsDocumentIdRouteImport
+      parentRoute: typeof WWorkspaceSlugRoute
+    }
+    '/w/$workspaceSlug/settings/$section': {
+      id: '/w/$workspaceSlug/settings/$section'
+      path: '/settings/$section'
+      fullPath: '/w/$workspaceSlug/settings/$section'
+      preLoaderRoute: typeof WWorkspaceSlugSettingsSectionRouteImport
+      parentRoute: typeof WWorkspaceSlugRoute
+    }
   }
 }
 
+interface WWorkspaceSlugRouteChildren {
+  WWorkspaceSlugHomeRoute: typeof WWorkspaceSlugHomeRoute
+  WWorkspaceSlugInboxRoute: typeof WWorkspaceSlugInboxRoute
+  WWorkspaceSlugSearchRoute: typeof WWorkspaceSlugSearchRoute
+  WWorkspaceSlugTrashRoute: typeof WWorkspaceSlugTrashRoute
+  WWorkspaceSlugVocabularyRoute: typeof WWorkspaceSlugVocabularyRoute
+  WWorkspaceSlugDocsDocumentIdRoute: typeof WWorkspaceSlugDocsDocumentIdRoute
+  WWorkspaceSlugSettingsSectionRoute: typeof WWorkspaceSlugSettingsSectionRoute
+}
+
+const WWorkspaceSlugRouteChildren: WWorkspaceSlugRouteChildren = {
+  WWorkspaceSlugHomeRoute: WWorkspaceSlugHomeRoute,
+  WWorkspaceSlugInboxRoute: WWorkspaceSlugInboxRoute,
+  WWorkspaceSlugSearchRoute: WWorkspaceSlugSearchRoute,
+  WWorkspaceSlugTrashRoute: WWorkspaceSlugTrashRoute,
+  WWorkspaceSlugVocabularyRoute: WWorkspaceSlugVocabularyRoute,
+  WWorkspaceSlugDocsDocumentIdRoute: WWorkspaceSlugDocsDocumentIdRoute,
+  WWorkspaceSlugSettingsSectionRoute: WWorkspaceSlugSettingsSectionRoute,
+}
+
+const WWorkspaceSlugRouteWithChildren = WWorkspaceSlugRoute._addFileChildren(
+  WWorkspaceSlugRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
+  WorkspacesRoute: WorkspacesRoute,
+  InvitesTokenRoute: InvitesTokenRoute,
+  PPublicTokenRoute: PPublicTokenRoute,
+  WWorkspaceSlugRoute: WWorkspaceSlugRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

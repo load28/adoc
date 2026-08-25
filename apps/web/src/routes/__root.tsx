@@ -1,9 +1,16 @@
+import "@atlaskit/css-reset";
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { useState } from "react";
 
 import { PRODUCT_NAME } from "../product";
+import { ProductAppProvider, themeBootstrapScript } from "../shell/product-app-provider";
+import { loadShellBootstrap } from "../shell/server-bootstrap";
 
 export const Route = createRootRoute({
+  loader: () => loadShellBootstrap(),
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -15,18 +22,29 @@ export const Route = createRootRoute({
 });
 
 function RootComponent() {
+  const bootstrap = Route.useLoaderData();
+  const [queryClient] = useState(() => new QueryClient());
   return (
-    <RootDocument>
-      <Outlet />
+    <RootDocument locale={bootstrap.locale} theme={bootstrap.theme}>
+      <QueryClientProvider client={queryClient}>
+        <ProductAppProvider locale={bootstrap.locale} theme={bootstrap.theme}>
+          <Outlet />
+        </ProductAppProvider>
+      </QueryClientProvider>
     </RootDocument>
   );
 }
 
-function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
+function RootDocument({
+  children,
+  locale,
+  theme,
+}: Readonly<{ children: ReactNode; locale: "ko" | "en"; theme: "LIGHT" | "DARK" | "SYSTEM" }>) {
   return (
-    <html lang="ko">
+    <html lang={locale} data-theme-preference={theme}>
       <head>
         <HeadContent />
+        <script>{themeBootstrapScript}</script>
       </head>
       <body>
         {children}
