@@ -65,6 +65,8 @@ export type AuditFilter = {
 };
 export type DocumentPage = components["schemas"]["DocumentPage"];
 export type PublicDocument = components["schemas"]["PublicDocument"];
+export type PublicLink = components["schemas"]["PublicLink"];
+export type PublicLinkCreated = components["schemas"]["PublicLinkCreated"];
 export type JobReference = components["schemas"]["JobReference"];
 
 export type ApiProblem = {
@@ -102,6 +104,25 @@ export class ApiClient {
     return this.#json<UserPreferences>("/api/v1/preferences", { signal });
   }
 
+  updatePreferences(
+    current: Pick<UserPreferences, "revision">,
+    input: Pick<UserPreferences, "locale" | "timezone" | "theme">,
+    command: CommandHeaders,
+  ): Promise<UserPreferences> {
+    return this.#json<UserPreferences>("/api/v1/preferences", {
+      method: "PUT",
+      headers: commandHeaders(command, current.revision),
+      body: JSON.stringify(input),
+    });
+  }
+
+  logout(command: CommandHeaders): Promise<void> {
+    return this.#empty("/api/v1/session/logout", {
+      method: "POST",
+      headers: commandHeaders(command),
+    });
+  }
+
   workspaces(signal?: AbortSignal): Promise<WorkspaceView[]> {
     return this.#json<WorkspaceView[]>("/api/v1/workspaces", { signal });
   }
@@ -112,6 +133,52 @@ export class ApiClient {
       headers: commandHeaders(command),
       body: JSON.stringify({ name }),
     });
+  }
+
+  workspace(workspaceId: string, signal?: AbortSignal): Promise<WorkspaceView> {
+    return this.#json<WorkspaceView>(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}`, {
+      signal,
+    });
+  }
+
+  updateWorkspace(
+    workspace: Pick<WorkspaceView, "id" | "revision">,
+    input: { name?: string; defaultPublishMode?: "DIRECT" | "REVIEW_REQUIRED" },
+    command: CommandHeaders,
+  ): Promise<WorkspaceView> {
+    return this.#json<WorkspaceView>(`/api/v1/workspaces/${encodeURIComponent(workspace.id)}`, {
+      method: "PUT",
+      headers: commandHeaders(command, workspace.revision),
+      body: JSON.stringify(input),
+    });
+  }
+
+  scheduleWorkspaceDeletion(
+    workspace: Pick<WorkspaceView, "id" | "revision">,
+    reason: string,
+    command: CommandHeaders,
+  ): Promise<WorkspaceView> {
+    return this.#json<WorkspaceView>(
+      `/api/v1/workspaces/${encodeURIComponent(workspace.id)}/deletion`,
+      {
+        method: "POST",
+        headers: commandHeaders(command, workspace.revision),
+        body: JSON.stringify({ reason }),
+      },
+    );
+  }
+
+  cancelWorkspaceDeletion(
+    workspace: Pick<WorkspaceView, "id" | "revision">,
+    command: CommandHeaders,
+  ): Promise<WorkspaceView> {
+    return this.#json<WorkspaceView>(
+      `/api/v1/workspaces/${encodeURIComponent(workspace.id)}/deletion`,
+      {
+        method: "DELETE",
+        headers: commandHeaders(command, workspace.revision),
+      },
+    );
   }
 
   invitationPreview(token: string, signal?: AbortSignal): Promise<InvitationPreview> {
@@ -719,6 +786,16 @@ export class ApiClient {
     );
   }
 
+  vocabularyConcept(
+    workspaceId: string,
+    conceptId: string,
+    signal?: AbortSignal,
+  ): Promise<VocabularyConcept> {
+    return this.#json<VocabularyConcept>(resourcePath(workspaceId, "vocabulary", conceptId), {
+      signal,
+    });
+  }
+
   writeVocabulary(
     workspaceId: string,
     input: { canonicalTerm: string; definition: string; terms: VocabularyTerm[] },
@@ -894,6 +971,10 @@ export class ApiClient {
 
   groups(workspaceId: string, signal?: AbortSignal): Promise<Group[]> {
     return this.#json(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/groups`, { signal });
+  }
+
+  group(workspaceId: string, groupId: string, signal?: AbortSignal): Promise<Group> {
+    return this.#json<Group>(resourcePath(workspaceId, "groups", groupId), { signal });
   }
 
   createGroup(workspaceId: string, name: string, command: CommandHeaders): Promise<Group> {
@@ -1098,6 +1179,61 @@ export class ApiClient {
     );
   }
 
+  file(workspaceId: string, assetId: string, signal?: AbortSignal): Promise<FileAssetView> {
+    return this.#json<FileAssetView>(resourcePath(workspaceId, "files", assetId), { signal });
+  }
+
+  deleteFile(
+    workspaceId: string,
+    assetId: string,
+    revision: number,
+    command: CommandHeaders,
+  ): Promise<void> {
+    return this.#empty(resourcePath(workspaceId, "files", assetId), {
+      method: "DELETE",
+      headers: commandHeaders(command, revision),
+    });
+  }
+
+  publicLinks(
+    workspaceId: string,
+    documentId: string,
+    signal?: AbortSignal,
+  ): Promise<PublicLink[]> {
+    return this.#json<PublicLink[]>(
+      `${resourcePath(workspaceId, "documents", documentId)}/public-links`,
+      { signal },
+    );
+  }
+
+  createPublicLink(
+    workspaceId: string,
+    documentId: string,
+    expiresAt: string | null,
+    command: CommandHeaders,
+  ): Promise<PublicLinkCreated> {
+    return this.#json<PublicLinkCreated>(
+      `${resourcePath(workspaceId, "documents", documentId)}/public-links`,
+      {
+        method: "POST",
+        headers: commandHeaders(command),
+        body: JSON.stringify({ expiresAt }),
+      },
+    );
+  }
+
+  revokePublicLink(
+    workspaceId: string,
+    documentId: string,
+    link: Pick<PublicLink, "id" | "revision">,
+    command: CommandHeaders,
+  ): Promise<void> {
+    return this.#empty(
+      `${resourcePath(workspaceId, "documents", documentId)}/public-links/${encodeURIComponent(link.id)}`,
+      { method: "DELETE", headers: commandHeaders(command, link.revision) },
+    );
+  }
+
   trashedDocuments(
     workspaceId: string,
     cursor?: string,
@@ -1203,6 +1339,23 @@ export class ApiClient {
 }
 
 export type CommandHeaders = { csrfToken: string; idempotencyKey: string };
+
+export function beginGoogleLoginUrl(returnTo: string): string {
+  if (!returnTo.startsWith("/") || returnTo.startsWith("//")) throw new Error("unsafe return path");
+  return `/api/v1/auth/google/start?returnTo=${encodeURIComponent(returnTo)}`;
+}
+
+export function workspaceStreamUrl(workspaceId: string): string {
+  return `/api/v1/stream?workspaceId=${encodeURIComponent(workspaceId)}`;
+}
+
+export function fileContentUrl(workspaceId: string, assetId: string): string {
+  return `${resourcePath(workspaceId, "files", assetId)}/content`;
+}
+
+export function publicFileContentUrl(publicToken: string, assetId: string): string {
+  return `/public/v1/documents/${encodeURIComponent(publicToken)}/files/${encodeURIComponent(assetId)}`;
+}
 
 function commandHeaders(command: CommandHeaders, revision?: number): Headers {
   const headers = new Headers({

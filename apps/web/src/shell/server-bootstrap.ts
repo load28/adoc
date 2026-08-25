@@ -5,6 +5,7 @@ import {
   type DocumentDetail,
   type InvitationPreview,
   type SessionView,
+  type WorkspaceView,
 } from "@adoc/ui-domain";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest, getRequestHeader } from "@tanstack/react-start/server";
@@ -61,6 +62,21 @@ export const loadInvitationPreview = createServerFn({ method: "GET" })
     return client.invitationPreview(data.token);
   });
 
+export const loadWorkspaceList = createServerFn({ method: "GET" }).handler(
+  async (): Promise<WorkspaceView[]> => serverApiClient().workspaces(),
+);
+
+export const loadWorkspaceBySlug = createServerFn({ method: "GET" })
+  .validator((input: { workspaceSlug: string }) => input)
+  .handler(async ({ data }): Promise<WorkspaceView> => {
+    const client = serverApiClient();
+    const summary = (await client.workspaces()).find(
+      (candidate) => candidate.slug === data.workspaceSlug,
+    );
+    if (!summary) throw new ApiProblemError({ code: "WORKSPACE_NOT_FOUND", message: "Not found" });
+    return client.workspace(summary.id);
+  });
+
 export const loadDocumentRoute = createServerFn({ method: "GET" })
   .validator((input: { workspaceSlug: string; documentId: string }) => input)
   .handler(async ({ data }): Promise<{ workspaceId: string; document: DocumentDetail }> => {
@@ -83,6 +99,16 @@ export const loadDocumentRoute = createServerFn({ method: "GET" })
 
 function anonymousBootstrap(): ShellBootstrap {
   return { authenticated: false, locale: "ko", theme: "SYSTEM" };
+}
+
+function serverApiClient(): ApiClient {
+  const request = getRequest();
+  const cookie = getRequestHeader("cookie") ?? "";
+  return new ApiClient((input, init) => {
+    const headers = new Headers(init?.headers);
+    headers.set("cookie", cookie);
+    return fetch(new URL(String(input), request.url), { ...init, headers });
+  });
 }
 
 function parseTheme(value: unknown): ThemePreference {

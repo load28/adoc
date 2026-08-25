@@ -1,6 +1,7 @@
 import {
   invalidationRoots,
   type WorkspaceRealtimeEvent,
+  workspaceStreamUrl,
   workspaceRealtimeEvents,
 } from "@adoc/ui-domain";
 import { useQueryClient } from "@tanstack/react-query";
@@ -11,9 +12,9 @@ export function useWorkspaceRealtime(workspaceId: string) {
   useEffect(() => {
     const storageKey = `adoc.stream.${workspaceId}`;
     const cursor = sessionStorage.getItem(storageKey);
-    const query = new URLSearchParams({ workspaceId });
-    if (cursor) query.set("cursor", cursor);
-    const source = new EventSource(`/api/v1/stream?${query}`);
+    const query = new URL(workspaceStreamUrl(workspaceId), window.location.origin);
+    if (cursor) query.searchParams.set("cursor", cursor);
+    const source = new EventSource(`${query.pathname}${query.search}`);
     const listeners = workspaceRealtimeEvents.map((eventName) => {
       const listener = (event: MessageEvent) => {
         if (event.lastEventId) sessionStorage.setItem(storageKey, event.lastEventId);

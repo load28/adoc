@@ -1,5 +1,5 @@
 import LinkButton from "@atlaskit/button/link";
-import { canonicalReturnTo } from "@adoc/ui-domain";
+import { beginGoogleLoginUrl, canonicalReturnTo } from "@adoc/ui-domain";
 import { Box, Stack } from "@atlaskit/primitives";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
@@ -26,10 +26,7 @@ function LoginScreen() {
       <Stack space="space.300" alignInline="center">
         <Box as="h1">{t("app.name")}</Box>
         <p>{t("auth.loginDescription")}</p>
-        <LinkButton
-          href={`/api/v1/auth/google/start?returnTo=${encodeURIComponent(returnTo)}`}
-          appearance="primary"
-        >
+        <LinkButton href={beginGoogleLoginUrl(returnTo)} appearance="primary">
           {t("auth.login")}
         </LinkButton>
       </Stack>

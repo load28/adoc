@@ -1100,8 +1100,9 @@ function VocabularyRow({
   const [reason, setReason] = useState("");
   const [replacement, setReplacement] = useState("");
   const update = useMutation({
-    mutationFn: () =>
-      api.writeVocabulary(
+    mutationFn: async () => {
+      const current = await api.vocabularyConcept(workspaceId, item.id);
+      return api.writeVocabulary(
         workspaceId,
         {
           canonicalTerm: term.trim(),
@@ -1112,19 +1113,22 @@ function VocabularyRow({
           ],
         },
         command(),
-        item,
-      ),
+        current,
+      );
+    },
     onSuccess: async () => client.invalidateQueries({ queryKey: ["vocabulary", workspaceId] }),
   });
   const deprecate = useMutation({
-    mutationFn: () =>
-      api.deprecateVocabulary(
+    mutationFn: async () => {
+      const current = await api.vocabularyConcept(workspaceId, item.id);
+      return api.deprecateVocabulary(
         workspaceId,
-        item,
+        current,
         replacement.trim() || null,
         reason.trim(),
         command(),
-      ),
+      );
+    },
     onSuccess: async () => client.invalidateQueries({ queryKey: ["vocabulary", workspaceId] }),
   });
   return (

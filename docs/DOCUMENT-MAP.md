@@ -209,6 +209,7 @@
 | PLAN-36 | `design/implementation/WORKSPACE-DOCUMENT-TREE-JOURNEYS.md` | Invitation·Workspace·permission-scoped Tree의 Web 구현 계약 | 구현 기준 |
 | PLAN-37 | `design/implementation/EDITOR-PUBLISH-VERSION-JOURNEYS.md` | Editor command·import/export·Publish·Version·conflict Web 구현 계약 | 구현 기준 |
 | PLAN-38 | `design/implementation/COLLABORATION-KNOWLEDGE-GOVERNANCE-JOURNEYS.md` | Collaboration·Knowledge·AI·Governance 전체 사용자 여정 구현 계약 | 구현 기준 |
+| PLAN-39 | `design/implementation/WEB-API-SCREEN-CONTRACT-COMPLETENESS.md` | OpenAPI·typed client·SCR·runtime surface 완전성 계약 | 구현 기준 |
 | PLAN-15 | `design/implementation/CONTENT-OPERATION-REDUCER.md` | Content·Region·Operation reducer 구현 계약 | 구현 기준 |
 | PLAN-16 | `design/implementation/DOCUMENT-TREE-DRAFT-LEASE.md` | Document Tree·Draft·Lease 구현 계약 | 구현 기준 |
 

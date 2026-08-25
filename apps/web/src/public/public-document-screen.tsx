@@ -1,5 +1,5 @@
 import type { DocumentContent } from "@adoc/contracts";
-import { ApiClient } from "@adoc/ui-domain";
+import { ApiClient, publicFileContentUrl } from "@adoc/ui-domain";
 import { Stack, Text } from "@atlaskit/primitives";
 import { useQuery } from "@tanstack/react-query";
 
@@ -29,9 +29,7 @@ export function PublicDocumentScreen({ token }: Readonly<{ token: string }>) {
           </header>
           <ContentRenderer
             content={query.data.content as DocumentContent}
-            assetUrl={(assetId) =>
-              `/public/v1/documents/${encodeURIComponent(token)}/files/${encodeURIComponent(assetId)}`
-            }
+            assetUrl={(assetId) => publicFileContentUrl(token, assetId)}
           />
         </Stack>
       </article>

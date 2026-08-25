@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
-import { loadShellBootstrap } from "../shell/server-bootstrap";
+import { loadShellBootstrap, loadWorkspaceBySlug } from "../shell/server-bootstrap";
 import { WorkspaceShell } from "../shell/workspace-shell";
 
 export const Route = createFileRoute("/w/$workspaceSlug")({
@@ -8,11 +8,7 @@ export const Route = createFileRoute("/w/$workspaceSlug")({
     const bootstrap = await loadShellBootstrap();
     if (!bootstrap.authenticated || !bootstrap.session)
       throw redirect({ to: "/login", search: { returnTo: `/w/${params.workspaceSlug}/home` } });
-    const workspace = bootstrap.session.workspaces.find(
-      (item) => item.slug === params.workspaceSlug,
-    );
-    if (!workspace) throw redirect({ to: "/workspaces" });
-    return workspace;
+    return loadWorkspaceBySlug({ data: { workspaceSlug: params.workspaceSlug } });
   },
   component: WorkspaceRoute,
 });

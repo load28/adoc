@@ -22,6 +22,7 @@ import {
   type EditLeaseView,
   OperationBuffer,
   editorCommandHint,
+  fileContentUrl,
   resolveEditorShortcut,
   type OperationBufferState,
 } from "@adoc/ui-domain";
@@ -79,9 +80,13 @@ export function DocumentEditorScreen({
             : await client.document(workspaceId, documentId, controller.signal);
         const csrfToken = readCookie("adoc_csrf");
         if (!csrfToken) throw new Error("CSRF token is unavailable");
-        const draft =
-          document.draft ??
-          (await client.createDraft(workspaceId, documentId, commandHeaders(csrfToken)));
+        const draft = await client
+          .draft(workspaceId, documentId, controller.signal)
+          .catch((error) => {
+            if (error instanceof ApiProblemError && error.problem.code === "DRAFT_NOT_FOUND")
+              return client.createDraft(workspaceId, documentId, commandHeaders(csrfToken));
+            throw error;
+          });
         const clientInstanceId = clientInstance(documentId);
         const lease = await client.acquireLease(
           workspaceId,
@@ -399,13 +404,18 @@ function DocumentEditor({
         commandHeaders(csrfToken),
       );
       await client.uploadFileBytes(upload.uploadUrl, upload.uploadToken, csrfToken, file);
-      const asset = await client.completeFileUpload(
+      const completed = await client.completeFileUpload(
         workspaceId,
         upload.assetId,
         checksum,
         file.size,
         commandHeaders(csrfToken),
       );
+      const asset = await client.file(workspaceId, completed.id);
+      if (asset.status === "FAILED") {
+        await client.deleteFile(workspaceId, asset.id, asset.revision, commandHeaders(csrfToken));
+        throw new Error(`file validation failed: ${asset.failureCode ?? "unknown"}`);
+      }
       if (asset.status !== "READY") throw new Error(`file did not become READY: ${asset.status}`);
       const blockId = crypto.randomUUID();
       if (asset.mimeType.startsWith("image/")) {
@@ -416,7 +426,7 @@ function DocumentEditor({
             assetId: asset.id,
             alt: file.name,
             caption: file.name,
-            src: `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(asset.id)}/content`,
+            src: fileContentUrl(workspaceId, asset.id),
           },
         });
       } else {

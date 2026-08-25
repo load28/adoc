@@ -247,16 +247,24 @@ function GroupRow({ workspaceId, group }: Readonly<{ workspaceId: string; group:
   const [name, setName] = useState(group.name);
   const [userId, setUserId] = useState("");
   const update = useMutation({
-    mutationFn: () => api.updateGroup(workspaceId, group, name.trim(), command()),
+    mutationFn: async () =>
+      api.updateGroup(workspaceId, await api.group(workspaceId, group.id), name.trim(), command()),
     onSuccess: async () => client.invalidateQueries({ queryKey: ["groups", workspaceId] }),
   });
   const remove = useMutation({
-    mutationFn: () => api.deleteGroup(workspaceId, group, command()),
+    mutationFn: async () =>
+      api.deleteGroup(workspaceId, await api.group(workspaceId, group.id), command()),
     onSuccess: async () => client.invalidateQueries({ queryKey: ["groups", workspaceId] }),
   });
   const member = useMutation({
-    mutationFn: (action: "add" | "remove") =>
-      api.changeGroupMember(workspaceId, group, userId.trim(), action, command()),
+    mutationFn: async (action: "add" | "remove") =>
+      api.changeGroupMember(
+        workspaceId,
+        await api.group(workspaceId, group.id),
+        userId.trim(),
+        action,
+        command(),
+      ),
     onSuccess: async () => {
       setUserId("");
       await client.invalidateQueries({ queryKey: ["groups", workspaceId] });
