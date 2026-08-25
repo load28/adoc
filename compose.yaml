@@ -4,33 +4,24 @@ x-app-environment: &app-environment
   ADOC_ENV: development
   ADOC_RELEASE_SHA: ${ADOC_RELEASE_SHA:-local}
   ADOC_PUBLIC_ORIGIN: http://localhost:${ADOC_WEB_PORT:-8080}
-  ADOC_DATABASE_URL_FILE: /run/secrets/database_url
-  ADOC_RETENTION_DATABASE_URL_FILE: /run/secrets/database_url
+  ADOC_DATABASE_URL_FILE: /run/adoc-secrets/database_url
+  ADOC_RETENTION_DATABASE_URL_FILE: /run/adoc-secrets/database_url
   ADOC_DB_MAX_CONNECTIONS: "10"
-  ADOC_REDIS_URL_FILE: /run/secrets/redis_url
+  ADOC_REDIS_URL_FILE: /run/adoc-secrets/redis_url
   ADOC_QUEUE_NAMESPACE: adoc-local
   ADOC_OPENSEARCH_URL: http://opensearch:9200
   ADOC_SEARCH_INDEX_PREFIX: adoc-local
   ADOC_EMBEDDING_DIMENSION: "1536"
-  ADOC_GOOGLE_CLIENT_ID_FILE: /run/secrets/google_client_id
-  ADOC_GOOGLE_CLIENT_SECRET_FILE: /run/secrets/google_client_secret
-  ADOC_SESSION_HMAC_KEY_FILE: /run/secrets/session_hmac
-  ADOC_CSRF_HMAC_KEY_FILE: /run/secrets/csrf_hmac
-  ADOC_TOKEN_HASH_PEPPER_FILE: /run/secrets/token_hash_pepper
+  ADOC_GOOGLE_CLIENT_ID_FILE: /run/adoc-secrets/google_client_id
+  ADOC_GOOGLE_CLIENT_SECRET_FILE: /run/adoc-secrets/google_client_secret
+  ADOC_SESSION_HMAC_KEY_FILE: /run/adoc-secrets/session_hmac
+  ADOC_CSRF_HMAC_KEY_FILE: /run/adoc-secrets/csrf_hmac
+  ADOC_TOKEN_HASH_PEPPER_FILE: /run/adoc-secrets/token_hash_pepper
   ADOC_OBJECT_STORAGE_DRIVER: local
   ADOC_LOCAL_OBJECT_ROOT: /var/lib/adoc/objects
   ADOC_ALLOWED_MIME_FILE: /etc/adoc/allowed-mime.txt
   ADOC_AI_DRIVER: codex_cli
   ADOC_CODEX_EXECUTABLE: /usr/bin/false
-
-x-app-secrets: &app-secrets
-  - database_url
-  - redis_url
-  - google_client_id
-  - google_client_secret
-  - session_hmac
-  - csrf_hmac
-  - token_hash_pepper
 
 services:
   volume-init:
@@ -38,6 +29,25 @@ services:
     command: [chown, -R, "10001:10001", /objects]
     volumes:
       - object_data:/objects
+    networks: [internal]
+    restart: "no"
+
+  runtime-secret-init:
+    image: busybox:1.37.0
+    command: [sh, /opt/adoc/stage-runtime-secrets.sh]
+    secrets:
+      - database_url
+      - redis_url
+      - redis_acl
+      - google_client_id
+      - google_client_secret
+      - session_hmac
+      - csrf_hmac
+      - token_hash_pepper
+    volumes:
+      - application_secret_data:/application-secrets
+      - redis_secret_data:/redis-secrets
+      - ./infra/docker/stage-runtime-secrets.sh:/opt/adoc/stage-runtime-secrets.sh:ro
     networks: [internal]
     restart: "no"
 
@@ -61,10 +71,12 @@ services:
 
   redis:
     image: redis:8.2.9-bookworm
-    command: [redis-server, --aclfile, /run/secrets/redis_acl, --appendonly, "no"]
-    secrets: [redis_acl]
+    command: [redis-server, --aclfile, /run/adoc-redis/redis_acl, --appendonly, "no"]
     volumes:
       - redis_data:/data
+      - redis_secret_data:/run/adoc-redis:ro
+    depends_on:
+      runtime-secret-init: {condition: service_completed_successfully}
     healthcheck:
       test: [CMD, redis-cli, --user, health, ping]
       interval: 2s
@@ -84,11 +96,13 @@ services:
     environment:
       ADOC_ENV: development
       ADOC_RELEASE_SHA: ${ADOC_RELEASE_SHA:-local}
-      ADOC_DATABASE_URL_FILE: /run/secrets/database_url
+      ADOC_DATABASE_URL_FILE: /run/adoc-secrets/database_url
       ADOC_DB_MAX_CONNECTIONS: "2"
-    secrets: [database_url]
+    volumes:
+      - application_secret_data:/run/adoc-secrets:ro
     depends_on:
       postgres: {condition: service_healthy}
+      runtime-secret-init: {condition: service_completed_successfully}
     restart: "no"
     networks: [internal]
 
@@ -101,13 +115,14 @@ services:
       <<: *app-environment
       ADOC_HTTP_BIND: 0.0.0.0:8081
       ADOC_PUBLIC_ORIGIN: ${ADOC_API_PUBLIC_ORIGIN:-http://localhost:${ADOC_WEB_PORT:-8080}}
-    secrets: *app-secrets
     volumes:
+      - application_secret_data:/run/adoc-secrets:ro
       - object_data:/var/lib/adoc/objects
       - ./infra/docker/allowed-mime.txt:/etc/adoc/allowed-mime.txt:ro
     depends_on:
       migrate: {condition: service_completed_successfully}
       redis: {condition: service_healthy}
+      runtime-secret-init: {condition: service_completed_successfully}
       volume-init: {condition: service_completed_successfully}
     healthcheck:
       test: [CMD, curl, --fail, --silent, http://127.0.0.1:8081/health/ready]
@@ -124,13 +139,14 @@ services:
       target: worker
       args: {ADOC_RELEASE_SHA: "${ADOC_RELEASE_SHA:-local}", ADOC_RELEASE_VERSION: "${ADOC_RELEASE_VERSION:-1.0.0}"}
     environment: *app-environment
-    secrets: *app-secrets
     volumes:
+      - application_secret_data:/run/adoc-secrets:ro
       - object_data:/var/lib/adoc/objects
       - ./infra/docker/allowed-mime.txt:/etc/adoc/allowed-mime.txt:ro
     depends_on:
       migrate: {condition: service_completed_successfully}
       redis: {condition: service_healthy}
+      runtime-secret-init: {condition: service_completed_successfully}
       volume-init: {condition: service_completed_successfully}
     healthcheck:
       test: [CMD, /usr/local/bin/adoc-worker, --health]
@@ -188,9 +204,11 @@ services:
     profiles: [ai-local]
     command: [--check-config]
     environment: *app-environment
-    secrets: *app-secrets
     volumes:
+      - application_secret_data:/run/adoc-secrets:ro
       - ./infra/docker/allowed-mime.txt:/etc/adoc/allowed-mime.txt:ro
+    depends_on:
+      runtime-secret-init: {condition: service_completed_successfully}
     networks: [internal]
     restart: "no"
 
@@ -258,10 +276,12 @@ networks:
     internal: true
 
 volumes:
+  application_secret_data: {}
   postgres_data: {}
   object_data: {}
   backup_data: {}
   redis_data: {}
+  redis_secret_data: {}
   opensearch_data: {}
 
 secrets:

@@ -24,6 +24,8 @@ application binary에 결합하지 않는다. image 갱신은 security·license�
 service dependency는 container 시작이 아니라 health 또는 successful completion 조건을 사용한다.
 `volume-init`은 root 소유로 생성되는 `object_data`를 UID/GID `10001`에 넘기는 단일 목적의 one-shot이다.
 애플리케이션에 root 권한을 주지 않으며 API·worker는 초기화 성공 뒤에만 시작한다.
+`runtime-secret-init`은 host `0600` source를 읽는 유일한 root one-shot이다. application과 Redis 전용
+named volume에 consumer가 필요한 파일만 stage하고 성공한 뒤에만 해당 service가 시작된다.
 
 | Profile | Service | 정본 여부 | 실패 영향 |
 |---|---|---|---|
@@ -44,6 +46,13 @@ Compose에는 secret 원문 environment를 넣지 않는다. `infra/docker/boots
 `infra/docker/.local/secrets`에 mode `0600` file을 원자 생성한다. application은 `_FILE`, PostgreSQL은
 `POSTGRES_PASSWORD_FILE`, Redis는 file을 읽는 entrypoint를 사용한다. example에는 값이 아니라
 형식만 둔다.
+
+File-backed Compose secret의 container mode는 Docker Desktop과 native Linux에서 동일하다고 가정하지
+않는다. `runtime-secret-init`은 application용 파일을 UID/GID `10001`, mode `0400`으로
+`application_secret_data`에 stage한다. Redis ACL은 Redis 전용 `redis_secret_data`에 mode `0444`로
+stage한다. 두 volume은 consumer에 read-only로 mount하며 서로의 credential을 포함하지 않는다.
+PostgreSQL·backup·root test runner처럼 image entrypoint가 root에서 직접 소비하는 secret는 source mount를
+유지한다. staging 실패나 파일 누락은 consumer 시작 전 one-shot 실패로 처리한다.
 
 host 공개 port는 web·api만 loopback에 bind한다. PostgreSQL·Redis·OpenSearch·worker·collector는
 internal network에만 둔다. `postgres_data`, `object_data`, `backup_data`는 persistent named volume이고
@@ -75,7 +84,7 @@ degraded로 노출한다.
 
 ## 실행 Gate
 
-`scripts/check-compose.mjs`는 exact tag, profile, secret-file-only, no privileged/root, health dependency,
+`scripts/check-compose.mjs`는 exact tag, profile, secret-file-only, non-root consumer, staging dependency,
 volume classification과 host port를 정적으로 검사한다. Docker integration은 고유 project name에서
 build → secret bootstrap → core up → migration exit 0 → health → search degraded isolation → backup
 artifact checksum → down → test volume cleanup 순으로 실행한다. 정적 검사를 mock Compose 실행으로

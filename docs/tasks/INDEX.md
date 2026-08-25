@@ -52,7 +52,8 @@
 | TASK-046 | SPDX SBOM 버전 계약 정정 | 결함·설계 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-046](TASK-046-spdx-sbom-version-contract.md) |
 | TASK-047 | AI CLI 교차 플랫폼 테스트 계약 정정 | 결함·설계 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-047](TASK-047-ai-cli-cross-platform-test.md) |
 | TASK-048 | 브라우저 생성 산출물 검사 경계 정정 | 결함·설계 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-048](TASK-048-generated-browser-artifact-boundary.md) |
+| TASK-049 | Compose 비밀 파일 교차 플랫폼 전달 경계 | 결함·설계 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-049](TASK-049-portable-compose-secret-staging.md) |
 
 ## 다음 태스크 번호
 
-**TASK-049**
+**TASK-050**

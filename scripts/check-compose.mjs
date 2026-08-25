@@ -8,6 +8,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const compose = parse(readFileSync(join(root, "compose.yaml"), "utf8"));
 const requiredServices = new Set([
   "volume-init",
+  "runtime-secret-init",
   "postgres",
   "redis",
   "migrate",
@@ -44,6 +45,13 @@ for (const service of ["api", "worker", "web", "postgres", "redis", "opensearch"
   if (!compose.services[service].healthcheck)
     throw new Error(`${service} must declare a healthcheck`);
 }
+for (const service of ["api", "worker", "migrate", "redis"]) {
+  if (
+    compose.services[service].depends_on?.["runtime-secret-init"]?.condition !==
+    "service_completed_successfully"
+  )
+    throw new Error(`${service} must wait for runtime secret staging`);
+}
 for (const service of ["api", "worker"]) {
   if (
     compose.services[service].depends_on?.["volume-init"]?.condition !==
@@ -56,14 +64,29 @@ for (const profile of ["search", "ai-local", "observability", "backup", "test"])
     throw new Error(`missing Compose profile: ${profile}`);
 }
 for (const volume of [
+  "application_secret_data",
   "postgres_data",
   "object_data",
   "backup_data",
   "redis_data",
+  "redis_secret_data",
   "opensearch_data",
 ]) {
   if (!compose.volumes?.[volume]) throw new Error(`missing named volume: ${volume}`);
 }
+
+for (const service of ["api", "worker", "migrate", "ai-runner"]) {
+  if (
+    !(compose.services[service].volumes ?? []).includes(
+      "application_secret_data:/run/adoc-secrets:ro",
+    )
+  )
+    throw new Error(`${service} must mount only staged application secrets read-only`);
+  if (compose.services[service].secrets)
+    throw new Error(`${service} must not mount host file-backed secrets directly`);
+}
+if (!(compose.services.redis.volumes ?? []).includes("redis_secret_data:/run/adoc-redis:ro"))
+  throw new Error("redis must mount only its staged ACL read-only");
 for (const secret of Object.values(compose.secrets ?? {})) {
   if (!secret.file?.includes("/.local/secrets/"))
     throw new Error("Compose secrets must resolve from the ignored local secret directory");
