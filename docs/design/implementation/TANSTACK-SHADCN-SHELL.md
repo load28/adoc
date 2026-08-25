@@ -36,6 +36,11 @@ shadcn CLI는 초기 source 취득에만 사용하며 이후 overwrite upgrade�
 Vite plugin 순서는 TanStack Start → Tailwind CSS → React다. root CSS는 한 번 import하고 다음
 순서로 구성한다.
 
+SSR dependency bundling은 Vite command별로 분리한다. 개발 server는 CommonJS package를 Node·Bun
+해석 경계에 externalize한다. production build는 `ssr.noExternal: true`로 dependency를 모두 bundle해
+`node_modules`가 없는 Web runtime image에서도 실행 가능한 self-contained server artifact를 만든다.
+두 mode의 설정을 하나의 고정값으로 합치지 않는다.
+
 ```text
 tailwindcss import
 → tw-animate-css
@@ -137,7 +142,7 @@ focus가 이동하며 background query refresh는 focus를 이동시키지 않�
 ## 11. 검증 계약
 
 1. `rg @atlaskit apps/web packages` 결과 0, package manifest·lockfile에서도 0
-2. typecheck·unit·SSR build와 hydration warning 0
+2. typecheck·unit·SSR build와 hydration warning 0, production SSR의 bare package import 0
 3. component keyboard·focus·axe test
 4. SCR-01~22 ready와 가능한 공통 state의 Story 대조
 5. 1440×1000, 1024×768, 390×844, 200% zoom layout

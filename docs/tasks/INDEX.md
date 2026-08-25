@@ -55,7 +55,8 @@
 | TASK-049 | Compose 비밀 파일 교차 플랫폼 전달 경계 | 결함·설계 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-049](TASK-049-portable-compose-secret-staging.md) |
 | TASK-050 | CI 명시 실행 경계 | 설계·구현·운영 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-050](TASK-050-explicit-ci-execution.md) |
 | TASK-051 | 엔터프라이즈 UI/UX 전체 재설계·구현 | 조사·설계·구현·품질 | 완료 | 2026-08-26 | 2026-08-26 | [TASK-051](TASK-051-enterprise-ui-ux-redesign.md) |
+| TASK-052 | Web SSR runtime bundle 경계 복구 | 결함·설계·구현·운영 | 완료 | 2026-08-26 | 2026-08-26 | [TASK-052](TASK-052-web-ssr-runtime-bundle-boundary.md) |
 
 ## 다음 태스크 번호
 
-**TASK-052**
+**TASK-053**
