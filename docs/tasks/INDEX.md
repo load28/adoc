@@ -40,7 +40,7 @@
 | TASK-034 | AI UX 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-034](TASK-034-ai-ux.md) |
 | TASK-035 | Settings·Audit·Public UX 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-035](TASK-035-settings-audit-public-ux.md) |
 | TASK-036 | System Hardening | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-036](TASK-036-system-hardening.md) |
-| TASK-037 | Full Acceptance Release | 구현·운영 | 진행 중 | 2026-08-25 | — | [TASK-037](TASK-037-full-acceptance-release.md) |
+| TASK-037 | Full Acceptance Release | 구현·운영 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-037](TASK-037-full-acceptance-release.md) |
 
 ## 다음 태스크 번호
 

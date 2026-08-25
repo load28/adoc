@@ -1,10 +1,10 @@
 # TASK-037: Full Acceptance Release
 
-- **상태**: 진행 중
+- **상태**: 완료
 - **유형**: 구현·운영
 - **구현 패키지**: IMP-28
 - **시작일**: 2026-08-25
-- **완료일**: —
+- **완료일**: 2026-08-25
 - **커밋**: —
 
 ## 목적
@@ -68,6 +68,11 @@ W-01~09와 TEST-09 전체를 동일 artifact에서 검증하고, 배포자가 �
   거부 회귀를 보강했다.
 - 2026-08-25: Cargo·JavaScript·OCI image version을 `1.0.0`으로 통일하고 세 image·SPDX SBOM·
   contract·migration·evidence·checksum을 하나로 묶는 candidate 생성기를 구현했다.
+- 2026-08-25: source commit `7d11460ff8b22f723d1fd4ebd7833dd879e8bb55`에서 root·Compose gate를
+  다시 실행하고 `adoc-1.0.0-7d11460ff8b2.tar.gz`를 생성했다.
+- 2026-08-25: artifact 133,571,851 bytes, SHA-256
+  `6916f5a0aaab777d2ec10d99c337a40586adb0251eaa9bcaf523338153c87356`, release identity
+  `ab41e51812af1ba386c588d70f594f1e975d380e2abbc307b0e4707ab4f85e5d`를 재검증했다.
 
 ## 이슈 및 해결
 
@@ -75,14 +80,19 @@ W-01~09와 TEST-09 전체를 동일 artifact에서 검증하고, 배포자가 �
   상태로 처리하지 않고 dependency 집합의 항등원으로 정의해 정상 결과는 허용하고 가짜 선택은 거부했다.
 - release version을 runtime 환경 변수로도 전달해 typed configuration이 알 수 없는 키로 거부했다.
   build metadata와 runtime configuration 경계를 분리해 image build argument에만 유지했다.
+- migration manifest의 마지막 entry에 `version` field가 있다고 가정해 첫 후보가 잘못된 metadata를
+  기록했다. 파일명의 4자리 sequence를 schema로 검증하고 1부터 연속인 마지막 version만 기록하도록
+  수정한 뒤 전체 후보를 폐기하고 clean commit에서 다시 생성했다.
 
 ## 검증
 
 - [x] acceptance manifest negative self-test·15 scenario mapping
 - [x] root·Compose 전체 acceptance
-- [ ] image metadata·SBOM·versioned bundle·checksum
-- [ ] clean tree·main·remote push 상태
+- [x] image metadata·SPDX SBOM·versioned bundle·checksum
+- [x] clean tree·main·remote push 상태: source commit과 `origin/main` 일치 확인
 
 ## 결과
 
-진행 중.
+W-01~09와 TEST-09 15개 scenario가 동일 source digest에서 통과했다. API·worker·web image,
+SPDX SBOM, 21개 migration, canonical contract, acceptance evidence와 checksum을 포함한 `1.0.0`
+local candidate를 생성해 IMP-01~28 전체 구현을 완료했다.
