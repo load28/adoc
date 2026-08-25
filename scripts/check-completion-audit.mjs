@@ -20,6 +20,14 @@ export function validateAudit(audit, index) {
       throw new Error(`${entry.id} has invalid status`);
     if (entry.status === "partial" && (!Array.isArray(entry.tasks) || entry.tasks.length === 0))
       throw new Error(`${entry.id} partial status has no remediation task`);
+    if (!Array.isArray(entry.evidence) || entry.evidence.length === 0)
+      throw new Error(`${entry.id} has no direct evidence`);
+    if (entry.status === "environment_skip") {
+      for (const field of ["reasonCode", "dependency", "verificationCommand"])
+        if (!entry[field]) throw new Error(`${entry.id} environment skip is missing ${field}`);
+      if (!entry.reasonCode.endsWith("_UNAVAILABLE"))
+        throw new Error(`${entry.id} environment skip is not an unavailable external dependency`);
+    }
     for (const task of entry.tasks ?? []) {
       if (!index.includes(`| ${task} |`)) throw new Error(`${entry.id} references missing ${task}`);
     }

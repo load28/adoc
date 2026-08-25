@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "security-lifecycle",
+  "title": "Security and Lifecycle",
+  "panels": [
+    { "id": "permission", "metrics": ["permission_invariant_failures_total"] },
+    { "id": "lease", "metrics": ["lease_conflicts_total"] },
+    { "id": "purge", "metrics": ["purge_oldest_age_seconds"] },
+    { "id": "backup", "metrics": ["backup_age_seconds"] }
+  ]
+}

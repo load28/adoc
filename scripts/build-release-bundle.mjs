@@ -10,6 +10,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { basename, join, resolve } from "node:path";
+import { signAndVerify, statement } from "./lib/provenance.mjs";
 
 const root = resolve(new URL("..", import.meta.url).pathname);
 const run = (command, args, options = {}) => {
@@ -18,6 +19,7 @@ const run = (command, args, options = {}) => {
     encoding: options.binary ? undefined : "utf8",
     stdio: options.inherit ? "inherit" : "pipe",
     maxBuffer: 32 * 1024 * 1024,
+    env: options.env ? { ...process.env, ...options.env } : process.env,
   });
   if (result.status !== 0) {
     const detail = options.inherit ? "" : `\n${result.stderr || result.stdout || ""}`;
@@ -121,12 +123,20 @@ if (run("git", ["branch", "--show-current"]) !== "main")
 if (run("git", ["status", "--porcelain"]) !== "") throw new Error("release requires a clean tree");
 run("bun", ["run", "check"], { inherit: true });
 run("bun", ["run", "compose:integration"], { inherit: true });
+run("bun", ["run", "browser:check"], { inherit: true });
 
 const version = validateVersions();
 const sourceSha = run("git", ["rev-parse", "HEAD"]);
 const shortSha = sourceSha.slice(0, 12);
 const releaseInputs = JSON.parse(run("node", ["scripts/check-release-inputs.mjs"]));
 const acceptance = JSON.parse(run("node", ["scripts/check-acceptance.mjs"]));
+const productionProof = JSON.parse(
+  run("node", ["scripts/check-production-readiness.mjs", "--self-test"]),
+);
+const environmentEvidence = JSON.parse(
+  readFileSync(join(root, "infra/security/environment-evidence.json")),
+);
+const disasterRecovery = JSON.parse(readFileSync(join(root, "dist/evidence/compose-dr.json")));
 const releaseRoot = join(root, "dist", "release");
 const directoryName = `adoc-${version}-${shortSha}`;
 const directory = join(releaseRoot, directoryName);
@@ -169,7 +179,9 @@ for (const target of ["api", "worker", "web"]) {
     throw new Error(`${target} image identity labels do not match the release`);
   const sbomPath = join(directory, "sbom", `${target}.spdx.json`);
   const sbom = run("docker", ["sbom", "--format", "spdx-json", tag]);
-  JSON.parse(sbom);
+  const parsedSbom = JSON.parse(sbom);
+  if (parsedSbom.spdxVersion !== "SPDX-2.3" || !Array.isArray(parsedSbom.packages))
+    throw new Error(`${target} SBOM is not a valid SPDX 2.3 document`);
   writeFileSync(sbomPath, `${sbom}\n`);
   images.push({
     title: expectedTitle,
@@ -178,12 +190,38 @@ for (const target of ["api", "worker", "web"]) {
     revision: sourceSha,
     version,
     sbom: `sbom/${target}.spdx.json`,
+    sbomPackages: parsedSbom.packages.length,
   });
   imageTags.push(tag);
 }
 run("docker", ["save", "--output", join(directory, "images.tar"), ...imageTags], {
   inherit: true,
 });
+
+const materials = Object.entries(releaseInputs.inputs).map(([uri, digest]) => ({
+  uri,
+  digest: { sha256: digest },
+}));
+const provenanceStatement = statement({
+  sourceSha,
+  sourceDigest: releaseInputs.sourceDigest,
+  subjects: images.map((image) => ({
+    name: image.title,
+    digest: { sha256: image.id.replace(/^sha256:/u, "") },
+  })),
+  materials,
+});
+const provenance = {
+  schemaVersion: 1,
+  localCandidate: true,
+  productionIdentity: false,
+  statement: provenanceStatement,
+  proof: signAndVerify(provenanceStatement),
+};
+writeFileSync(join(directory, "evidence", "provenance.json"), json(provenance));
+writeFileSync(join(directory, "evidence", "environment-skips.json"), json(environmentEvidence));
+writeFileSync(join(directory, "evidence", "production-readiness.json"), json(productionProof));
+writeFileSync(join(directory, "evidence", "disaster-recovery.json"), json(disasterRecovery));
 
 const migrationManifest = JSON.parse(readFileSync(join(root, "infra/migrations/manifest.json")));
 const contractManifest = readFileSync(join(root, "packages/contracts/src/generated/manifest.json"));
@@ -197,7 +235,24 @@ const manifest = {
   migrations: migrationVersion(migrationManifest),
   contracts: sha256(contractManifest),
   acceptance: { scenarios: acceptance.scenarios, workstreams: acceptance.workstreams },
-  gates: ["bun run check", "bun run compose:integration"],
+  gates: ["bun run check", "bun run compose:integration", "bun run browser:check"],
+  productionProof: {
+    identity: productionProof.proofIdentity,
+    path: "evidence/production-readiness.json",
+  },
+  disasterRecovery: {
+    identity: disasterRecovery.proofIdentity,
+    path: "evidence/disaster-recovery.json",
+  },
+  provenance: {
+    digest: provenance.proof.statementDigest,
+    path: "evidence/provenance.json",
+    productionIdentity: false,
+  },
+  environmentSkips: environmentEvidence.environmentSkips.map(({ id, reasonCode }) => ({
+    id,
+    reasonCode,
+  })),
   images,
 };
 manifest.releaseIdentity = identity(manifest);

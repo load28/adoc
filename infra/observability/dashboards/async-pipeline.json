@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "async-pipeline",
+  "title": "Async Pipeline",
+  "panels": [
+    { "id": "queue", "metrics": ["queue_depth", "queue_oldest_age_seconds"] },
+    { "id": "outbox", "metrics": ["outbox_lag_seconds"] },
+    { "id": "sse", "metrics": ["sse_connections", "sse_resets_total"] },
+    {
+      "id": "ai-progress",
+      "sli": "ai-progress",
+      "metrics": ["ai_first_progress_duration_ms", "ai_quota_rejections_total"]
+    }
+  ]
+}

@@ -48,7 +48,7 @@
 | TASK-042 | Web API client·화면 계약 완전성 | 구현·품질 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-042](TASK-042-web-api-screen-contract-completeness.md) |
 | TASK-043 | Operation·Event·State exact contract coverage | 품질 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-043](TASK-043-exact-contract-coverage.md) |
 | TASK-044 | Browser E2E·접근성·시각·호환성 검증 | 품질 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-044](TASK-044-browser-quality-gates.md) |
-| TASK-045 | 운영 hardening·최종 release 재검증 | 구현·운영 | 대기 | — | — | [TASK-045](TASK-045-operations-final-release.md) |
+| TASK-045 | 운영 hardening·최종 release 재검증 | 구현·운영 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-045](TASK-045-operations-final-release.md) |
 
 ## 다음 태스크 번호
 

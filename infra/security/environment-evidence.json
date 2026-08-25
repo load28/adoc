@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "environmentSkips": [
+    {
+      "id": "production-load",
+      "reasonCode": "PRODUCTION_TRAFFIC_UNAVAILABLE",
+      "dependency": "production-equivalent topology and traffic generator",
+      "verificationCommand": "node scripts/check-performance-profiles.mjs --evidence /evidence/performance.json"
+    },
+    {
+      "id": "registry-signature",
+      "reasonCode": "REGISTRY_IDENTITY_UNAVAILABLE",
+      "dependency": "immutable OCI registry and trusted CI OIDC identity",
+      "verificationCommand": "cosign verify-attestation --type slsaprovenance <immutable-repo-digest>"
+    },
+    {
+      "id": "external-backup",
+      "reasonCode": "EXTERNAL_BACKUP_DESTINATION_UNAVAILABLE",
+      "dependency": "encrypted external backup destination and restore environment",
+      "verificationCommand": "node scripts/check-production-readiness.mjs --dr-evidence /evidence/dr.json"
+    },
+    {
+      "id": "production-slo",
+      "reasonCode": "PRODUCTION_TRAFFIC_UNAVAILABLE",
+      "dependency": "30-day production SLI window",
+      "verificationCommand": "node scripts/check-production-readiness.mjs --slo-evidence /evidence/slo.json"
+    },
+    {
+      "id": "google-oidc-live",
+      "reasonCode": "PRODUCTION_CREDENTIAL_UNAVAILABLE",
+      "dependency": "Google production OIDC client",
+      "verificationCommand": "bun run browser:check -- --project Chromium-wide"
+    },
+    {
+      "id": "openai-live",
+      "reasonCode": "PRODUCTION_CREDENTIAL_UNAVAILABLE",
+      "dependency": "OpenAI production service credential",
+      "verificationCommand": "bun run compose:integration"
+    }
+  ]
+}

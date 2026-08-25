@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "exceptions": [
+    {
+      "id": "RUSTSEC-2023-0071",
+      "owner": "platform-security",
+      "reason": "rsa 0.9.10 is used only to generate ephemeral RS256 fixtures in adoc-adapters unit tests; deployed api, worker, and web artifacts do not depend on it, and RustSec publishes no fixed release.",
+      "expiresAt": "2026-11-23"
+    }
+  ]
+}

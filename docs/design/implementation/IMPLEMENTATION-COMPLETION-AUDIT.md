@@ -18,37 +18,31 @@
 
 | 범위 | 판정 | 직접 확인 결과 | 후속 태스크 |
 |---|---|---|---|
-| RQ-01~04 Governance·Tree | 부분 | server aggregate와 API는 있으나 Invitation·Home은 placeholder이고 Workspace·Tree 생성 UI가 없다. | TASK-039 |
-| RQ-05~08 Editor·Version | 부분 | lease·autosave·operation 기반은 있으나 전체 command, import/export, Published body, Diff·restore·publish conflict UI가 없다. | TASK-040 |
-| RQ-09~16 Collaboration·Knowledge·AI·Operations | 부분 | 주요 query/command UI는 있으나 Review 요청·변경 요청, Reference mutation, Vocabulary lifecycle, Group member, Policy와 Audit filter 흐름이 끊긴다. | TASK-041 |
-| RQ-17~20 Public·Quality·Lifecycle | 부분 | Public Viewer와 retention 기반은 있으나 browser matrix, 실제 SLO·alert, 부하 종류와 운영 복구 증거가 완료 조건에 못 미친다. | TASK-044·045 |
+| RQ-01~04 Governance·Tree | 완료 | Workspace·Invitation·Tree journey, 109 operation exact contract와 browser permission 경계를 실행한다. | 없음 |
+| RQ-05~08 Editor·Version | 완료 | Operation editor, lease, review·publish, immutable Version·Diff·restore와 browser 경계를 실행한다. | 없음 |
+| RQ-09~18 Collaboration·Knowledge·AI·File·UI | 완료 | 전체 screen action, event·state exact contract와 3개 engine의 TEST-09 결과를 실행한다. | 없음 |
+| RQ-19~20 SLO·Lifecycle | 환경 실행 | retention·DR repository gate는 완료했고 30일 production SLI와 외부 backup destination 증거만 외부 환경에 남는다. | 없음 |
 
 Google과 OpenAI의 실제 credential 검증, registry signing, production traffic 기반 SLO는 외부 환경
 실행으로 분류한다. adapter·설정 검증·실패 경계·runbook은 skip 대상이 아니며 TASK-045에서 완료한다.
 
 ## 계약·화면 증거
 
-- 감사 시점 OpenAPI 정본은 108개 operation이었고 TASK-039의 invitation preview 계약 추가 뒤
-  109개다. Web API client는 감사 시점 61개 public method이고 현재 Web은 서로
-  다른 47개 method를 호출한다. 전체 사용자 흐름에 필요한 createWorkspace, acceptInvitation,
-  createDocument, moveDocument, publishDocument, compareVersions 등의 client/UI 경계가 빠져 있다.
-- SCR-01~22 중 SCR-02와 SCR-04는 `ReservedScreen`이다. SCR-03은 생성 action이 없고 SCR-05의
-  Published mode는 제목만 출력한다. SCR-06~21은 일부 action만 제공하며 정본의 primary action과
-  완료 상태를 모두 충족하지 않는다. SCR-22 Public Viewer만 화면 목적의 직접 구현을 확인했다.
-- Rust adapter integration suite 15개는 도메인 기반을 검증한다. TEST-08이 요구하는 operation ID별
-  success·auth·tenant·permission·pagination 및 command 멱등성·stale·rollback·Audit·Outbox 집합
-  차이를 직접 계산하지 않는다.
-- Web test는 jsdom component 수준이다. Chromium·Firefox·WebKit 실제 browser E2E, visual,
-  keyboard-only와 screen-reader 확인 증거가 없다.
+- OpenAPI 109개 operation, Web client 100개 method와 SCR-01~22의 action 집합 차이는 0이다.
+- 109개 operation의 1,007개 case, 23개 event와 67개 state transition을 exact ID로 report한다.
+- TEST-09 15개 journey를 Chromium·Firefox·WebKit에서 실행하고 compact 접근성·반응형과 12개
+  zero-diff visual baseline을 검증한다.
+- 사람 screen-reader 읽기 품질은 repository 자동화로 완료 처리하지 않고 release environment
+  evidence로 유지한다.
 
 ## 운영 증거
 
-- metric registry, redacted log, trace propagation의 일부 구현과 health performance smoke가 있다.
-  `infra/observability`에는 collector pipeline 설명만 있고 정본 alert·dashboard 규칙이 없다.
-- smoke는 health·login latency를 측정하지만 TEST-06의 Document, command, Search, AI progress와
-  load·stress·soak·spike·degradation workload를 실행하지 않는다.
-- migration·backup isolated restore, secret scan, license와 SBOM gate는 있다. dependency vulnerability,
-  image provenance/signature 검증과 promotion registry 실행은 없다.
+- 5개 SLI, 21개 metric, 4개 dashboard와 7개 alert를 runtime registry·runbook과 exact 연결한다.
+- Document·command·public·Search·AI workload와 load·stress·soak·spike·degradation profile을 닫힌
+  정본으로 검증한다. production-equivalent 장시간 결과는 외부 traffic evidence다.
+- migration·backup isolated restore, deletion lifecycle, secret·license·dependency audit, image SBOM과
+  local provenance sign/verify를 release proof에 연결한다. trusted registry keyless identity와 외부
+  encrypted backup만 environment evidence로 남는다.
 
 ## 후속 구현 DAG
 
@@ -74,6 +68,7 @@ TASK-045 Observability·performance·security·최종 release
 
 ## 완료 재판정
 
-TASK-045는 이 문서의 manifest에서 `partial`을 0으로 만들고 RQ 20개, SCR 22개와 quality gate를
-각각 실행 증거에 연결해야 한다. 이후 root·Compose·browser·release 검증을 새 commit에서 다시
-실행한 경우에만 전체 제품 완료를 선언한다.
+TASK-045 manifest는 `partial` 0, RQ 20개, SCR 22개와 7개 quality gate를 직접 evidence에 연결한다.
+`environment_skip`은 production traffic·registry identity·외부 backup·production credential만 허용한다.
+root·Compose·browser·release 검증을 같은 clean main commit에서 다시 실행한 뒤 local candidate 완료를
+선언한다.

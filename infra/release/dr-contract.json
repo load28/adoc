@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "currentMigration": 21,
+  "rollbackApplication": { "minimumMigration": 1, "maximumMigration": 21 },
+  "retentionDays": { "primaryPurge": 30, "backup": 35 },
+  "rpoTargetSeconds": 900,
+  "rtoTargetSeconds": 14400,
+  "requiredSteps": [
+    "backup-checksum",
+    "isolated-postgres-restore",
+    "migration-range",
+    "tenant-count",
+    "document-version-and-draft",
+    "audit-sequence",
+    "object-archive-checksum",
+    "deletion-ledger",
+    "outbox-reconcile",
+    "search-rebuild"
+  ]
+}

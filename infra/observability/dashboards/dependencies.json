@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "dependencies",
+  "title": "Dependencies",
+  "panels": [
+    {
+      "id": "search",
+      "sli": "search-availability",
+      "metrics": ["search_requests_total", "search_index_watermark"]
+    },
+    {
+      "id": "ai-provider",
+      "metrics": ["ai_usage_tokens_total", "provider_credential_failures_total"]
+    },
+    { "id": "file", "metrics": ["file_validation_total", "file_gc_oldest_age_seconds"] },
+    { "id": "backup", "metrics": ["backup_age_seconds"] }
+  ]
+}

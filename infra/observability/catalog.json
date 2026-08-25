@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "slis": [
+    {
+      "id": "core-availability",
+      "target": 0.999,
+      "window": "30d",
+      "goodMetric": "http_requests_total",
+      "totalMetric": "http_requests_total",
+      "badCodes": ["WRITE_LOST", "VERSION_CORRUPT", "PERMISSION_INVARIANT"]
+    },
+    {
+      "id": "document-latency",
+      "target": 0.95,
+      "window": "5m",
+      "metric": "http_request_duration_ms",
+      "thresholdMs": 300
+    },
+    {
+      "id": "public-latency",
+      "target": 0.95,
+      "window": "5m",
+      "metric": "http_request_duration_ms",
+      "thresholdMs": 500
+    },
+    {
+      "id": "search-availability",
+      "target": 0.99,
+      "window": "30d",
+      "goodMetric": "search_requests_total",
+      "totalMetric": "search_requests_total"
+    },
+    {
+      "id": "ai-progress",
+      "target": 0.95,
+      "window": "5m",
+      "metric": "ai_first_progress_duration_ms",
+      "thresholdMs": 2000
+    }
+  ],
+  "metrics": [
+    {
+      "name": "http_requests_total",
+      "type": "counter",
+      "unit": "1",
+      "labels": ["method", "status", "code", "service"]
+    },
+    {
+      "name": "http_request_duration_ms",
+      "type": "histogram",
+      "unit": "ms",
+      "labels": ["method", "status", "service"]
+    },
+    { "name": "db_pool_in_use", "type": "gauge", "unit": "1", "labels": ["service"] },
+    {
+      "name": "db_transaction_retries_total",
+      "type": "counter",
+      "unit": "1",
+      "labels": ["result", "service"]
+    },
+    { "name": "queue_depth", "type": "gauge", "unit": "1", "labels": ["queue", "service"] },
+    {
+      "name": "queue_oldest_age_seconds",
+      "type": "gauge",
+      "unit": "s",
+      "labels": ["queue", "service"]
+    },
+    { "name": "outbox_lag_seconds", "type": "gauge", "unit": "s", "labels": ["service"] },
+    {
+      "name": "search_index_watermark",
+      "type": "gauge",
+      "unit": "1",
+      "labels": ["source", "service"]
+    },
+    {
+      "name": "search_requests_total",
+      "type": "counter",
+      "unit": "1",
+      "labels": ["result", "service"]
+    },
+    { "name": "sse_connections", "type": "gauge", "unit": "1", "labels": ["service"] },
+    { "name": "sse_resets_total", "type": "counter", "unit": "1", "labels": ["reason", "service"] },
+    {
+      "name": "lease_conflicts_total",
+      "type": "counter",
+      "unit": "1",
+      "labels": ["result", "service"]
+    },
+    {
+      "name": "ai_usage_tokens_total",
+      "type": "counter",
+      "unit": "token",
+      "labels": ["provider", "result", "service"]
+    },
+    {
+      "name": "ai_quota_rejections_total",
+      "type": "counter",
+      "unit": "1",
+      "labels": ["scope", "service"]
+    },
+    {
+      "name": "ai_first_progress_duration_ms",
+      "type": "histogram",
+      "unit": "ms",
+      "labels": ["driver", "result", "service"]
+    },
+    {
+      "name": "file_validation_total",
+      "type": "counter",
+      "unit": "1",
+      "labels": ["result", "service"]
+    },
+    { "name": "file_gc_oldest_age_seconds", "type": "gauge", "unit": "s", "labels": ["service"] },
+    { "name": "backup_age_seconds", "type": "gauge", "unit": "s", "labels": ["service"] },
+    {
+      "name": "purge_oldest_age_seconds",
+      "type": "gauge",
+      "unit": "s",
+      "labels": ["kind", "service"]
+    },
+    {
+      "name": "permission_invariant_failures_total",
+      "type": "counter",
+      "unit": "1",
+      "labels": ["boundary", "service"]
+    },
+    {
+      "name": "provider_credential_failures_total",
+      "type": "counter",
+      "unit": "1",
+      "labels": ["provider", "service"]
+    }
+  ],
+  "requiredDashboards": ["core-slo", "async-pipeline", "dependencies", "security-lifecycle"],
+  "requiredAlerts": [
+    "core-burn-rate",
+    "queue-age",
+    "outbox-lag",
+    "backup-rpo",
+    "purge-stuck",
+    "permission-invariant",
+    "provider-credential"
+  ]
+}

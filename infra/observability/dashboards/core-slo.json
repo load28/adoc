@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "core-slo",
+  "title": "Core SLO",
+  "panels": [
+    { "id": "availability", "sli": "core-availability", "metrics": ["http_requests_total"] },
+    {
+      "id": "document-latency",
+      "sli": "document-latency",
+      "metrics": ["http_request_duration_ms"]
+    },
+    { "id": "public-latency", "sli": "public-latency", "metrics": ["http_request_duration_ms"] },
+    { "id": "db-pool", "metrics": ["db_pool_in_use", "db_transaction_retries_total"] }
+  ]
+}

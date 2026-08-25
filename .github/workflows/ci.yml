@@ -34,6 +34,19 @@ jobs:
       - name: Verify repository
         run: bun run ci
 
+      - name: Audit Rust dependencies
+        uses: actions-rust-lang/audit@v1
+        with:
+          denyWarnings: true
+          createIssues: false
+          ignore: RUSTSEC-2023-0071
+
+      - name: Audit JavaScript dependencies
+        run: bun audit --audit-level high
+
+      - name: Verify provenance and production-readiness contracts
+        run: node scripts/check-provenance.mjs --self-test && bun run check:production-readiness
+
       - name: Verify full acceptance in containers
         run: bun run compose:integration
 

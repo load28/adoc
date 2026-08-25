@@ -143,10 +143,11 @@ docker compose -p "$project" --profile test run --rm test-runner \
   --test ai_context_runtime \
   --test ai_result_proposal \
   -- --ignored --nocapture
+dr_started=$(date +%s)
 docker compose -p "$project" --profile backup run --rm backup >/dev/null
 docker compose -p "$project" --profile backup run --rm --entrypoint sh backup -c \
   'test -s /backup/latest/manifest.json && cd /backup/latest && sha256sum -c checksums.sha256'
-docker compose -p "$project" --profile backup run --rm --entrypoint sh backup -c '
+dr_result=$(docker compose -p "$project" --profile backup run --rm --entrypoint sh backup -c '
   password=$(cat /run/secrets/postgres_password)
   export PGPASSWORD="$password"
   dropdb --host postgres --username postgres --if-exists adoc_restore
@@ -159,8 +160,13 @@ docker compose -p "$project" --profile backup run --rm --entrypoint sh backup -c
   duplicate_audit=$(psql --host postgres --username postgres --dbname adoc_restore --tuples-only --no-align --command "SELECT count(*) FROM (SELECT workspace_id, sequence FROM audit_events GROUP BY workspace_id, sequence HAVING count(*) > 1) duplicate")
   test "$bad_documents" = 0
   test "$duplicate_audit" = 0
+  printf "%s %s\n" "$source_version" "$restore_version"
   dropdb --host postgres --username postgres adoc_restore
-'
+')
+set -- $dr_result
+dr_ended=$(date +%s)
+node scripts/check-dr-proof.mjs --record dist/evidence/compose-dr.json \
+  "$dr_started" "$dr_ended" "$1" "$2"
 docker compose -p "$project" --profile search stop opensearch >/dev/null
 curl --fail --silent http://127.0.0.1:18081/health/ready >/dev/null
 cleanup

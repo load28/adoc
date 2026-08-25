@@ -38,11 +38,29 @@ const KNOWN_METRICS: &[MetricDescriptor] = &[
     MetricDescriptor::new("queue_depth", &["queue", "service"]),
     MetricDescriptor::new("queue_oldest_age_seconds", &["queue", "service"]),
     MetricDescriptor::new("outbox_lag_seconds", &["service"]),
+    MetricDescriptor::new("search_index_watermark", &["source", "service"]),
+    MetricDescriptor::new("search_requests_total", &["result", "service"]),
     MetricDescriptor::new("sse_connections", &["service"]),
+    MetricDescriptor::new("sse_resets_total", &["reason", "service"]),
     MetricDescriptor::new("lease_conflicts_total", &["result", "service"]),
     MetricDescriptor::new("ai_usage_tokens_total", &["provider", "result", "service"]),
+    MetricDescriptor::new("ai_quota_rejections_total", &["scope", "service"]),
+    MetricDescriptor::new(
+        "ai_first_progress_duration_ms",
+        &["driver", "result", "service"],
+    ),
     MetricDescriptor::new("file_validation_total", &["result", "service"]),
+    MetricDescriptor::new("file_gc_oldest_age_seconds", &["service"]),
     MetricDescriptor::new("backup_age_seconds", &["service"]),
+    MetricDescriptor::new("purge_oldest_age_seconds", &["kind", "service"]),
+    MetricDescriptor::new(
+        "permission_invariant_failures_total",
+        &["boundary", "service"],
+    ),
+    MetricDescriptor::new(
+        "provider_credential_failures_total",
+        &["provider", "service"],
+    ),
 ];
 
 #[derive(Clone, Debug)]

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "workloads": [
+    {"id":"document-read","targetP95Ms":300,"targetP99Ms":500,"maxErrorRate":0.001},
+    {"id":"command-ack","targetP95Ms":500,"targetP99Ms":800,"maxErrorRate":0.001},
+    {"id":"public-viewer","targetP95Ms":500,"targetP99Ms":800,"maxErrorRate":0.001},
+    {"id":"search-first-page","targetP95Ms":1500,"targetP99Ms":2500,"maxErrorRate":0.01},
+    {"id":"ai-first-progress","targetP95Ms":2000,"targetP99Ms":3500,"maxErrorRate":0.02}
+  ],
+  "profiles": [
+    {"id":"repository","tier":"repository","arrival":"closed","concurrency":1,"durationSeconds":30,"warmupSeconds":3,"scale":{"workspaces":1,"documents":3,"sessions":2},"resourceBudget":{"clientMemoryMiB":256,"maxConnections":8},"workloads":["document-read","command-ack","public-viewer","search-first-page","ai-first-progress"],"stop":{"maxErrorRate":0.02,"maxSaturationSeconds":5}},
+    {"id":"load","tier":"environment","arrival":"constant","concurrency":10000,"durationSeconds":1800,"warmupSeconds":300,"scale":{"workspaces":10000,"documents":10000000,"sessions":10000},"resourceBudget":{"queryPerSecond":1000,"commandPerSecond":200},"workloads":["document-read","command-ack","public-viewer","search-first-page","ai-first-progress"],"stop":{"maxErrorRate":0.02,"maxSaturationSeconds":60}},
+    {"id":"stress","tier":"environment","arrival":"ramp","concurrency":10000,"durationSeconds":3600,"warmupSeconds":300,"scale":{"workspaces":10000,"documents":10000000,"sessions":10000},"resourceBudget":{"queryPerSecond":1000,"commandPerSecond":200},"workloads":["document-read","command-ack","search-first-page"],"stop":{"untilSaturation":true,"maxErrorRate":0.05,"maxSaturationSeconds":120}},
+    {"id":"soak","tier":"environment","arrival":"constant","concurrency":10000,"durationSeconds":28800,"warmupSeconds":300,"scale":{"workspaces":10000,"documents":10000000,"sessions":10000},"resourceBudget":{"queryPerSecond":1000,"commandPerSecond":200},"workloads":["document-read","command-ack","public-viewer","search-first-page","ai-first-progress"],"stop":{"maxErrorRate":0.02,"maxSaturationSeconds":120}},
+    {"id":"spike","tier":"environment","arrival":"spike","concurrency":100000,"durationSeconds":300,"warmupSeconds":300,"scale":{"workspaces":10000,"documents":10000000,"sessions":10000},"resourceBudget":{"queryPerSecond":10000,"commandPerSecond":2000},"workloads":["document-read","command-ack","public-viewer","search-first-page"],"stop":{"maxErrorRate":0.1,"maxSaturationSeconds":60}},
+    {"id":"degradation","tier":"environment","arrival":"constant","concurrency":10000,"durationSeconds":1800,"warmupSeconds":300,"scale":{"workspaces":10000,"documents":10000000,"sessions":10000},"resourceBudget":{"queryPerSecond":1000,"commandPerSecond":200},"faults":["redis-loss","opensearch-timeout","object-storage-partial-write","ai-timeout","sse-disconnect"],"workloads":["document-read","command-ack","public-viewer","search-first-page","ai-first-progress"],"stop":{"maxErrorRate":0.02,"maxSaturationSeconds":120}}
+  ]
+}

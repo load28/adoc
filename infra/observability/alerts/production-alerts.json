@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "alerts": [
+    {
+      "id": "core-burn-rate",
+      "severity": "page",
+      "sli": "core-availability",
+      "condition": "burn_rate_1h >= 14.4 && burn_rate_5m >= 14.4",
+      "for": "5m",
+      "runbook": "docs/design/operations/INCIDENT-RUNBOOK.md",
+      "owner": "platform",
+      "impact": "core document read or write SLO is burning"
+    },
+    {
+      "id": "queue-age",
+      "severity": "ticket",
+      "metric": "queue_oldest_age_seconds",
+      "condition": "max >= 300",
+      "for": "10m",
+      "runbook": "docs/design/operations/SUPPORT-RUNBOOK.md",
+      "owner": "platform",
+      "impact": "asynchronous work is delayed"
+    },
+    {
+      "id": "outbox-lag",
+      "severity": "page",
+      "metric": "outbox_lag_seconds",
+      "condition": "max >= 300",
+      "for": "10m",
+      "runbook": "docs/design/operations/INCIDENT-RUNBOOK.md",
+      "owner": "platform",
+      "impact": "committed changes are not propagating"
+    },
+    {
+      "id": "backup-rpo",
+      "severity": "page",
+      "metric": "backup_age_seconds",
+      "condition": "max >= 900",
+      "for": "5m",
+      "runbook": "docs/design/operations/BACKUP-DISASTER-RECOVERY.md",
+      "owner": "platform",
+      "impact": "RPO is at risk"
+    },
+    {
+      "id": "purge-stuck",
+      "severity": "ticket",
+      "metric": "purge_oldest_age_seconds",
+      "condition": "max >= 86400",
+      "for": "30m",
+      "runbook": "docs/design/operations/SUPPORT-RUNBOOK.md",
+      "owner": "privacy",
+      "impact": "retention work is overdue"
+    },
+    {
+      "id": "permission-invariant",
+      "severity": "page",
+      "metric": "permission_invariant_failures_total",
+      "condition": "increase_5m > 0",
+      "for": "0m",
+      "runbook": "docs/design/operations/INCIDENT-RUNBOOK.md",
+      "owner": "security",
+      "impact": "tenant or permission isolation may be violated"
+    },
+    {
+      "id": "provider-credential",
+      "severity": "ticket",
+      "metric": "provider_credential_failures_total",
+      "condition": "increase_15m >= 3",
+      "for": "5m",
+      "runbook": "docs/design/operations/SUPPORT-RUNBOOK.md",
+      "owner": "platform",
+      "impact": "Search or AI provider is unavailable"
+    }
+  ]
+}
