@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
-import { ApiClient, ApiProblemError, beginCommand, parseDocumentSearch } from "../src";
+import {
+  ApiClient,
+  ApiProblemError,
+  beginCommand,
+  parseDocumentSearch,
+  parseSettingsSearch,
+} from "../src";
 
 describe("frontend shell contracts", () => {
   test("canonicalizes document search and removes unknown values", () => {
@@ -26,5 +32,24 @@ describe("frontend shell contracts", () => {
     expect(request).toMatchObject({ credentials: "same-origin", redirect: "manual" });
     expect(error).toBeInstanceOf(ApiProblemError);
     expect((error as ApiProblemError).problem.code).toBe("SESSION_REQUIRED");
+  });
+
+  test("bounds settings selection without accepting capability-like values", () => {
+    expect(parseSettingsSearch({ document: " doc ", subject: "user", token: "secret" })).toEqual({
+      document: "doc",
+      subject: "user",
+    });
+  });
+
+  test("public viewer omits credentials and makes every failure indistinguishable", async () => {
+    let request: RequestInit | undefined;
+    const client = new ApiClient(async (_input, init) => {
+      request = init;
+      return Response.json({ code: "PUBLIC_LINK_REVOKED" }, { status: 410 });
+    });
+    const token = "A".repeat(43);
+    const error = await client.publicDocument(token).catch((cause: unknown) => cause);
+    expect(request).toMatchObject({ credentials: "omit", redirect: "manual" });
+    expect((error as ApiProblemError).problem.code).toBe("PUBLIC_DOCUMENT_NOT_FOUND");
   });
 });

@@ -5,6 +5,7 @@ const settingsSections = ["members", "groups", "permissions", "writing", "ai", "
 type DocumentMode = (typeof documentModes)[number];
 type DocumentPanel = (typeof documentPanels)[number];
 export type SettingsSection = (typeof settingsSections)[number];
+export type SettingsSearch = { document?: string; subject?: string; cursor?: string };
 
 export type DocumentSearch = {
   mode: DocumentMode;
@@ -48,4 +49,12 @@ export function parseSettingsSection(value: unknown): SettingsSection | undefine
   return settingsSections.includes(value as SettingsSection)
     ? (value as SettingsSection)
     : undefined;
+}
+
+export function parseSettingsSearch(input: Record<string, unknown>): SettingsSearch {
+  return {
+    ...(optionalBounded(input.document) ? { document: optionalBounded(input.document) } : {}),
+    ...(optionalBounded(input.subject) ? { subject: optionalBounded(input.subject) } : {}),
+    ...(optionalBounded(input.cursor) ? { cursor: optionalBounded(input.cursor) } : {}),
+  };
 }

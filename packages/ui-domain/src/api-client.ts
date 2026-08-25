@@ -36,6 +36,20 @@ export type CreateAIJob = components["schemas"]["CreateAIJob"];
 export type AIJob = components["schemas"]["AIJob"];
 export type AIJobPage = components["schemas"]["AIJobPage"];
 export type Proposal = components["schemas"]["Proposal"];
+export type Membership = components["schemas"]["Membership"];
+export type Invitation = components["schemas"]["Invitation"];
+export type InvitationPage = components["schemas"]["InvitationPage"];
+export type Group = components["schemas"]["Group"];
+export type PermissionView = components["schemas"]["PermissionView"];
+export type PermissionGrant = components["schemas"]["PermissionGrant"];
+export type WritingConfiguration = components["schemas"]["WritingConfiguration"];
+export type AIConfiguration = components["schemas"]["AIConfiguration"];
+export type AIUsage = components["schemas"]["AIUsage"];
+export type AIProviderHealth = components["schemas"]["AIProviderHealth"];
+export type AuditPage = components["schemas"]["AuditPage"];
+export type DocumentPage = components["schemas"]["DocumentPage"];
+export type PublicDocument = components["schemas"]["PublicDocument"];
+export type JobReference = components["schemas"]["JobReference"];
 
 export type ApiProblem = {
   code: string;
@@ -516,6 +530,256 @@ export class ApiClient {
       headers: commandHeaders(command, proposalRevision),
       body: JSON.stringify({ reason }),
     });
+  }
+
+  members(workspaceId: string, signal?: AbortSignal): Promise<Membership[]> {
+    return this.#json(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/members`, { signal });
+  }
+
+  invitations(workspaceId: string, cursor?: string, signal?: AbortSignal): Promise<InvitationPage> {
+    return this.#json(
+      withQuery(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/invitations`, { cursor }),
+      { signal },
+    );
+  }
+
+  inviteMember(
+    workspaceId: string,
+    email: string,
+    role: "MEMBER" | "ADMIN",
+    command: CommandHeaders,
+  ): Promise<Invitation> {
+    return this.#json(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/invitations`, {
+      method: "POST",
+      headers: commandHeaders(command),
+      body: JSON.stringify({ email, role }),
+    });
+  }
+
+  revokeInvitation(
+    workspaceId: string,
+    invitation: Pick<Invitation, "id" | "revision">,
+    command: CommandHeaders,
+  ): Promise<Invitation> {
+    return this.#json(
+      `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/invitations/${encodeURIComponent(invitation.id)}`,
+      { method: "DELETE", headers: commandHeaders(command, invitation.revision) },
+    );
+  }
+
+  updateMemberRole(
+    workspaceId: string,
+    member: Pick<Membership, "userId" | "revision">,
+    role: Membership["role"],
+    command: CommandHeaders,
+  ): Promise<Membership> {
+    return this.#json(`${resourcePath(workspaceId, "members", member.userId)}/role`, {
+      method: "PUT",
+      headers: commandHeaders(command, member.revision),
+      body: JSON.stringify({ role }),
+    });
+  }
+
+  removeMember(
+    workspaceId: string,
+    member: Pick<Membership, "userId" | "revision">,
+    command: CommandHeaders,
+  ): Promise<Membership> {
+    return this.#json(resourcePath(workspaceId, "members", member.userId), {
+      method: "DELETE",
+      headers: commandHeaders(command, member.revision),
+    });
+  }
+
+  groups(workspaceId: string, signal?: AbortSignal): Promise<Group[]> {
+    return this.#json(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/groups`, { signal });
+  }
+
+  createGroup(workspaceId: string, name: string, command: CommandHeaders): Promise<Group> {
+    return this.#json(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/groups`, {
+      method: "POST",
+      headers: commandHeaders(command),
+      body: JSON.stringify({ name, memberIds: [] }),
+    });
+  }
+
+  updateGroup(
+    workspaceId: string,
+    group: Pick<Group, "id" | "revision">,
+    name: string,
+    command: CommandHeaders,
+  ): Promise<Group> {
+    return this.#json(resourcePath(workspaceId, "groups", group.id), {
+      method: "PUT",
+      headers: commandHeaders(command, group.revision),
+      body: JSON.stringify({ name }),
+    });
+  }
+
+  deleteGroup(
+    workspaceId: string,
+    group: Pick<Group, "id" | "revision">,
+    command: CommandHeaders,
+  ): Promise<void> {
+    return this.#empty(resourcePath(workspaceId, "groups", group.id), {
+      method: "DELETE",
+      headers: commandHeaders(command, group.revision),
+    });
+  }
+
+  documentPermissions(
+    workspaceId: string,
+    documentId: string,
+    signal?: AbortSignal,
+  ): Promise<PermissionView> {
+    return this.#json(`${resourcePath(workspaceId, "documents", documentId)}/permissions`, {
+      signal,
+    });
+  }
+
+  setDocumentPermission(
+    workspaceId: string,
+    documentId: string,
+    grantId: string,
+    revision: number,
+    input: components["schemas"]["PermissionGrantInput"],
+    command: CommandHeaders,
+  ): Promise<PermissionGrant> {
+    return this.#json(
+      `${resourcePath(workspaceId, "documents", documentId)}/permissions/${encodeURIComponent(grantId)}`,
+      {
+        method: "PUT",
+        headers: commandHeaders(command, revision),
+        body: JSON.stringify(input),
+      },
+    );
+  }
+
+  writingConfiguration(workspaceId: string, signal?: AbortSignal): Promise<WritingConfiguration> {
+    return this.#json(
+      `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/writing-configuration`,
+      { signal },
+    );
+  }
+
+  updateWritingConfiguration(
+    workspaceId: string,
+    revision: number,
+    command: CommandHeaders,
+  ): Promise<WritingConfiguration> {
+    return this.#json(
+      `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/writing-configuration`,
+      {
+        method: "PUT",
+        headers: commandHeaders(command, revision),
+        body: JSON.stringify({ baselineVersion: "writing-rules-v1", overrides: [] }),
+      },
+    );
+  }
+
+  aiConfiguration(workspaceId: string, signal?: AbortSignal): Promise<AIConfiguration> {
+    return this.#json(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/ai/configuration`, {
+      signal,
+    });
+  }
+
+  updateAIConfiguration(
+    workspaceId: string,
+    input: Omit<AIConfiguration, "revision">,
+    revision: number,
+    command: CommandHeaders,
+  ): Promise<AIConfiguration> {
+    return this.#json(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/ai/configuration`, {
+      method: "PUT",
+      headers: commandHeaders(command, revision),
+      body: JSON.stringify(input),
+    });
+  }
+
+  aiUsage(workspaceId: string, from: string, to: string, signal?: AbortSignal): Promise<AIUsage> {
+    return this.#json(
+      withQuery(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/ai/usage`, { from, to }),
+      { signal },
+    );
+  }
+
+  aiProviderHealth(workspaceId: string, signal?: AbortSignal): Promise<AIProviderHealth> {
+    return this.#json(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/ai/provider-health`, {
+      signal,
+    });
+  }
+
+  auditEvents(workspaceId: string, cursor?: string, signal?: AbortSignal): Promise<AuditPage> {
+    return this.#json(
+      withQuery(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/audit-events`, { cursor }),
+      { signal },
+    );
+  }
+
+  trashedDocuments(
+    workspaceId: string,
+    cursor?: string,
+    signal?: AbortSignal,
+  ): Promise<DocumentPage> {
+    return this.#json(
+      withQuery(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/documents/trash`, {
+        cursor,
+      }),
+      { signal },
+    );
+  }
+
+  restoreDocument(
+    workspaceId: string,
+    documentId: string,
+    revision: number,
+    command: CommandHeaders,
+  ): Promise<components["schemas"]["Document"]> {
+    return this.#json(`${resourcePath(workspaceId, "documents", documentId)}/restore`, {
+      method: "POST",
+      headers: commandHeaders(command, revision),
+      body: JSON.stringify({ parentId: null, afterDocumentId: null }),
+    });
+  }
+
+  purgeDocument(
+    workspaceId: string,
+    documentId: string,
+    revision: number,
+    reason: string,
+    command: CommandHeaders,
+  ): Promise<JobReference> {
+    return this.#json(resourcePath(workspaceId, "documents", documentId), {
+      method: "DELETE",
+      headers: commandHeaders(command, revision),
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async publicDocument(token: string, signal?: AbortSignal): Promise<PublicDocument> {
+    if (token.length !== 43 || !/^[A-Za-z0-9_-]+$/.test(token))
+      throw new ApiProblemError({
+        code: "PUBLIC_DOCUMENT_NOT_FOUND",
+        message: "Document not found",
+      });
+    const response = await this.#fetch(`/public/v1/documents/${encodeURIComponent(token)}`, {
+      signal,
+      credentials: "omit",
+      redirect: "manual",
+      headers: { accept: "application/json" },
+    });
+    if (!response.ok)
+      throw new ApiProblemError({
+        code: "PUBLIC_DOCUMENT_NOT_FOUND",
+        message: "Document not found",
+      });
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.toLowerCase().startsWith("application/json"))
+      throw new ApiProblemError({
+        code: "PUBLIC_DOCUMENT_NOT_FOUND",
+        message: "Document not found",
+      });
+    return (await response.json()) as PublicDocument;
   }
 
   async #json<T>(path: string, init: RequestInit): Promise<T> {

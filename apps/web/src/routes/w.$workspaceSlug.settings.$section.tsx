@@ -1,9 +1,10 @@
-import { parseSettingsSection } from "@adoc/ui-domain";
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { parseSettingsSearch, parseSettingsSection } from "@adoc/ui-domain";
+import { createFileRoute, getRouteApi, notFound } from "@tanstack/react-router";
 
-import { ReservedScreen } from "../shell/reserved-screen";
+import { SettingsAuditScreen } from "../operations/settings-audit-screen";
 
 export const Route = createFileRoute("/w/$workspaceSlug/settings/$section")({
+  validateSearch: parseSettingsSearch,
   loader: ({ params }) => {
     const section = parseSettingsSection(params.section);
     if (!section) throw notFound();
@@ -13,5 +14,13 @@ export const Route = createFileRoute("/w/$workspaceSlug/settings/$section")({
 });
 
 function SettingsScreen() {
-  return <ReservedScreen title={`Settings · ${Route.useLoaderData()}`} />;
+  const workspace = getRouteApi("/w/$workspaceSlug").useLoaderData();
+  const { document: documentId } = Route.useSearch();
+  return (
+    <SettingsAuditScreen
+      workspaceId={workspace.id}
+      section={Route.useLoaderData()}
+      documentId={documentId}
+    />
+  );
 }

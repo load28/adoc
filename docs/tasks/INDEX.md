@@ -38,7 +38,8 @@
 | TASK-032 | Document Editor UX 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-032](TASK-032-document-editor-ux.md) |
 | TASK-033 | Collaboration·Knowledge UX 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-033](TASK-033-collaboration-knowledge-ux.md) |
 | TASK-034 | AI UX 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-034](TASK-034-ai-ux.md) |
+| TASK-035 | Settings·Audit·Public UX 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-035](TASK-035-settings-audit-public-ux.md) |
 
 ## 다음 태스크 번호
 
-**TASK-035**
+**TASK-036**

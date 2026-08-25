@@ -1,13 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { ReservedScreen } from "../shell/reserved-screen";
-import { useTranslation } from "../shell/product-app-provider";
+import { PublicDocumentScreen as PublicViewer } from "../public/public-document-screen";
 
 export const Route = createFileRoute("/p/$publicToken")({
   component: PublicDocumentScreen,
 });
 
 function PublicDocumentScreen() {
-  const t = useTranslation();
-  return <ReservedScreen title={t("route.publicDocument")} />;
+  return <PublicViewer token={Route.useParams().publicToken} />;
 }

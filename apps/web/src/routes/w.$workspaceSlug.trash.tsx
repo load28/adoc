@@ -1,7 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 
-import { ReservedScreen } from "../shell/reserved-screen";
+import { TrashScreen } from "../operations/trash-screen";
 
 export const Route = createFileRoute("/w/$workspaceSlug/trash")({
-  component: () => <ReservedScreen title="Trash" />,
+  component: TrashRoute,
 });
+
+function TrashRoute() {
+  const workspace = getRouteApi("/w/$workspaceSlug").useLoaderData();
+  return <TrashScreen workspaceId={workspace.id} />;
+}
