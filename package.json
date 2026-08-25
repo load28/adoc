@@ -39,6 +39,7 @@
     "browser:check": "sh scripts/check-browser.sh",
     "browser:update": "ADOC_UPDATE_BROWSER_SNAPSHOTS=1 sh scripts/check-browser.sh",
     "ci": "bun run check",
+    "ci:local": "bun run check && bun run audit:rust && bun audit --audit-level high && bun run check:production-readiness && bun run compose:integration && bun run browser:check",
     "format": "cargo fmt --all && biome format --write .",
     "format:check": "cargo fmt --all -- --check && biome format .",
     "lint": "bun run check:boundaries && biome lint . && cargo clippy --workspace --all-targets --all-features -- -D warnings",

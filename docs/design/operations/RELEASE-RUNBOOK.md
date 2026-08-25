@@ -5,8 +5,8 @@
 
 ## 사전 조건
 
-main CI green, signed image·SBOM, schema compatibility, backup/restore freshness, error budget,
-known issue와 rollback image를 확인한다.
+대상 main SHA의 로컬 전체 CI와 수동 GitHub Actions green, signed image·SBOM, schema
+compatibility, backup/restore freshness, error budget, known issue와 rollback image를 확인한다.
 
 ## 순서
 

@@ -53,7 +53,8 @@
 | TASK-047 | AI CLI 교차 플랫폼 테스트 계약 정정 | 결함·설계 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-047](TASK-047-ai-cli-cross-platform-test.md) |
 | TASK-048 | 브라우저 생성 산출물 검사 경계 정정 | 결함·설계 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-048](TASK-048-generated-browser-artifact-boundary.md) |
 | TASK-049 | Compose 비밀 파일 교차 플랫폼 전달 경계 | 결함·설계 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-049](TASK-049-portable-compose-secret-staging.md) |
+| TASK-050 | CI 명시 실행 경계 | 설계·구현·운영 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-050](TASK-050-explicit-ci-execution.md) |
 
 ## 다음 태스크 번호
 
-**TASK-050**
+**TASK-051**

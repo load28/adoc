@@ -15,3 +15,8 @@
 - [설계 동결 보고서](docs/design/implementation/DESIGN-FREEZE-REPORT.md)
 - [태스크 인덱스](docs/tasks/INDEX.md)
 - [작업 규칙](AGENTS.md)
+
+## CI 실행
+
+전체 CI는 자동으로 실행되지 않는다. 로컬에서는 `bun run ci:local`을 명시적으로 실행한다.
+GitHub에서는 Actions의 `ci` workflow에서 **Run workflow**를 선택한 경우에만 실행된다.

@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { parse } from "yaml";
 
 const exceptions = JSON.parse(readFileSync("infra/security/advisory-exceptions.json", "utf8"));
 const environment = JSON.parse(readFileSync("infra/security/environment-evidence.json", "utf8"));
@@ -37,6 +38,29 @@ if (process.argv.includes("--self-test")) {
       new Date(),
     ),
   );
+  expectFailure(() =>
+    validateSupplyChain(
+      exceptions,
+      environment,
+      workflow.replace("  workflow_dispatch:\n", "  workflow_dispatch:\n  push:\n"),
+      packageDocument,
+      auditRunner,
+      new Date(),
+    ),
+  );
+  expectFailure(() =>
+    validateSupplyChain(
+      exceptions,
+      environment,
+      workflow,
+      {
+        ...packageDocument,
+        scripts: { ...packageDocument.scripts, "ci:local": "bun run check" },
+      },
+      auditRunner,
+      new Date(),
+    ),
+  );
 }
 console.log(JSON.stringify(summary));
 
@@ -65,6 +89,15 @@ export function validateSupplyChain(
     if (!/_(UNAVAILABLE)$/u.test(skip.reasonCode))
       throw new Error(`${skip.id} does not describe an unavailable external dependency`);
   }
+  const trigger = parse(workflowSource)?.on;
+  if (
+    !trigger ||
+    typeof trigger !== "object" ||
+    Array.isArray(trigger) ||
+    Object.keys(trigger).length !== 1 ||
+    !("workflow_dispatch" in trigger)
+  )
+    throw new Error("GitHub CI must be triggered only by workflow_dispatch");
   for (const marker of [
     "actions-rust-lang/audit@v1",
     "bun audit",
@@ -74,6 +107,21 @@ export function validateSupplyChain(
     if (!workflowSource.includes(marker)) throw new Error(`CI is missing ${marker}`);
   if (packageDocument.scripts?.["audit:rust"] !== "node scripts/audit-rust.mjs")
     throw new Error("Rust audit command does not use the advisory registry runner");
+  const localCi = packageDocument.scripts?.["ci:local"];
+  if (typeof localCi !== "string") throw new Error("local CI entrypoint is missing");
+  let previousIndex = -1;
+  for (const marker of [
+    "bun run check",
+    "bun run audit:rust",
+    "bun audit --audit-level high",
+    "bun run check:production-readiness",
+    "bun run compose:integration",
+    "bun run browser:check",
+  ]) {
+    const index = localCi.indexOf(marker);
+    if (index <= previousIndex) throw new Error(`local CI is missing or misorders ${marker}`);
+    previousIndex = index;
+  }
   for (const id of ids)
     if (!workflowSource.includes(`ignore: ${id}`) || !auditRunnerSource.includes("--ignore"))
       throw new Error("advisory exception registry, audit runner, and CI ignore list differ");

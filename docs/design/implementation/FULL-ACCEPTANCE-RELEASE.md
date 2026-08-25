@@ -12,7 +12,9 @@ image와 계약·migration·SBOM·검증 증거를 하나의 versioned release b
 인수 시나리오를 통과 처리하지 않는다.
 
 제품 첫 전체 범위 버전은 `1.0.0`이다. local 검증 산출물은 `1.0.0-local.<short-sha>`로 식별하고,
-production tag `v1.0.0`은 clean main commit의 원격 CI가 같은 digest를 검증·서명한 뒤에만 만든다.
+production tag `v1.0.0`은 clean main commit의 로컬 전체 CI와 명시적으로 호출한 원격 GitHub
+Actions가 같은 digest를 검증·서명한 뒤에만 만든다. commit과 push 자체는 검증을 자동 시작하지
+않는다.
 
 ## 2. Acceptance manifest
 
