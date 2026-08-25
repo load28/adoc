@@ -6,7 +6,7 @@
 ```text
 /
 ├─ apps/
-│  ├─ web/                 # TanStack Start React 18.2 + Vite
+│  ├─ web/                 # TanStack Start React 19.2 + Vite + Tailwind CSS
 │  ├─ api/                 # Axum HTTP·SSE binary
 │  └─ worker/              # async worker binary
 ├─ crates/
@@ -19,7 +19,7 @@
 ├─ packages/
 │  ├─ contracts/           # generated OpenAPI·event clients
 │  ├─ editor-schema/       # Tiptap schema·Operation codec
-│  ├─ ui-domain/           # Atlaskit-composed domain UI
+│  ├─ ui-domain/           # typed API client·browser application state
 │  └─ i18n/                # ko/en ICU resources
 ├─ infra/
 │  ├─ docker/ migrations/ opensearch/ observability/
@@ -38,7 +38,7 @@
 - `crates/configuration`은 process input parsing·validation과 secret loading만 소유한다.
 - `crates/telemetry`는 검증된 config를 받아 observability를 구성하며 secret 원문을 받지 않는다.
 - `tools/contract_codegen`만 정본 schema를 generated source로 변환한다.
-- `ui-domain`은 design system을 재정의하지 않고 public Atlaskit을 직접 조합한다.
+- `ui-domain`은 React design system을 소유하지 않는다. UI source는 `apps/web/src/components`에 둔다.
 - SQL은 owner adapter에, migration은 `infra/migrations`에 둔다.
 
 ## Naming

@@ -24,7 +24,9 @@ infra/{docker,migrations,opensearch}
 metric·redaction을 구성한다. 두 crate는 domain 정책을 소유하거나 domain crate에서 import하지
 않는다.
 
-`packages/ui-domain`은 design system이 아니라 Atlaskit을 조합한 domain UI다.
+`packages/ui-domain`은 design system이 아니라 API client와 browser application state 경계다.
+shadcn/ui source는 `apps/web/src/components/ui`, 제품 composition은 `apps/web/src/components/product`가
+소유한다.
 
 ## 의존 방향
 

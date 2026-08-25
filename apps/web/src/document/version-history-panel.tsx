@@ -5,11 +5,11 @@ import {
   type PublishedVersion,
   type VersionPage,
 } from "@adoc/ui-domain";
-import Button from "@atlaskit/button/default/button";
-import Checkbox from "@atlaskit/checkbox";
-import InlineMessage from "@atlaskit/inline-message";
-import Lozenge from "@atlaskit/lozenge";
-import { Inline, Stack, Text } from "@atlaskit/primitives";
+import { Button } from "../components/product/legacy";
+import { Checkbox } from "../components/product/legacy";
+import { InlineMessage } from "../components/product/legacy";
+import { Lozenge } from "../components/product/legacy";
+import { Inline, Stack, Text } from "../components/product/legacy";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 

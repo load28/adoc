@@ -5,11 +5,11 @@ import {
   type DocumentView,
   type ImpactPreview,
 } from "@adoc/ui-domain";
-import Button from "@atlaskit/button/default/button";
-import LinkButton from "@atlaskit/button/link";
-import InlineMessage from "@atlaskit/inline-message";
-import { Inline, Stack, Text } from "@atlaskit/primitives";
-import Textfield from "@atlaskit/textfield";
+import { Button } from "../components/product/legacy";
+import { LinkButton } from "../components/product/legacy";
+import { InlineMessage } from "../components/product/legacy";
+import { Inline, Stack, Text } from "../components/product/legacy";
+import { Textfield } from "../components/product/legacy";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 

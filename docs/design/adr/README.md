@@ -14,6 +14,7 @@
 | [ADR-008](ADR-008-atlaskit-ui.md) | Atlaskit-only UI 체계 |
 | [ADR-009](ADR-009-bun-package-manager.md) | Bun package manager·workspace scripts |
 | [ADR-010](ADR-010-asdf-local-toolchain.md) | asdf local toolchain |
+| [ADR-011](ADR-011-tailwind-shadcn-ui.md) | Tailwind CSS·shadcn/ui New York UI 체계 |
 
 각 ADR의 공통 결과는 [Technology Selection](../architecture/TECHNOLOGY-SELECTION.md)에
 통합한다.

@@ -22,7 +22,7 @@
 | RQ-15 File lifecycle | PROD-16 | SPEC-15·17·19, DATA-07 | A-07·08, TEST-09 |
 | RQ-16 structured Audit | PROD-16 | SPEC-16, CONTRACT-04, DATA-07 | A-08, TEST-08 |
 | RQ-17 공개 단일 문서 Viewer | PROD-10 | SPEC-08·15·18, API-02 | A-07, TEST-04·09 |
-| RQ-18 ko/en·responsive | PROD-03·06 | UX-01~16 | A-01~08, TEST-09, visual·a11y |
+| RQ-18 ko/en·responsive | PROD-03·06 | UX-01~19 | A-01~08, TEST-09, visual·a11y |
 | RQ-19 99.9%·RPO/RTO | PROD-06 | OPS-03·04, PLAN-07 | TEST-03·06·09, DR drill |
 | RQ-20 30일 삭제·privacy | PROD-16 | DATA-04·07·08, PRIV-01 | A-08, TEST-09 |
 

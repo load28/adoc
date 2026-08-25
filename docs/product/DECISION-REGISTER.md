@@ -49,6 +49,7 @@
 | DEC-034 | 고객용 Public API·Webhook은 제외하고 내부 API만 구현 | 2026-08-24 | TASK-003, 향후 PROD-05·API-01·ARCH-07 |
 | DEC-035 | JavaScript·TypeScript workspace의 패키지 관리와 script 실행에 Bun을 사용 | 2026-08-25 | TASK-006, ADR-009·ARCH-04·PLAN-08 |
 | DEC-036 | 로컬 Rust·Bun·Node toolchain은 asdf와 저장소 `.tool-versions`로 설치·선택 | 2026-08-25 | TASK-007, ADR-010·ARCH-04·PLAN-08 |
+| DEC-037 | DEC-031의 Atlaskit 단일 UI 결정을 대체하고 React 19·Tailwind CSS 4·shadcn/ui New York 기반으로 전체 UI/UX를 재설계 | 2026-08-26 | TASK-051, ADR-011·UX-09·UX-14·UX-17~19 |
 
 ## 기록 규칙
 

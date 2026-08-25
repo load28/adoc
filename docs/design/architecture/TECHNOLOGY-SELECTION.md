@@ -5,10 +5,10 @@
 
 | 영역 | 선택 | 구조적 이유 |
 |---|---|---|
-| Web | TanStack Start, React 18.2, TypeScript, Vite | route별 SSR·CSR, typed client |
+| Web | TanStack Start, React 19.2, TypeScript, Vite | route별 SSR·CSR, typed client |
 | JS Toolchain | Bun package manager·workspace scripts | 단일 lockfile, frozen install, 빠른 workspace 실행 |
 | Local Toolchain | asdf + root `.tool-versions` | Rust·Bun·Node 설치와 버전 선택 재현 |
-| UI | public Apache-2.0 `@atlaskit` | 단일 token·component 체계 |
+| UI | Tailwind CSS 4.3, shadcn/ui New York, Radix UI | 소유 가능한 단일 token·component source 체계 |
 | Editor | Tiptap Core·ProseMirror | schema·transaction extension, Yjs 불필요 |
 | API | Rust, Axum·Tokio·Tower | explicit async·middleware·SSE |
 | DB | PostgreSQL + SQLx | transaction·constraint·typed SQL |
@@ -21,7 +21,7 @@
 ## 제외
 
 ORM, WebSocket, CRDT·Yjs, Tiptap Collaboration, customer-facing API, silent model fallback,
-병행 UI library와 custom design tokens를 제외한다.
+병행 UI library와 화면별 custom design tokens를 제외한다.
 
 Bun은 JavaScript·TypeScript package manager와 workspace script runner 경계에 사용한다. Rust
 backend를 대체하지 않으며 Web production runtime은 배포 adapter의 Node-compatible output
@@ -34,10 +34,10 @@ backend를 대체하지 않으며 Web production runtime은 배포 adapter의 No
 
 ## Build compatibility
 
-TanStack Start의 Vite build는 Atlaskit distributed CSS를 처리하고 Vite 8의 공식
-`@rolldown/plugin-babel`에서 `@atlaskit/tokens/babel-plugin`을 실행한다. ADS Compiled source를 자체 작성하지 않고 public
-prebuilt component·primitive를 사용한다. React 18.2 peer dependency와 SSR matrix를 dependency
-upgrade gate에서 검증한다.
+TanStack Start의 Vite build는 `@tailwindcss/vite`로 Tailwind CSS를 처리한다. theme는 CSS-first
+구성으로 정의하고 shadcn/ui source와 application class를 같은 scan 경계에 둔다. React 19.2,
+TanStack Start, Vite, Tailwind CSS와 Radix peer dependency의 정확한 설치 조합은 lockfile에
+고정하며 SSR·hydration·browser matrix를 dependency upgrade gate에서 검증한다.
 
 ## ADR
 

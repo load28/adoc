@@ -10,6 +10,13 @@ route loader는 session → Workspace Membership → target permission 순서로
 server commit 전 성공 UI를 표시하지 않으며 오류는 [Error Catalog](../api/ERROR-CATALOG.md)의
 code로 state를 선택한다.
 
+모든 화면은 [Experience Principles](EXPERIENCE-PRINCIPLES.md)와
+[화면 Story](SCREEN-STORIES.md)의 같은 SCR ID를 따른다. 이 문서는 loader·command·완료 결과를,
+UX-19는 첫 viewport·정보 위계·반응형·접근성 표현을 소유한다.
+
+공통 화면 anatomy는 `AppShell → PageHeader → optional StatusBanner → primary task → secondary
+section → contextual surface`다. auth·public route는 AppShell 대신 전용 layout을 사용한다.
+
 | Screen ID | Route | Loader query | Primary action | 완료 뒤 |
 |---|---|---|---|---|
 | SCR-01 | `/login` | `getSession` | `beginGoogleLogin` | 검증된 returnTo 또는 Workspace 선택 |

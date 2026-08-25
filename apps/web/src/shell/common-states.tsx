@@ -1,8 +1,8 @@
-import Button from "@atlaskit/button/default/button";
-import EmptyState from "@atlaskit/empty-state";
-import InlineMessage from "@atlaskit/inline-message";
-import { Box, Stack } from "@atlaskit/primitives";
-import Skeleton from "@atlaskit/skeleton";
+import { Button } from "../components/product/legacy";
+import { EmptyState } from "../components/product/legacy";
+import { InlineMessage } from "../components/product/legacy";
+import { Box, Stack } from "../components/product/legacy";
+import { Skeleton } from "../components/product/legacy";
 
 import { useTranslation } from "./product-app-provider";
 

@@ -1,4 +1,4 @@
-import "@atlaskit/css-reset";
+import "../styles/globals.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 
 import { PRODUCT_NAME } from "../product";
+import { RouteProblem } from "../shell/common-states";
 import { ProductAppProvider } from "../shell/product-app-provider";
 import { loadShellBootstrap } from "../shell/server-bootstrap";
 import themeBootstrapUrl from "../shell/theme-bootstrap.js?url";
@@ -20,6 +21,7 @@ export const Route = createRootRoute({
     ],
   }),
   component: RootComponent,
+  notFoundComponent: () => <RouteProblem code="NOT_FOUND" />,
 });
 
 function RootComponent() {
@@ -42,7 +44,7 @@ function RootDocument({
   theme,
 }: Readonly<{ children: ReactNode; locale: "ko" | "en"; theme: "LIGHT" | "DARK" | "SYSTEM" }>) {
   return (
-    <html lang={locale} data-theme-preference={theme}>
+    <html lang={locale} data-theme-preference={theme} suppressHydrationWarning>
       <head>
         <HeadContent />
         <script src={themeBootstrapUrl} />

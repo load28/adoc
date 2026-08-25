@@ -18,7 +18,7 @@
 | 사용자 차단 결정 | 통과 | Decision Register 대기 0, DEC-000~036 유지 |
 | 전체 문서 상태 | 통과 | Document Map mapped artifact 130개 동결 |
 | 제품·도메인 | 통과 | PROD-01~17, DOM-00~06, RQ-01~20 traceability |
-| 화면·디자인 | 통과 | SCR-01~22, Atlaskit matrix, route/state, keymap |
+| 화면·디자인 | 통과 | SCR-01~22, UX-17 조사, UX-18 원칙, UX-19 Story, shadcn matrix, route/state, keymap |
 | HTTP·event | 통과 | Catalog/OpenAPI 105 operation 1:1, AsyncAPI 3.1 |
 | Payload type | 통과 | Content·Operation·AI·Event JSON Schema 2020-12 |
 | 저장·동시성 | 통과 | PostgreSQL DDL, DB invariant 30개, lock order |
@@ -48,7 +48,7 @@
 - PostgreSQL·ObjectStorage만 복구 정본이고 Redis·OpenSearch는 재구축 가능하다.
 - 좁은 Rewrite 외 AI 변경은 Proposal·Diff·사람 승인을 거친다.
 - 공개 link는 단일 최신 Published Document와 exact embedded File만 제공한다.
-- UI는 공개 Atlaskit package와 ADS token을 사용하고 별도 design system을 만들지 않는다.
+- UI는 Tailwind CSS와 저장소 소유 shadcn/ui New York source를 단일 기반으로 사용한다.
 
 ## 구현 중 금지되는 우회
 
@@ -59,7 +59,7 @@ token·병행 component library와 Public Viewer의 Workspace API 재사용을 �
 ## 재검토 trigger
 
 제품 범위, 권한 precedence, retention, AI provider 계약, Content·Operation schema, public link 경계,
-React/Atlaskit major version, 배포 topology 또는 SLO가 바뀌면 관련 설계 task에서 정본, ADR,
+React/UI foundation major version, 배포 topology 또는 SLO가 바뀌면 관련 설계 task에서 정본, ADR,
 schema, test와 이 보고서를 함께 다시 연다.
 
 Bun의 적용 범위가 package manager·workspace script runner를 넘어 production runtime으로

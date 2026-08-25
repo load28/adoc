@@ -24,24 +24,26 @@ function DocumentScreen() {
   const { documentId, workspaceSlug } = Route.useParams();
   const workspace = getRouteApi("/w/$workspaceSlug").useLoaderData();
   const routeDocument = Route.useLoaderData();
-  const selectedPanel = panel ?? "discussion";
+  const selectedPanel = panel;
   return (
-    <>
-      {mode === "draft" ? (
-        <DocumentEditorScreen
-          workspaceId={workspace.id}
-          workspaceSlug={workspaceSlug}
-          documentId={documentId}
-          initialDocument={routeDocument.document}
-        />
-      ) : (
-        <PublishedDocumentScreen
-          workspaceId={workspace.id}
-          workspaceSlug={workspaceSlug}
-          documentId={documentId}
-          initialDocument={routeDocument.document}
-        />
-      )}
+    <div className={selectedPanel ? "document-workspace has-panel" : "document-workspace"}>
+      <div className="min-w-0">
+        {mode === "draft" ? (
+          <DocumentEditorScreen
+            workspaceId={workspace.id}
+            workspaceSlug={workspaceSlug}
+            documentId={documentId}
+            initialDocument={routeDocument.document}
+          />
+        ) : (
+          <PublishedDocumentScreen
+            workspaceId={workspace.id}
+            workspaceSlug={workspaceSlug}
+            documentId={documentId}
+            initialDocument={routeDocument.document}
+          />
+        )}
+      </div>
       {selectedPanel === "history" ? (
         <VersionHistoryPanel
           workspaceId={workspace.id}
@@ -58,7 +60,7 @@ function DocumentScreen() {
           jobId={job}
           proposalId={proposal}
         />
-      ) : (
+      ) : selectedPanel ? (
         <DocumentCollaborationPanel
           workspaceId={workspace.id}
           workspaceSlug={workspaceSlug}
@@ -67,7 +69,7 @@ function DocumentScreen() {
           discussionId={discussion}
           reviewId={review}
         />
-      )}
-    </>
+      ) : null}
+    </div>
   );
 }

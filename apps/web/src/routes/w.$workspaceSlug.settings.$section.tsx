@@ -19,6 +19,7 @@ function SettingsScreen() {
   return (
     <SettingsAuditScreen
       workspaceId={workspace.id}
+      workspaceSlug={Route.useParams().workspaceSlug}
       section={Route.useLoaderData()}
       documentId={search.document}
       search={search}

@@ -80,7 +80,7 @@ evidence는 각각의 전용 validator가 검사하며 source formatter·linter�
 브라우저 실행 산출물이 남아 있어도 repository source gate의 결과는 달라지지 않는다.
 
 SSR bundle은 Vite가 dependency까지 하나의 server artifact로 만들고 Bun은 그 artifact만 runtime executable로
-만든다. 이 경계는 Atlaskit이 서로 다른 React instance로 렌더링되는 것을 방지한다. CSP를 위해 JSON Schema
+만든다. 이 경계는 SSR과 client에 서로 다른 React instance가 포함되는 것을 방지한다. CSP를 위해 JSON Schema
 validator도 build 시 standalone 함수로 생성하며 browser runtime에서 동적 코드를 만들지 않는다.
 
 ## 6. Gate

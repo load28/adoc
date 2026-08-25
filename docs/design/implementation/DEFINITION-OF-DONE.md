@@ -13,7 +13,7 @@
 
 - module dependency, typed ID, tenant scope와 expected revision을 지킨다.
 - permission, idempotency, transaction, outbox와 recovery 계약을 우회하지 않는다.
-- public `@atlaskit` package/token만 사용하고 병행 UI 체계가 없다.
+- Tailwind CSS·shadcn/ui source·UX-09 token만 사용하고 병행 UI 체계가 없다.
 - ko/en, responsive, loading·empty·error·denied·recovery 상태가 있다.
 
 ## 검증

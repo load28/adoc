@@ -12,15 +12,16 @@ import {
   type VocabularyConcept,
   type VocabularyPage,
 } from "@adoc/ui-domain";
-import Button from "@atlaskit/button/default/button";
-import LinkButton from "@atlaskit/button/link";
-import Lozenge from "@atlaskit/lozenge";
-import { Box, Inline, Stack, Text } from "@atlaskit/primitives";
-import TextArea from "@atlaskit/textarea";
-import Textfield from "@atlaskit/textfield";
+import { Button } from "../components/product/legacy";
+import { LinkButton } from "../components/product/legacy";
+import { Lozenge } from "../components/product/legacy";
+import { Box, Inline, Stack, Text } from "../components/product/legacy";
+import { TextArea } from "../components/product/legacy";
+import { Textfield } from "../components/product/legacy";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { PageHeader } from "../components/product/page";
 import { RoutePending, RouteProblem } from "../shell/common-states";
 import "./collaboration-knowledge.css";
 
@@ -1200,10 +1201,19 @@ function VocabularyRow({
 }
 
 function Screen({ title, children }: Readonly<{ title: string; children: React.ReactNode }>) {
+  const descriptions: Record<string, string> = {
+    "받은 편지함": "검토 요청, 언급과 충돌처럼 내가 처리해야 할 협업 작업입니다.",
+    검색: "Workspace 권한 범위 안의 공식 문서와 근거를 찾습니다.",
+    용어집: "조직에서 같은 의미로 사용하는 표준 용어와 정의를 관리합니다.",
+  };
   return (
     <main className="resource-screen">
       <Stack space="space.250">
-        <h1>{title}</h1>
+        <PageHeader
+          eyebrow="WORKSPACE KNOWLEDGE"
+          title={title}
+          description={descriptions[title] ?? "Workspace의 협업과 지식 자원을 관리합니다."}
+        />
         {children}
       </Stack>
     </main>

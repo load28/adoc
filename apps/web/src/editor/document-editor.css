@@ -1,31 +1,90 @@
 .adoc-editor-layout {
   display: grid;
-  gap: var(--ds-space-200, 16px);
-  max-width: 960px;
+  gap: 1rem;
+  width: 100%;
+  max-width: 70rem;
   margin: 0 auto;
-  padding: var(--ds-space-300, 24px);
+  padding: 1.5rem 2rem 3rem;
 }
 
 .adoc-editor-toolbar {
   position: sticky;
-  top: 0;
-  z-index: 1;
+  top: 4.25rem;
+  z-index: 20;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--ds-space-050, 4px);
-  padding: var(--ds-space-100, 8px);
-  background: var(--ds-surface, #fff);
-  border: 1px solid var(--ds-border, #091e4224);
-  border-radius: var(--ds-border-radius-200, 8px);
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background: color-mix(in oklch, var(--background) 92%, transparent);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 2px);
+  box-shadow: 0 8px 24px color-mix(in oklch, var(--foreground) 8%, transparent);
+  backdrop-filter: blur(12px);
 }
 
 .adoc-editor-canvas {
-  min-height: 60vh;
-  padding: var(--ds-space-300, 24px);
-  color: var(--ds-text, #172b4d);
-  background: var(--ds-surface, #fff);
-  border: 1px solid var(--ds-border, #091e4224);
-  border-radius: var(--ds-border-radius-200, 8px);
+  min-height: 65svh;
+  padding: 2rem clamp(1.25rem, 6vw, 5rem);
+  color: var(--foreground);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 2px);
+  box-shadow: 0 1px 2px color-mix(in oklch, var(--foreground) 4%, transparent);
+}
+
+.adoc-editor-canvas:focus-within {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--ring) 30%, transparent);
+}
+
+.adoc-editor-canvas .tiptap {
+  min-height: 58svh;
+  max-width: 72ch;
+  margin: 0 auto;
+  font-size: 1rem;
+  line-height: 1.75;
+  outline: none;
+}
+
+.adoc-editor-canvas .tiptap > * + * {
+  margin-top: 0.875rem;
+}
+
+.adoc-editor-canvas table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.adoc-editor-canvas th,
+.adoc-editor-canvas td {
+  min-width: 7.5rem;
+  padding: 0.625rem;
+  border: 1px solid var(--border);
+}
+
+.adoc-editor-canvas [data-callout] {
+  padding: 1rem;
+  background: color-mix(in oklch, var(--info) 9%, transparent);
+  border-inline-start: 3px solid var(--info);
+  border-radius: var(--radius);
+}
+
+@media (max-width: 639px) {
+  .adoc-editor-layout {
+    padding: 1rem 1.25rem 6rem;
+  }
+
+  .adoc-editor-toolbar {
+    top: 3.75rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .adoc-editor-canvas {
+    padding: 1.5rem 1.25rem;
+  }
 }
 
 @media print {
@@ -38,46 +97,5 @@
   .adoc-editor-canvas {
     border: 0;
     box-shadow: none;
-  }
-}
-
-.adoc-editor-canvas:focus-within {
-  border-color: var(--ds-border-focused, #0c66e4);
-  box-shadow: 0 0 0 1px var(--ds-border-focused, #0c66e4);
-}
-
-.adoc-editor-canvas .tiptap {
-  min-height: 55vh;
-  outline: none;
-  line-height: 1.6;
-}
-
-.adoc-editor-canvas table {
-  display: block;
-  max-width: 100%;
-  overflow-x: auto;
-  border-collapse: collapse;
-}
-
-.adoc-editor-canvas th,
-.adoc-editor-canvas td {
-  min-width: 120px;
-  padding: var(--ds-space-100, 8px);
-  border: 1px solid var(--ds-border, #091e4224);
-}
-
-.adoc-editor-canvas [data-callout] {
-  padding: var(--ds-space-200, 16px);
-  background: var(--ds-background-information, #e9f2ff);
-  border-inline-start: 4px solid var(--ds-border-information, #0c66e4);
-}
-
-@media (max-width: 600px) {
-  .adoc-editor-layout {
-    padding: var(--ds-space-150, 12px);
-  }
-
-  .adoc-editor-canvas {
-    padding: var(--ds-space-200, 16px);
   }
 }

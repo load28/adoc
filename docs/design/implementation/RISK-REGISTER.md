@@ -7,7 +7,7 @@
 |---|---|---|---|
 | R-01 | Permission scope와 point resolver 불일치 | 하나의 policy compiler·golden property test | TEST-04 |
 | R-02 | Tiptap position에 영속 anchor 결합 | stable Block ID·Region resolver | SPEC-06 |
-| R-03 | Atlaskit 외부 지원·peer 호환 | public package만, lock matrix·visual SSR gate | ADR-008 |
+| R-03 | shadcn source drift·Radix peer 호환 | source ownership, lock matrix·visual SSR gate | ADR-011 |
 | R-04 | OpenSearch 권한 지연 leak | deny-safe scope, sequence tombstone | SPEC-12 |
 | R-05 | AI prompt injection·hallucination | no tool/data credential, Source·schema validation | SEC-04 |
 | R-06 | CLI credential의 공용 사용 | local only, managed API adapter | ADR-006 |

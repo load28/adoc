@@ -49,9 +49,12 @@
 | UX-11 | `design/ux/CONTENT-AND-MICROCOPY.md` | 용어, 오류·확인 문안, 상태 표현 | 동결 |
 | UX-12 | `design/ux/RESPONSIVE-VISUAL-SPECS.md` | 화면별 wireframe, responsive, density와 visual state | 동결 |
 | UX-13 | `design/ux/SCREEN-BEHAVIOR-SPECS.md` | 화면별 layout, action, state, API와 완료 조건 | 동결 |
-| UX-14 | `design/ux/ATLASKIT-COMPONENT-MATRIX.md` | UI 요소별 공개 Atlaskit package·component 매핑 | 동결 |
+| UX-14 | `design/ux/SHADCN-COMPONENT-MATRIX.md` | UI 요소별 shadcn/ui primitive·제품 composition 매핑 | 구현 기준 |
 | UX-15 | `design/ux/FRONTEND-STATE-ROUTE-CONTRACT.md` | route loader, cache, form·stream state와 ownership | 동결 |
 | UX-16 | `design/ux/EDITOR-COMMAND-KEYMAP.md` | Editor command, selection, keymap와 기기별 대체 조작 | 동결 |
+| UX-17 | `design/ux/ENTERPRISE-UX-RESEARCH.md` | 외부 1차 자료, enterprise 품질 정의와 설계 근거 | 구현 기준 |
+| UX-18 | `design/ux/EXPERIENCE-PRINCIPLES.md` | 전체 화면의 판단·위계·상태·밀도 원칙 | 구현 기준 |
+| UX-19 | `design/ux/SCREEN-STORIES.md` | SCR-01~22의 상세 시각·행동·반응형·접근성 story | 구현 기준 |
 
 ## 3. 시스템·아키텍처 문서
 
@@ -73,7 +76,8 @@
 | ADR-005 | `design/adr/ADR-005-editor-engine.md` | Tiptap Core·ProseMirror | 동결 |
 | ADR-006 | `design/adr/ADR-006-ai-runtime.md` | 환경별 AI Runtime adapter | 동결 |
 | ADR-007 | `design/adr/ADR-007-object-storage.md` | local-first ObjectStorage | 동결 |
-| ADR-008 | `design/adr/ADR-008-atlaskit-ui.md` | 공개 Atlaskit UI 체계 | 동결 |
+| ADR-008 | `design/adr/ADR-008-atlaskit-ui.md` | 공개 Atlaskit UI 체계 | ADR-011로 대체 |
+| ADR-011 | `design/adr/ADR-011-tailwind-shadcn-ui.md` | Tailwind CSS·shadcn/ui New York UI 체계 | 승인 |
 | ADR-009 | `design/adr/ADR-009-bun-package-manager.md` | Bun package manager·workspace scripts | 동결 |
 | ADR-010 | `design/adr/ADR-010-asdf-local-toolchain.md` | asdf local toolchain | 동결 |
 
@@ -198,7 +202,7 @@
 | PLAN-25 | `design/implementation/HYBRID-RETRIEVAL-SOURCE.md` | 권한 scope·BM25·kNN·RRF·Source 구현 계약 | 구현 기준 |
 | PLAN-26 | `design/implementation/AI-CONTEXT-RUNTIME-ADAPTERS.md` | AI Context·Runtime Adapter 구현 계약 | 구현 기준 |
 | PLAN-27 | `design/implementation/AI-RESULT-PROPOSAL-RULES.md` | AI Result 검증·Proposal 적용·Writing Rules 구현 계약 | 구현 기준 |
-| PLAN-28 | `design/implementation/TANSTACK-ATLASKIT-SHELL.md` | TanStack SSR shell·Atlaskit·route·theme·i18n 구현 계약 | 구현 기준 |
+| PLAN-28 | `design/implementation/TANSTACK-SHADCN-SHELL.md` | TanStack SSR shell·Tailwind·shadcn·route·theme·i18n 구현 계약 | 구현 기준 |
 | PLAN-29 | `design/implementation/DOCUMENT-EDITOR-UX.md` | Tiptap adapter·lease·operation buffer·암호화 복구 구현 계약 | 구현 기준 |
 | PLAN-30 | `design/implementation/COLLABORATION-KNOWLEDGE-UX.md` | Collaboration panel·Inbox·Search·Vocabulary UX 계약 | 구현 기준 |
 | PLAN-31 | `design/implementation/AI-UX.md` | AI Inspector·Job·Result·Proposal UX 구현 계약 | 구현 기준 |

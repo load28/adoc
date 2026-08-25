@@ -7,7 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { RouteEmpty } from "./common-states";
 import { ProductAppProvider, routerTarget, toColorMode } from "./product-app-provider";
 
-describe("TanStack Atlaskit shell", () => {
+describe("TanStack shadcn shell", () => {
   test("separates app route search and leaves API links native", () => {
     expect(routerTarget("/w/alpha/docs/doc?mode=published&discussion=item#messages")).toEqual({
       pathname: "/w/alpha/docs/doc",

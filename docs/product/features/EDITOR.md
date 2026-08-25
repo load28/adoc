@@ -31,5 +31,5 @@ menu 기반 대체 조작을 제공한다. selection과 toolbar는 focus를 잃�
 
 ## UI 체계
 
-toolbar, menu, dialog, form, token과 icon은 공개 `@atlaskit` component로 구성한다. Editor
-canvas의 제품 고유 렌더링도 ADS token만 사용한다.
+toolbar, menu, dialog, form과 icon은 UX-14의 shadcn/ui primitive로 구성한다. Editor canvas의
+제품 고유 렌더링도 UX-09 semantic token만 사용한다.

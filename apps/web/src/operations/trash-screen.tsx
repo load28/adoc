@@ -1,11 +1,12 @@
 import { ApiClient, ApiProblemError, type DocumentPage } from "@adoc/ui-domain";
-import Button from "@atlaskit/button/default/button";
-import Lozenge from "@atlaskit/lozenge";
-import { Inline, Stack, Text } from "@atlaskit/primitives";
-import TextArea from "@atlaskit/textarea";
+import { Button } from "../components/product/legacy";
+import { Lozenge } from "../components/product/legacy";
+import { Inline, Stack, Text } from "../components/product/legacy";
+import { TextArea } from "../components/product/legacy";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { PageHeader } from "../components/product/page";
 import { RoutePending, RouteProblem } from "../shell/common-states";
 import "./settings-audit.css";
 
@@ -21,11 +22,11 @@ export function TrashScreen({ workspaceId }: Readonly<{ workspaceId: string }>) 
   return (
     <main className="settings-screen">
       <Stack space="space.250">
-        <h1>휴지통</h1>
-        <Text>
-          복원은 문서를 Workspace root로 되돌립니다. 영구 삭제는 비동기 purge이며 복구할 수
-          없습니다.
-        </Text>
+        <PageHeader
+          eyebrow="RETENTION · 30 DAYS"
+          title="휴지통"
+          description="복원은 문서를 Workspace root로 되돌립니다. 영구 삭제는 비동기 purge이며 복구할 수 없습니다."
+        />
         <TrashList workspaceId={workspaceId} page={query.data} />
       </Stack>
     </main>

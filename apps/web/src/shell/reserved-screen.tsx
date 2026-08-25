@@ -1,5 +1,5 @@
-import EmptyState from "@atlaskit/empty-state";
-import { Box } from "@atlaskit/primitives";
+import { EmptyState } from "../components/product/legacy";
+import { Box } from "../components/product/legacy";
 
 import { useTranslation } from "./product-app-provider";
 

@@ -13,7 +13,7 @@ manager가 필요하다. 기존 IMP-01 계획은 pnpm을 전제로 했으나 구
 ## 선택 기준
 
 하나의 재현 가능한 lockfile, workspace dependency 해석, frozen install, root script 실행,
-Vite·TanStack Start·React 18.2 호환과 CI·로컬 명령 일치가 필요하다.
+Vite·TanStack Start·React frontend stack 호환과 CI·로컬 명령 일치가 필요하다.
 
 ## 검토한 대안
 

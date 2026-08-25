@@ -10,13 +10,15 @@ import {
   type SettingsSection,
   type SettingsSearch,
 } from "@adoc/ui-domain";
-import Button from "@atlaskit/button/default/button";
-import Lozenge from "@atlaskit/lozenge";
-import { Inline, Stack, Text } from "@atlaskit/primitives";
-import Textfield from "@atlaskit/textfield";
+import { Button } from "../components/product/legacy";
+import { Lozenge } from "../components/product/legacy";
+import { Inline, Stack, Text } from "../components/product/legacy";
+import { Textfield } from "../components/product/legacy";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
+import { LinkButton } from "../components/product/legacy";
+import { PageHeader } from "../components/product/page";
 import { RoutePending, RouteProblem } from "../shell/common-states";
 import "./settings-audit.css";
 
@@ -24,11 +26,13 @@ const api = new ApiClient();
 
 export function SettingsAuditScreen({
   workspaceId,
+  workspaceSlug,
   section,
   documentId,
   search,
 }: Readonly<{
   workspaceId: string;
+  workspaceSlug: string;
   section: SettingsSection;
   documentId?: string;
   search: SettingsSearch;
@@ -36,7 +40,25 @@ export function SettingsAuditScreen({
   return (
     <main className="settings-screen">
       <Stack space="space.250">
-        <h1>설정 · {sectionLabel(section)}</h1>
+        <PageHeader
+          eyebrow="WORKSPACE SETTINGS"
+          title={sectionLabel(section)}
+          description="Workspace의 구성, 권한과 운영 정책을 관리합니다. 변경은 저장 이후에만 적용됩니다."
+        />
+        <nav aria-label="설정 섹션" className="-mt-4 flex gap-1 overflow-x-auto border-b pb-3">
+          {(["members", "groups", "permissions", "writing", "ai", "audit"] as const).map((item) => (
+            <LinkButton
+              key={item}
+              href={`/w/${encodeURIComponent(workspaceSlug)}/settings/${item}`}
+              appearance="subtle"
+              isSelected={section === item}
+              className="h-8"
+              aria-current={section === item ? "page" : undefined}
+            >
+              {sectionLabel(item)}
+            </LinkButton>
+          ))}
+        </nav>
         {section === "members" && <MembersSettings workspaceId={workspaceId} />}
         {section === "groups" && <GroupsSettings workspaceId={workspaceId} />}
         {section === "permissions" && (

@@ -47,7 +47,7 @@
 
 | ID | Package | 선행 | 산출물 | 완료 gate |
 |---|---|---|---|---|
-| IMP-22 | TanStack shell·Atlaskit | IMP-02,06~08 | SSR shell, theme, routes, i18n | hydration·license·a11y |
+| IMP-22 | TanStack shell·Tailwind·shadcn | IMP-02,06~08 | SSR shell, theme, routes, i18n | hydration·token·a11y |
 | IMP-23 | Document Editor UX | IMP-09~11,15,22 | Tiptap, operation buffer, recovery | IME·keymap·multi-session |
 | IMP-24 | Collaboration·Knowledge UX | IMP-12~14,18,22 | panels, Inbox, Search, Vocabulary | screen behavior contract |
 | IMP-25 | AI UX | IMP-17,20,21,22 | Inspector, progress, Proposal Diff | no-direct-apply·Source views |

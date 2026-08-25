@@ -91,11 +91,11 @@ action을 차단한다. upload token은 memory에만 두고 URL·recovery·log�
 
 ## 8. UI·접근성·반응형
 
-모든 chrome은 공개 Atlaskit Button, Icon, Menu, Modal, Form, Spinner, InlineMessage와 ADS token으로 구성한다.
-편집 canvas만 ProseMirror semantic DOM을 사용하되 색·간격·focus는 ADS token이다. 저장·lease·upload 상태는
+모든 chrome은 UX-14의 shadcn/ui Button, Menu, Dialog, Form, Skeleton, Alert와 제품 composition으로 구성한다.
+편집 canvas만 ProseMirror semantic DOM을 사용하되 색·간격·focus는 UX-09 semantic token이다. 저장·lease·upload 상태는
 `role=status` live region, conflict는 `role=alert`로 묶어 변화 단위로 알린다.
 
-wide는 tree·canvas·panel, medium은 drawer, compact는 단일 canvas와 full-screen command surface다. drag의
+ST-06에 따라 wide는 tree·canvas·panel, medium은 Sheet, compact는 단일 canvas와 full-screen command surface다. drag의
 동일 command를 move menu가 제공한다. toolbar는 roving focus, 현재 mark의 `aria-pressed`, shortcut hint를
 제공하고 dialog 종료 시 selection과 editor focus를 복원한다.
 

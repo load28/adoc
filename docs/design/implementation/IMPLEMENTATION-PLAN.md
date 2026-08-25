@@ -41,7 +41,7 @@ purge와 backup deletion ledger를 구현한다.
 
 ## W-08 Web UX
 
-TanStack Start shell, ko/en, Atlaskit theme → responsive tree/editor/panels → all common/error states →
+TanStack Start shell, ko/en, Tailwind·shadcn theme → responsive tree/editor/panels → all common/error states →
 public viewer → accessibility와 visual regression을 각 domain vertical과 병행 통합한다.
 
 ## W-09 Operations·hardening

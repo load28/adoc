@@ -35,5 +35,6 @@ retry, cancellation과 recovery 계약으로 정상·오류 흐름을 같은 모
 
 ## P-07. UI 기반은 재구현하지 않는다
 
-공개 Apache-2.0 `@atlaskit` package, token과 primitive를 유일한 UI 체계로 사용한다.
-자체 token이나 병행 component library를 만들지 않는다.
+Tailwind CSS와 저장소가 소유하는 shadcn/ui New York component source를 단일 UI 기반으로
+사용한다. 제품 고유 component는 같은 semantic token과 primitive를 조합하며 별도 component
+library, 화면별 임의 token과 일회성 시각 규칙을 만들지 않는다.

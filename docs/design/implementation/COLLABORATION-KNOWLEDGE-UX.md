@@ -74,8 +74,8 @@ Document snippet, Vocabulary definition, mention, filename과 Reference title은
 
 ## 7. UI·접근성·반응형
 
-panel, tabs, buttons, forms, lozenge, modal, pagination과 message는 공개 Atlaskit component와 ADS token만
-사용한다. wide panel은 canvas 오른쪽, compact panel은 focus-trapped full-screen dialog다. 닫으면 원래
+panel, tabs, buttons, forms, badge, dialog, pagination과 message는 UX-14의 shadcn/ui primitive와 UX-09
+semantic token만 사용한다. wide panel은 canvas 오른쪽, compact panel은 focus-trapped full-height Sheet다. 닫으면 원래
 trigger와 editor selection으로 focus를 복원한다.
 
 tab은 arrow key, list는 semantic heading·list, unread count는 text alternative를 제공한다. command 결과는

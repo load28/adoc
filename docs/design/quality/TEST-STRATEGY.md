@@ -11,7 +11,7 @@
 | Persistence integration | PostgreSQL constraint, transaction, SQLx query |
 | Adapter contract | ObjectStorage, AI Runtime, OpenSearch, Redis 동일 port suite |
 | API contract | OpenAPI request·problem·idempotency·revision |
-| Browser component | Tiptap schema, Atlaskit interaction, a11y |
+| Browser component | Tiptap schema, shadcn/Radix interaction, a11y, visual token |
 | End-to-end | 전체 사용자 여정, multi-session, dependency failure |
 
 ## Test data

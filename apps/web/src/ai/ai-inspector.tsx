@@ -7,12 +7,12 @@ import {
   type Proposal,
   selectProposalOperation,
 } from "@adoc/ui-domain";
-import Button from "@atlaskit/button/default/button";
-import LinkButton from "@atlaskit/button/link";
-import Checkbox from "@atlaskit/checkbox";
-import Lozenge from "@atlaskit/lozenge";
-import { Inline, Stack, Text } from "@atlaskit/primitives";
-import TextArea from "@atlaskit/textarea";
+import { Button } from "../components/product/legacy";
+import { LinkButton } from "../components/product/legacy";
+import { Checkbox } from "../components/product/legacy";
+import { Lozenge } from "../components/product/legacy";
+import { Inline, Stack, Text } from "../components/product/legacy";
+import { TextArea } from "../components/product/legacy";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 

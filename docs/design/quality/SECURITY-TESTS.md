@@ -26,7 +26,8 @@ rebind, zip bomb, MIME polyglot, SVG script와 path traversal fixture를 사용�
 ## Supply chain
 
 lockfile integrity, license allowlist, SBOM, secret scan, Rust advisory·npm audit와 container image
-scan을 수행한다. `@atlaskit` package는 Apache-2.0과 official source를 검증한다.
+scan을 수행한다. shadcn source가 사용하는 Radix·Lucide·utility package의 license와 official
+source를 검증한다.
 
 ## 결과
 

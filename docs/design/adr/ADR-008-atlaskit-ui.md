@@ -1,6 +1,6 @@
 # ADR-008: 공개 Atlaskit UI 체계
 
-- **상태**: 승인
+- **상태**: ADR-011로 대체
 - **결정일**: 2026-08-24
 - **관련 결정**: DEC-031
 
@@ -20,3 +20,6 @@ plugin을 연결한다. 자체 Compiled CSS-in-JS source는 작성하지 않는�
 
 package license·peer dependency·SSR compatibility를 upgrade gate로 검증한다. ADS에 없는 domain
 UI를 만들 수 있지만 visual foundation은 ADS token만 사용한다.
+
+2026-08-26 DEC-037로 이 결정을 대체했다. 기능·권한 계약은 유지하며 이후 UI 구현은
+[ADR-011](ADR-011-tailwind-shadcn-ui.md)을 따른다.

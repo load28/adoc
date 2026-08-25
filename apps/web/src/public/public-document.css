@@ -1,45 +1,63 @@
 .public-document {
   box-sizing: border-box;
-  margin: 0 auto;
-  max-width: 800px;
-  padding: var(--ds-space-400);
   width: 100%;
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 3rem 2rem;
 }
+
+.public-document article > div > header {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
 .public-content {
   display: grid;
-  gap: var(--ds-space-150);
+  gap: 1rem;
+  font-size: 1rem;
+  line-height: 1.75;
 }
+
 .public-content blockquote,
 .public-content aside {
-  border-inline-start: 4px solid var(--ds-border-bold);
+  padding: 0.75rem 1rem;
   margin: 0;
-  padding-inline-start: var(--ds-space-200);
+  color: var(--muted-foreground);
+  background: var(--muted);
+  border-inline-start: 3px solid var(--primary);
 }
+
 .public-content pre {
-  background: var(--ds-surface-sunken);
-  border-radius: var(--ds-border-radius-100);
+  padding: 1rem;
   overflow: auto;
-  padding: var(--ds-space-150);
+  background: var(--muted);
+  border-radius: var(--radius);
 }
+
 .public-content img {
   height: auto;
   max-width: 100%;
 }
+
 .public-table {
-  border: 1px solid var(--ds-border);
   overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
 }
+
 .public-table table {
-  border-collapse: collapse;
   min-width: 100%;
+  border-collapse: collapse;
 }
+
 .public-table td,
 .public-table th {
-  border: 1px solid var(--ds-border);
-  padding: var(--ds-space-100);
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid var(--border);
 }
-@media (max-width: 767px) {
+
+@media (max-width: 639px) {
   .public-document {
-    padding: var(--ds-space-200);
+    padding: 2rem 1.25rem;
   }
 }

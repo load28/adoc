@@ -9,11 +9,12 @@ import {
   importDocumentText,
   productContentToEditorJson,
 } from "@adoc/editor-schema";
-import Button from "@atlaskit/button/default/button";
-import InlineMessage from "@atlaskit/inline-message";
-import { Box, Inline, Stack, Text } from "@atlaskit/primitives";
-import TextArea from "@atlaskit/textarea";
-import Textfield from "@atlaskit/textfield";
+import { Button } from "../components/product/legacy";
+import { InlineMessage } from "../components/product/legacy";
+import { Box, Inline, Stack, Text } from "../components/product/legacy";
+import { TextArea } from "../components/product/legacy";
+import { Textfield } from "../components/product/legacy";
+import { LinkButton } from "../components/product/legacy";
 import {
   ApiClient,
   ApiProblemError,
@@ -31,6 +32,7 @@ import { DragHandle } from "@tiptap/extension-drag-handle-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
+import { PageHeader } from "../components/product/page";
 import { RoutePending, RouteProblem } from "../shell/common-states";
 import { useTranslation } from "../shell/product-app-provider";
 import { BrowserRecoveryStore } from "./browser-recovery-store";
@@ -131,6 +133,7 @@ export function DocumentEditorScreen({
       workspaceId={workspaceId}
       workspaceSlug={workspaceSlug}
       documentId={documentId}
+      title={initialDocument.title}
       ready={ready}
     />
   );
@@ -140,11 +143,13 @@ function DocumentEditor({
   workspaceId,
   workspaceSlug,
   documentId,
+  title,
   ready,
 }: Readonly<{
   workspaceId: string;
   workspaceSlug: string;
   documentId: string;
+  title: string;
   ready: ReadyEditor;
 }>) {
   const t = useTranslation();
@@ -158,12 +163,12 @@ function DocumentEditor({
   const [replaceText, setReplaceText] = useState("");
   const [publishing, setPublishing] = useState(false);
   const contentRef = useRef(ready.draft.content as DocumentContent);
-  const bufferRef = useRef<OperationBuffer>();
-  const flushTimer = useRef<ReturnType<typeof setTimeout>>();
+  const bufferRef = useRef<OperationBuffer | undefined>(undefined);
+  const flushTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const composition = useRef(false);
   const undoRef = useRef<() => void>(() => {});
   const uploadRef = useRef<(file: File) => void>(() => {});
-  const recoveryStoreRef = useRef<BrowserRecoveryStore>();
+  const recoveryStoreRef = useRef<BrowserRecoveryStore | undefined>(undefined);
   const leaseRef = useRef(ready.lease);
   const csrfToken = readCookie("adoc_csrf");
   const publishPolicy = useQuery({
@@ -509,6 +514,23 @@ function DocumentEditor({
   };
   return (
     <main id="main-content" className="adoc-editor-layout">
+      <PageHeader
+        eyebrow="DOCUMENT DRAFT"
+        title={title}
+        status={
+          <span className="inline-flex h-6 items-center rounded-full border border-warning/30 bg-warning/10 px-2 text-xs font-medium text-warning-foreground">
+            초안
+          </span>
+        }
+        description={`${bufferState === "IDLE" ? t("editor.saved") : bufferState === "OFFLINE" ? t("editor.offline") : bufferState === "CONFLICT" ? t("editor.conflict") : t("editor.saving")} · revision ${bufferRef.current?.revision ?? ready.draft.revision}`}
+        actions={
+          <LinkButton
+            href={`/w/${encodeURIComponent(workspaceSlug)}/docs/${encodeURIComponent(documentId)}?mode=published`}
+          >
+            발행 버전 보기
+          </LinkButton>
+        }
+      />
       <EditorToolbar
         editor={editor}
         uploading={uploading}
