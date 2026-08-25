@@ -5,9 +5,19 @@ import { JSDOM } from "jsdom";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { RouteEmpty } from "./common-states";
-import { ProductAppProvider, toColorMode } from "./product-app-provider";
+import { ProductAppProvider, routerTarget, toColorMode } from "./product-app-provider";
 
 describe("TanStack Atlaskit shell", () => {
+  test("separates app route search and leaves API links native", () => {
+    expect(routerTarget("/w/alpha/docs/doc?mode=published&discussion=item#messages")).toEqual({
+      pathname: "/w/alpha/docs/doc",
+      search: { mode: "published", discussion: "item" },
+      hash: "messages",
+    });
+    expect(routerTarget("/api/v1/files/id/content")).toBeUndefined();
+    expect(routerTarget("https://example.test/path")).toBeUndefined();
+  });
+
   test("renders the same locale and theme inputs on the server", () => {
     const html = renderToStaticMarkup(
       <ProductAppProvider locale="ko" theme="DARK">

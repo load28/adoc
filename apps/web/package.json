@@ -8,7 +8,7 @@
     "layer": "web"
   },
   "scripts": {
-    "build": "vite build && bun build src/server/runtime.ts --target=bun --outdir=dist/web-runtime",
+    "build": "vite build && bun build src/server/runtime.ts --target=bun --outdir=dist/web-runtime --external '*dist/server/server.js'",
     "dev": "vite dev",
     "test": "bun test",
     "typecheck": "tsc --noEmit"

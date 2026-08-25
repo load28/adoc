@@ -5,6 +5,7 @@ import { parseWebRuntimeConfig } from "./config";
 import { resolveClientAsset } from "./static-assets";
 import { safeServerEvent } from "./telemetry";
 import { hardenResponse } from "./response-policy";
+import { isApiUpstreamPath } from "./request-routing";
 
 const source = Object.fromEntries(
   Object.entries(Bun.env).filter(([key]) => key.startsWith("ADOC_")),
@@ -39,7 +40,7 @@ async function routeRequest(request: Request): Promise<Response> {
       ? new Response(null, { headers })
       : new Response(file, { headers });
   }
-  if (pathname.startsWith("/api/v1/")) {
+  if (isApiUpstreamPath(pathname)) {
     if (!config.apiUpstream) return Response.json({ status: "unavailable" }, { status: 503 });
     const target = new URL(`${pathname}${new URL(request.url).search}`, config.apiUpstream);
     const headers = new Headers(request.headers);

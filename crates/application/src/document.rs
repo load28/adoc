@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 pub use adoc_document::{
     Document, DocumentOperation, DocumentStatus, Draft, OperationBase, OperationError,
-    OperationErrorCode, OperationPrecondition, OperationScope, ReducerInput, ReferenceEffect,
-    ReferenceSnapshot, ReferenceTarget, RegionResolutionStatus, TreeRank, ValidatedContent,
-    apply_operations, canonical_hash, reanchor_region,
+    OperationErrorCode, OperationPrecondition, OperationScope, PublishedVersion, ReducerInput,
+    ReferenceEffect, ReferenceSnapshot, ReferenceTarget, RegionResolutionStatus, TreeRank,
+    ValidatedContent, apply_operations, canonical_hash, reanchor_region,
 };
 use adoc_ports::BoxFuture;
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
@@ -100,6 +100,7 @@ pub struct DocumentDetail {
     #[serde(flatten)]
     pub document: Document,
     pub draft: Option<Draft>,
+    pub published_version: Option<PublishedVersion>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

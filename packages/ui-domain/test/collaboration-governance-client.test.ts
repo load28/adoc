@@ -26,9 +26,9 @@ describe("collaboration and governance API client", () => {
     await api.cancelReview("workspace", { id: "review", revision: 3 }, "다시 작성", command);
 
     expect(requests.map(requestShape)).toEqual([
-      ["POST", "/api/v1/workspaces/workspace/discussions/discussion/topics", "4"],
-      ["PUT", "/api/v1/workspaces/workspace/discussions/discussion/messages/message", "9"],
-      ["POST", "/api/v1/workspaces/workspace/reviews/review/cancel", "3"],
+      ["POST", "/api/v1/workspaces/workspace/discussions/discussion/topics", '"4"'],
+      ["PUT", "/api/v1/workspaces/workspace/discussions/discussion/messages/message", '"9"'],
+      ["POST", "/api/v1/workspaces/workspace/reviews/review/cancel", '"3"'],
     ]);
   });
 
@@ -58,8 +58,8 @@ describe("collaboration and governance API client", () => {
     );
 
     expect(requests.map(requestShape)).toEqual([
-      ["POST", "/api/v1/workspaces/workspace/documents/document/references", "7"],
-      ["DELETE", "/api/v1/workspaces/workspace/documents/document/references/reference", "8"],
+      ["POST", "/api/v1/workspaces/workspace/documents/document/references", '"7"'],
+      ["DELETE", "/api/v1/workspaces/workspace/documents/document/references/reference", '"8"'],
     ]);
     for (const request of requests) {
       const headers = new Headers(request.init?.headers);
@@ -90,9 +90,9 @@ describe("collaboration and governance API client", () => {
     });
 
     expect(requests.slice(0, 3).map(requestShape)).toEqual([
-      ["PUT", "/api/v1/workspaces/workspace/groups/group/members/user", "2"],
-      ["DELETE", "/api/v1/workspaces/workspace/documents/document/permissions/grant", "5"],
-      ["PUT", "/api/v1/workspaces/workspace/documents/document/publish-policy", "6"],
+      ["PUT", "/api/v1/workspaces/workspace/groups/group/members/user", '"2"'],
+      ["DELETE", "/api/v1/workspaces/workspace/documents/document/permissions/grant", '"5"'],
+      ["PUT", "/api/v1/workspaces/workspace/documents/document/publish-policy", '"6"'],
     ]);
     expect(requests[3]?.input).toBe(
       "/api/v1/workspaces/workspace/audit-events?cursor=cursor&action=DOCUMENT_MOVED&actorUserId=actor&targetKind=DOCUMENT&from=2026-08-01T00%3A00%3A00Z&to=2026-08-25T00%3A00%3A00Z",

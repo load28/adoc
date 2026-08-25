@@ -34,7 +34,10 @@ describe("frontend shell contracts", () => {
     let request: RequestInit | undefined;
     const client = new ApiClient(async (_input, init) => {
       request = init;
-      return Response.json({ code: "SESSION_REQUIRED", message: "Sign in" }, { status: 401 });
+      return new Response(JSON.stringify({ code: "SESSION_REQUIRED", message: "Sign in" }), {
+        status: 401,
+        headers: { "content-type": "application/problem+json" },
+      });
     });
     const error = await client.session().catch((cause: unknown) => cause);
     expect(request).toMatchObject({ credentials: "same-origin", redirect: "manual" });

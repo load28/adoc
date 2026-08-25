@@ -3,12 +3,13 @@
 FROM rust:1.90.0-bookworm AS rust-builder
 WORKDIR /workspace
 COPY Cargo.toml Cargo.lock ./
-COPY apps ./apps
+COPY apps/api ./apps/api
+COPY apps/worker ./apps/worker
 COPY crates ./crates
 COPY tools ./tools
 COPY docs/design/contracts ./docs/design/contracts
 COPY infra/migrations ./infra/migrations
-RUN cargo build --locked --release -p adoc-api -p adoc-worker
+RUN cargo build --locked --release -p adoc-api -p adoc-worker -p adoc-browser-fixtures
 
 FROM oven/bun:1.3.13-debian AS web-builder
 WORKDIR /workspace

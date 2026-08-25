@@ -3,6 +3,9 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, resolve } from "node:path";
 import { compile } from "json-schema-to-typescript";
 import openapiTS, { astToString } from "openapi-typescript";
+import Ajv2020 from "ajv/dist/2020.js";
+import standaloneCode from "ajv/dist/standalone/index.js";
+import addFormats from "ajv-formats";
 import { parse } from "yaml";
 
 const root = resolve(import.meta.dirname, "../../..");
@@ -236,6 +239,42 @@ await mkdir(output, { recursive: true });
 await writeFile(
   resolve(output, "contract-bundle.schema.json"),
   `${JSON.stringify(bundle, null, 2)}\n`,
+);
+const validatorNames = {
+  validateAiTask: "AiContracts__task",
+  validateContent: "DocumentContent",
+  validateEvent: "EventPayloads",
+  validateOperation: "DocumentOperation",
+};
+const validatorCompiler = new Ajv2020({
+  allErrors: true,
+  strict: true,
+  strictTypes: false,
+  code: { source: true, esm: true },
+});
+addFormats(validatorCompiler);
+validatorCompiler.addSchema(bundle);
+const validatorReferences = Object.fromEntries(
+  Object.entries(validatorNames).map(([name, definition]) => [
+    name,
+    `${bundle.$id}#/$defs/${definition}`,
+  ]),
+);
+for (const reference of Object.values(validatorReferences)) {
+  if (!validatorCompiler.getSchema(reference))
+    throw new Error(`missing validator schema: ${reference}`);
+}
+await writeFile(
+  resolve(output, "validators.js"),
+  `/* Generated standalone validators. Do not edit. */\n${standaloneCode(validatorCompiler, validatorReferences)}\n`,
+);
+await writeFile(
+  resolve(output, "validators.d.ts"),
+  `/* Generated standalone validator declarations. Do not edit. */\nimport type { ValidateFunction } from "ajv";\n${Object.keys(
+    validatorNames,
+  )
+    .map((name) => `export declare const ${name}: ValidateFunction;`)
+    .join("\n")}\n`,
 );
 await writeFile(resolve(output, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
 await writeFile(

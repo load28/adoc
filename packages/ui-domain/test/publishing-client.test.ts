@@ -20,7 +20,7 @@ describe("publishing API client", () => {
       },
       { csrfToken: "csrf", idempotencyKey: "44444444-4444-4444-8444-444444444444" },
     );
-    expect(new Headers(requests[0]?.init?.headers).get("if-match")).toBe("7");
+    expect(new Headers(requests[0]?.init?.headers).get("if-match")).toBe('"7"');
     expect(JSON.parse(String(requests[0]?.init?.body))).toEqual({
       summary: "요약",
       clientInstanceId: "33333333-3333-4333-8333-333333333333",
@@ -47,7 +47,7 @@ describe("publishing API client", () => {
       ["GET", "/api/v1/workspaces/workspace/documents/document/versions/version"],
       ["POST", "/api/v1/workspaces/workspace/documents/document/versions/version/restore"],
     ]);
-    expect(new Headers(requests[1]?.init?.headers).get("if-match")).toBe("9");
+    expect(new Headers(requests[1]?.init?.headers).get("if-match")).toBe('"9"');
   });
 });
 

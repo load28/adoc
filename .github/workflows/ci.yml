@@ -11,7 +11,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -36,3 +36,6 @@ jobs:
 
       - name: Verify full acceptance in containers
         run: bun run compose:integration
+
+      - name: Verify browser acceptance and accessibility
+        run: bun run browser:check

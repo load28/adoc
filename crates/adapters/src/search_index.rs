@@ -84,7 +84,7 @@ impl OpenSearchIndex {
                 )
                 .await?;
             if !response.status().is_success() {
-                return Err(status_error(response.status()));
+                return Err(response_error(&response));
             }
         }
         let actions = [SearchSourceKind::Published, SearchSourceKind::Draft]
@@ -106,7 +106,7 @@ impl OpenSearchIndex {
         if response.status().is_success() {
             Ok(())
         } else {
-            Err(status_error(response.status()))
+            Err(response_error(&response))
         }
     }
 
@@ -133,7 +133,7 @@ impl OpenSearchIndex {
                 continue;
             }
             if !response.status().is_success() {
-                return Err(status_error(response.status()));
+                return Err(response_error(&response));
             }
             let value: Value = response
                 .json()
@@ -156,7 +156,7 @@ impl OpenSearchIndex {
         if response.status().is_success() {
             Ok(())
         } else {
-            Err(status_error(response.status()))
+            Err(response_error(&response))
         }
     }
 
@@ -167,7 +167,7 @@ impl OpenSearchIndex {
             return Ok(());
         }
         if response.status() != StatusCode::NOT_FOUND {
-            return Err(status_error(response.status()));
+            return Err(response_error(&response));
         }
         let index = self.generation_index(kind, 1);
         let create = self
@@ -178,7 +178,7 @@ impl OpenSearchIndex {
             )
             .await?;
         if !create.status().is_success() && create.status() != StatusCode::BAD_REQUEST {
-            return Err(status_error(create.status()));
+            return Err(response_error(&create));
         }
         let aliases = json!({"actions":[
             {"add":{"index":index,"alias":read}},
@@ -190,7 +190,7 @@ impl OpenSearchIndex {
         if response.status().is_success() {
             Ok(())
         } else {
-            Err(status_error(response.status()))
+            Err(response_error(&response))
         }
     }
 
@@ -281,7 +281,7 @@ impl OpenSearchIndex {
         if response.status().is_success() {
             Ok(())
         } else {
-            Err(status_error(response.status()))
+            Err(response_error(&response))
         }
     }
 
@@ -330,7 +330,7 @@ impl OpenSearchIndex {
             .await?;
         let status = response.status();
         if !status.is_success() {
-            return Err(status_error(status));
+            return Err(status_error(status, "_bulk"));
         }
         let result: Value = response
             .json()
@@ -511,7 +511,7 @@ impl OpenSearchIndex {
                 )
                 .await?;
             if !response.status().is_success() {
-                return Err(status_error(response.status()));
+                return Err(response_error(&response));
             }
             let value: Value = response
                 .json()
@@ -589,7 +589,7 @@ impl OpenSearchIndex {
                         .push(json!({"remove":{"index":index,"alias":rebuild,"must_exist":false}}));
                 }
             } else if response.status() != StatusCode::NOT_FOUND {
-                return Err(status_error(response.status()));
+                return Err(response_error(&response));
             }
             let index = self.generation_index(kind, generation);
             actions.push(json!({"add":{"index":index,"alias":read}}));
@@ -605,7 +605,7 @@ impl OpenSearchIndex {
         if response.status().is_success() {
             Ok(())
         } else {
-            Err(status_error(response.status()))
+            Err(response_error(&response))
         }
     }
 
@@ -771,12 +771,28 @@ fn parse_kind(value: &str) -> Result<SearchSourceKind, SearchProjectionError> {
     }
 }
 
-fn status_error(status: StatusCode) -> SearchProjectionError {
+fn response_error(response: &reqwest::Response) -> SearchProjectionError {
+    status_error(response.status(), response.url().path())
+}
+
+fn status_error(status: StatusCode, path: &str) -> SearchProjectionError {
     if status == StatusCode::NOT_FOUND {
         SearchProjectionError::Transient("SEARCH_ALIAS_CHANGED")
     } else if status == StatusCode::TOO_MANY_REQUESTS || status.is_server_error() {
         SearchProjectionError::Transient("SEARCH_UNAVAILABLE")
+    } else if path.ends_with("/_aliases") {
+        SearchProjectionError::Permanent("SEARCH_ALIAS_REQUEST_REJECTED")
+    } else if path.contains("_update_by_query") {
+        SearchProjectionError::Permanent("SEARCH_UPDATE_REQUEST_REJECTED")
+    } else if path.ends_with("/_bulk") || path == "_bulk" {
+        SearchProjectionError::Permanent("SEARCH_BULK_REQUEST_REJECTED")
+    } else if path.ends_with("-read") || path.ends_with("-write") || path.ends_with("-rebuild") {
+        SearchProjectionError::Permanent("SEARCH_ALIAS_LOOKUP_REJECTED")
+    } else if path.ends_with("/_count") {
+        SearchProjectionError::Permanent("SEARCH_COUNT_REQUEST_REJECTED")
+    } else if path.contains("/_doc/") {
+        SearchProjectionError::Permanent("SEARCH_DOCUMENT_REQUEST_REJECTED")
     } else {
-        SearchProjectionError::Permanent("SEARCH_REQUEST_REJECTED")
+        SearchProjectionError::Permanent("SEARCH_INDEX_CREATE_REJECTED")
     }
 }

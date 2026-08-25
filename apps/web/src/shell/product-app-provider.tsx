@@ -19,12 +19,32 @@ const RouterLink = forwardRef<HTMLAnchorElement, RouterLinkComponentProps>(funct
   { href, children, ...rest },
   ref,
 ) {
+  const target = routerTarget(String(href));
+  if (!target)
+    return (
+      <a ref={ref} href={String(href)} {...rest}>
+        {children}
+      </a>
+    );
   return (
-    <Link ref={ref} to={String(href)} {...rest}>
+    <Link ref={ref} to={target.pathname} search={target.search} hash={target.hash} {...rest}>
       {children}
     </Link>
   );
 });
+
+export function routerTarget(
+  href: string,
+): { pathname: string; search: Record<string, string>; hash: string } | undefined {
+  if (!href.startsWith("/") || href.startsWith("//")) return undefined;
+  const url = new URL(href, "https://adoc.invalid");
+  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/public/")) return undefined;
+  return {
+    pathname: url.pathname,
+    search: Object.fromEntries(url.searchParams),
+    hash: url.hash.slice(1),
+  };
+}
 
 export function ProductAppProvider({
   children,

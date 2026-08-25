@@ -1311,7 +1311,7 @@ export class ApiClient {
       redirect: "manual",
     });
     const contentType = response.headers.get("content-type") ?? "";
-    if (!contentType.toLowerCase().startsWith("application/json")) {
+    if (!isJsonMediaType(contentType)) {
       throw new ApiProblemError({
         code: "DEPENDENCY_UNAVAILABLE",
         message: "API returned an unsupported response",
@@ -1363,7 +1363,7 @@ function commandHeaders(command: CommandHeaders, revision?: number): Headers {
     "x-csrf-token": command.csrfToken,
     "idempotency-key": command.idempotencyKey,
   });
-  if (revision !== undefined) headers.set("if-match", String(revision));
+  if (revision !== undefined) headers.set("if-match", revisionTag(revision));
   return headers;
 }
 
@@ -1371,8 +1371,18 @@ function previewHeaders(csrfToken: string, revision: number): Headers {
   return new Headers({
     "content-type": "application/json",
     "x-csrf-token": csrfToken,
-    "if-match": String(revision),
+    "if-match": revisionTag(revision),
   });
+}
+
+function revisionTag(revision: number): string {
+  if (!Number.isSafeInteger(revision) || revision < 0) throw new Error("invalid revision");
+  return `"${revision}"`;
+}
+
+function isJsonMediaType(contentType: string): boolean {
+  const mediaType = contentType.split(";", 1)[0]?.trim().toLowerCase();
+  return mediaType === "application/json" || mediaType?.endsWith("+json") === true;
 }
 
 function leaseHeaders(

@@ -14,7 +14,7 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   ssr: {
-    noExternal: [/^@atlaskit\//],
+    noExternal: true,
   },
   plugins: [tanstackStart(), babel({ plugins: ["@atlaskit/tokens/babel-plugin"] }), viteReact()],
 });

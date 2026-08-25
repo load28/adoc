@@ -128,10 +128,18 @@ impl DocumentRepository for PostgresDocumentRepository {
             let row = sqlx::query("SELECT id,parent_id,title,status::text,current_version_id,revision FROM documents WHERE workspace_id=$1 AND id=$2")
                 .bind(workspace).bind(document_id).fetch_one(&mut *tx).await.map_err(map_store)?;
             let draft = load_draft(&mut tx, workspace, document_id).await?;
+            let published_version = match row.get::<Option<Uuid>, _>("current_version_id") {
+                Some(version_id) => Some(
+                    super::publishing::load_version(&mut tx, workspace, document_id, version_id)
+                        .await?,
+                ),
+                None => None,
+            };
             tx.commit().await.map_err(map_store)?;
             Ok(DocumentDetail {
                 document: document(&row)?,
                 draft,
+                published_version,
             })
         })
     }

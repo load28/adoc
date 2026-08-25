@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "featureDocument": "docs/design/quality/acceptance.feature",
+  "suite": "tests/browser/acceptance.spec.ts",
+  "scenarios": [
+    {"id":"ACC-01","title":"가장 가까운 개인 권한이 같은 위치의 그룹 거부보다 우선한다"},
+    {"id":"ACC-02","title":"관리자는 문서 권한을 우회하지 못한다"},
+    {"id":"ACC-03","title":"하나의 편집 lease만 Draft를 변경한다"},
+    {"id":"ACC-04","title":"Draft 변경은 기존 승인을 무효화한다"},
+    {"id":"ACC-05","title":"검토 정책을 충족한 exact Draft만 발행한다"},
+    {"id":"ACC-06","title":"발행 버전은 일반 application role로 변경할 수 없다"},
+    {"id":"ACC-07","title":"토론은 닫고 다시 열어도 Message history를 유지한다"},
+    {"id":"ACC-08","title":"검색은 권한 밖 후보를 순위 계산 전에 제외한다"},
+    {"id":"ACC-09","title":"조직 사실에 Source가 없으면 AI가 답을 꾸미지 않는다"},
+    {"id":"ACC-10","title":"큰 AI 변경은 사람 승인 전 Draft를 바꾸지 않는다"},
+    {"id":"ACC-11","title":"stale Proposal은 부분적으로도 적용되지 않는다"},
+    {"id":"ACC-12","title":"발행 버전이 참조하는 File은 Draft에서 제거해도 보존한다"},
+    {"id":"ACC-13","title":"공개 Viewer는 최신 단일 발행 문서의 embedded File만 본다"},
+    {"id":"ACC-14","title":"휴지통 30일 전에는 복구하고 이후에는 구조적으로 purge한다"},
+    {"id":"ACC-15","title":"Redis 유실 뒤 PostgreSQL Job과 Outbox로 복구한다"}
+  ]
+}

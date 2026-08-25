@@ -100,6 +100,7 @@ services:
     environment:
       <<: *app-environment
       ADOC_HTTP_BIND: 0.0.0.0:8081
+      ADOC_PUBLIC_ORIGIN: ${ADOC_API_PUBLIC_ORIGIN:-http://localhost:${ADOC_WEB_PORT:-8080}}
     secrets: *app-secrets
     volumes:
       - object_data:/var/lib/adoc/objects
@@ -172,7 +173,11 @@ services:
     volumes:
       - opensearch_data:/usr/share/opensearch/data
     healthcheck:
-      test: [CMD-SHELL, "curl --fail --silent http://127.0.0.1:9200/_cluster/health >/dev/null"]
+      test:
+        [
+          CMD-SHELL,
+          "curl --fail --silent 'http://127.0.0.1:9200/_cluster/health?wait_for_status=yellow&timeout=3s' | grep --quiet '\"timed_out\":false'",
+        ]
       interval: 5s
       timeout: 5s
       retries: 40
@@ -221,11 +226,30 @@ services:
       ADOC_TEST_DATABASE_URL_FILE: /run/secrets/database_url
       ADOC_TEST_REDIS_URL_FILE: /run/secrets/redis_url
       ADOC_TEST_OPENSEARCH_URL: http://opensearch:9200
+      ADOC_SESSION_HMAC_KEY_FILE: /run/secrets/session_hmac
       CARGO_BUILD_JOBS: "1"
-    secrets: [database_url, redis_url]
+    secrets: [database_url, redis_url, session_hmac]
     depends_on:
       migrate: {condition: service_completed_successfully}
     networks: [internal]
+    restart: "no"
+
+  browser-runner:
+    image: mcr.microsoft.com/playwright:v1.62.1-noble
+    profiles: [browser]
+    working_dir: /workspace
+    user: "${ADOC_HOST_UID:-1000}:${ADOC_HOST_GID:-1000}"
+    environment:
+      HOME: /tmp
+      ADOC_BROWSER_BASE_URL: http://localhost:8080
+      ADOC_BROWSER_FIXTURE_FILE: /workspace/artifacts/browser/fixture.json
+    volumes:
+      - .:/workspace
+    depends_on:
+      web: {condition: service_healthy}
+    network_mode: service:web
+    init: true
+    ipc: host
     restart: "no"
 
 networks:

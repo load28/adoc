@@ -25,10 +25,10 @@ describe("complete Web operation client", () => {
     await api.cancelWorkspaceDeletion(workspace, command);
 
     expect(requests.map(shape)).toEqual([
-      ["PUT", "/api/v1/preferences", "3"],
-      ["PUT", "/api/v1/workspaces/workspace", "4"],
-      ["POST", "/api/v1/workspaces/workspace/deletion", "4"],
-      ["DELETE", "/api/v1/workspaces/workspace/deletion", "4"],
+      ["PUT", "/api/v1/preferences", '"3"'],
+      ["PUT", "/api/v1/workspaces/workspace", '"4"'],
+      ["POST", "/api/v1/workspaces/workspace/deletion", '"4"'],
+      ["DELETE", "/api/v1/workspaces/workspace/deletion", '"4"'],
     ]);
   });
 
@@ -43,10 +43,10 @@ describe("complete Web operation client", () => {
 
     expect(requests.map(shape)).toEqual([
       ["GET", "/api/v1/workspaces/workspace/files/asset", null],
-      ["DELETE", "/api/v1/workspaces/workspace/files/asset", "2"],
+      ["DELETE", "/api/v1/workspaces/workspace/files/asset", '"2"'],
       ["GET", "/api/v1/workspaces/workspace/documents/document/public-links", null],
       ["POST", "/api/v1/workspaces/workspace/documents/document/public-links", null],
-      ["DELETE", "/api/v1/workspaces/workspace/documents/document/public-links/link", "5"],
+      ["DELETE", "/api/v1/workspaces/workspace/documents/document/public-links/link", '"5"'],
     ]);
   });
 

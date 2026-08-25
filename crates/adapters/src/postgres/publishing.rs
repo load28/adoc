@@ -502,7 +502,7 @@ async fn approved_review_snapshot(
 }
 
 const VERSION_SELECT: &str = "SELECT pv.id,pv.document_id,pv.number,pv.content_json,pv.schema_version,pv.content_fingerprint,pv.based_on_version_id,pv.source_draft_revision,pv.publisher_id,pv.summary,pv.published_at,vc.review_snapshot_json,vc.discussion_ids FROM published_versions pv JOIN version_context vc ON vc.version_id=pv.id";
-async fn load_version(
+pub(super) async fn load_version(
     tx: &mut Transaction<'_, Postgres>,
     workspace: Uuid,
     document: Uuid,

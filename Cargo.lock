@@ -83,6 +83,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "adoc-browser-fixtures"
+version = "1.0.0"
+dependencies = [
+ "adoc-application",
+ "adoc-document",
+ "anyhow",
+ "chrono",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sqlx",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "adoc-collaboration"
 version = "1.0.0"
 dependencies = [
