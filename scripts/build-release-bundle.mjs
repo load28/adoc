@@ -78,6 +78,19 @@ function identity(manifest) {
   );
 }
 
+function migrationVersion(manifest) {
+  if (!Array.isArray(manifest.migrations) || manifest.migrations.length === 0)
+    throw new Error("migration manifest is empty");
+  const versions = manifest.migrations.map(({ file }, index) => {
+    const parsed = file?.match(/^(\d{4})_[a-z0-9_]+\.sql$/u)?.[1];
+    if (!parsed) throw new Error(`migration ${index + 1} has an invalid filename`);
+    return Number(parsed);
+  });
+  if (versions.some((version, index) => version !== index + 1))
+    throw new Error("migration versions are not contiguous and ordered");
+  return String(versions.at(-1));
+}
+
 if (process.argv.includes("--self-test")) {
   const fixture = {
     version: "1.0.0",
@@ -91,6 +104,12 @@ if (process.argv.includes("--self-test")) {
     throw new Error("release identity includes volatile fields");
   if (identity(fixture) === identity({ ...fixture, sourceDigest: "d".repeat(64) }))
     throw new Error("release identity ignores source changes");
+  if (
+    migrationVersion({
+      migrations: [{ file: "0001_initial.sql" }, { file: "0002_next.sql" }],
+    }) !== "2"
+  )
+    throw new Error("migration version extraction is not canonical");
   console.log(JSON.stringify({ schemaVersion: 1, selfTest: "passed" }));
   process.exit(0);
 }
@@ -175,7 +194,7 @@ const manifest = {
   generatedAt: new Date().toISOString(),
   sourceSha,
   sourceDigest: releaseInputs.sourceDigest,
-  migrations: String(migrationManifest.migrations.at(-1).version),
+  migrations: migrationVersion(migrationManifest),
   contracts: sha256(contractManifest),
   acceptance: { scenarios: acceptance.scenarios, workstreams: acceptance.workstreams },
   gates: ["bun run check", "bun run compose:integration"],
