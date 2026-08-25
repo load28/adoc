@@ -5,13 +5,15 @@ import type {
 } from "@adoc/contracts";
 import { validateContract } from "@adoc/contracts";
 
+import { createUuid } from "./id-factory";
+
 export type ImportFormat = "markdown" | "plain";
 export type ExportFormat = ImportFormat;
 
 export function importDocumentText(
   source: string,
   format: ImportFormat,
-  idFactory: () => string = crypto.randomUUID,
+  idFactory: () => string = createUuid,
 ): DocumentContent {
   const normalized = source.replace(/\r\n?/g, "\n");
   const blocks =

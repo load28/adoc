@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import type { DocumentContent } from "@adoc/contracts";
 
 import {
@@ -40,6 +40,23 @@ describe("Tiptap product adapter", () => {
       scope: { kind: "BLOCK", blockId: firstId },
       precondition: { draftRevision: 7 },
     });
+  });
+
+  test("calls the default operation id factory with its Web Crypto receiver", () => {
+    const randomUuid = spyOn(crypto, "randomUUID").mockImplementation(function (this: Crypto) {
+      if (this !== crypto) throw new TypeError("Illegal invocation");
+      return firstId;
+    });
+    try {
+      const operations = createEditorOperationBatch(
+        paragraphs("before", "stable"),
+        paragraphs("after", "stable"),
+        7,
+      );
+      expect(operations[0]?.opId).toBe(firstId);
+    } finally {
+      randomUuid.mockRestore();
+    }
   });
 
   test("rejects unknown nodes without silent conversion", () => {

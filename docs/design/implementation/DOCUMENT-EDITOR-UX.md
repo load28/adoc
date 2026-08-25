@@ -40,6 +40,8 @@ Import는 먼저 Content validator를 통과한 뒤 registry가 전체 tree를 T
 text·attr·mark는 좁은 Operation으로, 삽입·삭제·이동은 해당 block Operation으로 만든다. 하나의 structural
 command가 복합 변경이면 dependency DAG를 만든다. adapter가 동일 의미를 증명할 수 없는 transaction은
 정확한 최소 BLOCK·BLOCK_RANGE `REPLACE_REGION`으로 표현한다. DOCUMENT 전체 교체 fallback은 금지한다.
+Operation·block ID factory는 receiver가 필요한 Web API method 참조를 노출하지 않고 독립 호출 가능한
+`() => UUID` 계약으로 정규화한다. 기본 factory와 주입 factory는 같은 adapter test를 통과해야 한다.
 
 ## 4. Composition·command·undo
 
@@ -112,7 +114,8 @@ fallback하지 않고 404로 닫는다. 초기 theme bootstrap도 같은 asset g
 
 ## 10. 검증 gate
 
-- adapter: 모든 schema node·mark round trip, unknown 거부, stable ID와 UTF-16 한글·emoji fixture
+- adapter: 모든 schema node·mark round trip, unknown 거부, stable ID와 UTF-16 한글·emoji fixture,
+  기본·주입 ID factory의 독립 호출
 - input: composition 중 command·flush 0회, 종료 뒤 단일 group, toolbar/keymap 동일 command
 - buffer: 250ms·20개·boundary, single in-flight, timeout identity, ack mismatch·conflict 정지
 - recovery: enqueue-before-send, AES-GCM AAD, ack delete, wrong key·TTL·offline·visibility 복귀

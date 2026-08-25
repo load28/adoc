@@ -7,6 +7,8 @@ import {
   validateContract,
 } from "@adoc/contracts";
 
+import { createUuid } from "./id-factory";
+
 export type EditorJson = {
   type: string;
   attrs?: Record<string, unknown>;
@@ -41,7 +43,7 @@ export function createEditorOperationBatch(
   before: DocumentContent,
   after: DocumentContent,
   draftRevision: number,
-  idFactory: () => string = crypto.randomUUID,
+  idFactory: () => string = createUuid,
 ): DocumentOperation[] {
   assertContent(before);
   assertContent(after);

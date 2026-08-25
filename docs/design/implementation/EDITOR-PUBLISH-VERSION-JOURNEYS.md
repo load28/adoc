@@ -31,6 +31,8 @@ TASK-044가 소유한다.
 Published 화면은 `DocumentDetail.publishedVersion.content`만 렌더링하며 Draft를 섞지 않는다. Draft 화면은
 active Draft와 Lease 획득 뒤에만 mutation command를 활성화한다. query cache는 저장 ack의 revision을
 반영하고 Publish·restore 성공 뒤 Document·Draft·Version query를 함께 무효화한다.
+`publishedVersion`이 없는 Document는 유효한 미발행 상태다. Published 화면은 Document title, 아직 발행된
+버전이 없다는 설명과 권한별 Draft 진입 action을 표시하며 Workspace 부재나 기능 준비 상태로 표현하지 않는다.
 
 ## 3. 하나의 command registry
 
@@ -111,8 +113,9 @@ selected text, filename, summary, File token과 operation payload는 기록하�
 4. `web/document`: immutable Published renderer와 Version history·diff·restore
 5. Rust·PostgreSQL: existing Publish·Version·File invariants의 missing query/negative integration 보강
 
-unit gate는 import/export round trip, unsafe input, command availability, selection batch와 conflict 선택을
-검증한다. Web component gate는 Published·Draft·Publish·History 상태를 ko/en과 keyboard로 검증한다.
+unit gate는 import/export round trip, unsafe input, command availability, selection batch, 기본 ID factory와
+conflict 선택을 검증한다. Web component gate는 Published·Draft·Publish·History 상태를 ko/en과 keyboard로
+검증하고 미발행 Document가 Workspace 부재 문구를 포함하지 않음을 확인한다.
 Compose gate는 save → publish → immutable read → diff → restore, stale base, active Draft, File READY·failure와
 과거 Version download를 실제 PostgreSQL·ObjectStorage에서 검증한다.
 

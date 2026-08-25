@@ -16,7 +16,10 @@ route skeleton은 최종 layout과 같은 크기를 사용한다. 300ms 미만 �
 ## Empty
 
 데이터 부재와 filter 결과 부재를 구분한다. 사용자가 수행 가능한 단일 primary action만
-제시하고 권한 없는 action은 비활성화 대신 숨긴다.
+제시하고 권한 없는 action은 비활성화 대신 숨긴다. Empty state의 heading과 description은
+부재한 도메인 대상을 명시하며, 표현 형태가 같다는 이유로 다른 도메인의 문구를 재사용하지
+않는다. PublishedVersion이 없는 유효한 Document는 Workspace·Document 부재가 아니라 `미발행`
+상태로 표시하고 Document title과 권한별 Draft action을 유지한다.
 
 ## Error
 

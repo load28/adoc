@@ -56,7 +56,8 @@
 | TASK-050 | CI 명시 실행 경계 | 설계·구현·운영 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-050](TASK-050-explicit-ci-execution.md) |
 | TASK-051 | 엔터프라이즈 UI/UX 전체 재설계·구현 | 조사·설계·구현·품질 | 완료 | 2026-08-26 | 2026-08-26 | [TASK-051](TASK-051-enterprise-ui-ux-redesign.md) |
 | TASK-052 | Web SSR runtime bundle 경계 복구 | 결함·설계·구현·운영 | 완료 | 2026-08-26 | 2026-08-26 | [TASK-052](TASK-052-web-ssr-runtime-bundle-boundary.md) |
+| TASK-053 | Editor 저장·미발행 문서 상태 결함 수정 | 결함·설계·구현·품질 | 완료 | 2026-08-26 | 2026-08-26 | [TASK-053](TASK-053-editor-save-unpublished-state.md) |
 
 ## 다음 태스크 번호
 
-**TASK-053**
+**TASK-054**

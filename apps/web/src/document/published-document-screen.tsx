@@ -11,10 +11,11 @@ import { LinkButton } from "../components/product/legacy";
 import { Inline, Stack, Text } from "../components/product/legacy";
 import { Textfield } from "../components/product/legacy";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 
 import { PageHeader } from "../components/product/page";
-import { RouteEmpty, RoutePending, RouteProblem } from "../shell/common-states";
+import { EmptyState } from "../components/product/legacy";
+import { RoutePending, RouteProblem } from "../shell/common-states";
 import { useTranslation } from "../shell/product-app-provider";
 import { browserCommand } from "../shell/browser-command";
 import { ContentRenderer } from "./content-renderer";
@@ -44,7 +45,8 @@ export function PublishedDocumentScreen({
   const version = query.data.publishedVersion;
   if (!version)
     return (
-      <RouteEmpty
+      <UnpublishedDocumentState
+        title={query.data.title}
         action={
           <LinkButton href={documentUrl(workspaceSlug, documentId, "draft")} appearance="primary">
             {t("editor.edit")}
@@ -107,6 +109,23 @@ export function PublishedDocumentScreen({
         </section>
         <PublicLinkManager workspaceId={workspaceId} documentId={documentId} />
       </Stack>
+    </main>
+  );
+}
+
+export function UnpublishedDocumentState({
+  title,
+  action,
+}: Readonly<{ title: string; action?: ReactNode }>) {
+  const t = useTranslation();
+  return (
+    <main id="main-content">
+      <EmptyState
+        header={title}
+        description={t("document.unpublished")}
+        headingLevel={1}
+        primaryAction={action}
+      />
     </main>
   );
 }
