@@ -449,7 +449,11 @@ pub(super) async fn scope_snapshot_tx(
         policy_revision: row.get("policy_revision"),
         membership_revision: row.get("membership_revision"),
     };
-    let nodes = load_scope_nodes(tx, workspace_id, user_id).await?;
+    let nodes = match load_scope_nodes(tx, workspace_id, user_id).await {
+        Ok(nodes) => nodes,
+        Err(GovernanceError::DocumentNotFound) => Vec::new(),
+        Err(error) => return Err(error),
+    };
     Ok(ScopeSnapshot {
         workspace_id,
         user_id,

@@ -20,6 +20,7 @@
 | MessageChanged | Collaboration | Discussion SSE, AI context invalidator | messageId, revision, action |
 | ReviewChanged | Collaboration | Inbox, publish gate cache | reviewId, draftRevision, status |
 | VocabularyChanged | Knowledge | index, AI rule cache | conceptId, revision |
+| SearchProjectionRepairScheduled | Knowledge retrieval | Search projection | documentId, detected fingerprint |
 | AIJobChanged | Writing Intelligence | SSE, usage metrics | jobId, sequence, status |
 | ProposalApplied | Writing Intelligence | Audit, Discussion UI | proposalId, documentId, revision |
 | FileChanged | Operations | preview, UI | assetId, status |
@@ -35,3 +36,5 @@ Browser Stream으로 투영하는 Event는 producer가 `INTERNAL|WORKSPACE|ADMIN
 같은 transaction에 기록한다. SSE payload의 일반 변경 알림은 `entityId`, `revision`, `action`으로
 정규화하고 상세 상태는 해당 query로 다시 읽는다. `InvitationDeliveryRequested` 같은 내부 명령 Event는
 `INTERNAL`이며 Browser contract로 검증하거나 전송하지 않는다.
+`SearchProjectionRepairScheduled`도 current state를 다시 materialize하기 위한 내부 복구 사실이며
+Browser Stream에는 노출하지 않는다.

@@ -22,9 +22,16 @@ swap으로 zero-downtime reindex한다.
 PermissionScope filter → lexical BM25와 vector kNN 후보 → reciprocal rank fusion → kind·freshness·
 authority rerank → dedupe → Source 반환. 권한 filter를 post-filter로 적용하지 않는다.
 
+scope pair는 composite `permissionKey`로 compile하고 4,096개 단위로 분할한다. 각 batch의
+후보를 modality별 global top 100으로 다시 줄인 뒤 RRF를 수행하므로 scope 크기에 따라
+OpenSearch clause 한도를 바꾸거나 검색 가능한 Document 수를 제한하지 않는다. query vector가
+없는 caller는 lexical modality만 실행하며, Hybrid caller는 mapping dimension과 정확히 같은
+vector를 제공해야 한다.
+
 ## Source
 
-`{kind, stableId, documentId?, version?, regionId?, authority, snapshotHash, displaySnapshot}`.
+`{kind, stableId, documentId, version?, draftRevision?, regionId, authority, snapshotHash,
+displaySnapshot}`.
 AI result 저장 시 Source를 복사하되 현재 content를 복사하지 않는다. 표시할 때 현재 permission을
 다시 검사한다.
 

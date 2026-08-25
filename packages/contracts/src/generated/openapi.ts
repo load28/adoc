@@ -1620,14 +1620,26 @@ export interface components {
             }[];
             nextCursor?: string | null;
             indexWatermark: number;
+            /** @constant */
+            configurationVersion: "search-ranking-v1";
         };
         Source: {
-            kind: string;
-            stableId: components["schemas"]["Id"];
-            documentId?: components["schemas"]["NullableId"];
-            regionId?: components["schemas"]["NullableId"];
-            authority: string;
+            /** @enum {string} */
+            kind: "PUBLISHED" | "DRAFT";
+            stableId: string;
+            documentId: components["schemas"]["Id"];
+            regionId: components["schemas"]["Id"];
+            version?: number | null;
+            draftRevision?: number | null;
+            /** @enum {string} */
+            authority: "OFFICIAL" | "WORKING";
             snapshotHash: string;
+            displaySnapshot: {
+                title: string;
+                excerpt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            };
         };
         Reference: {
             id: components["schemas"]["Id"];
@@ -4575,6 +4587,8 @@ export interface operations {
         parameters: {
             query: {
                 q: string;
+                includeDrafts?: boolean;
+                limit?: number;
                 cursor?: string;
             };
             header?: never;

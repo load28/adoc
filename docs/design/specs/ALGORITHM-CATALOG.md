@@ -79,6 +79,12 @@ Workspace와 permission scope filter를 BM25·kNN 모두에 먼저 적용한다.
 Document/Region/snapshotHash로 dedupe해 top 30을 반환한다. projection fingerprint 불일치는
 제외하고 reindex job을 만든다.
 
+configuration `search-ranking-v1`은 exact normalized term `+0.005`, Published `+0.003`, Draft
+`+0.001`, freshness `0.002 * 0.5^(ageDays/180)`을 사용한다. modality 안에서는 provider score
+내림차순과 projection ID 오름차순, 최종 결과는 score 내림차순과 Source stable ID 오름차순으로
+정렬한다. Permission key는 4,096개씩 query하되 batch 결과를 modality별 global top 100으로
+재선정한 후에만 RRF를 계산한다.
+
 ## ALG-008 File reference·GC
 
 Content 또는 Message commit에서 JSON Schema가 허용한 File ID를 추출해 owner reference set을

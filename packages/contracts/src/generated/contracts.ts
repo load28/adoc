@@ -61,6 +61,7 @@ export type AdocContractBundle =
   | EventPayloads_DraftChanged
   | EventPayloads_LeaseChanged
   | EventPayloads_VersionPublished
+  | EventPayloads_SearchProjectionRepairScheduled
   | EventPayloads_JobChanged
   | EventPayloads_ProposalApplied
   | EventPayloads_PurgeChanged
@@ -542,6 +543,7 @@ export type EventPayloads_Payload =
   | EventPayloads_DraftChanged
   | EventPayloads_LeaseChanged
   | EventPayloads_VersionPublished
+  | EventPayloads_SearchProjectionRepairScheduled
   | EventPayloads_JobChanged
   | EventPayloads_ProposalApplied
   | EventPayloads_PurgeChanged;
@@ -1755,6 +1757,10 @@ export interface EventPayloads_VersionPublished {
   number: number;
   sourceDraftRevision: EventPayloads_Revision;
 }
+export interface EventPayloads_SearchProjectionRepairScheduled {
+  documentId: EventPayloads_Id;
+  detectedFingerprint: string;
+}
 export interface EventPayloads_JobChanged {
   jobId: EventPayloads_Id;
   status: "QUEUED" | "RUNNING" | "CANCEL_REQUESTED" | "SUCCEEDED" | "FAILED" | "CANCELLED" | "TIMED_OUT";
@@ -2049,20 +2055,25 @@ export interface OpenApi__SearchPage {
   items: {
     source: OpenApi__Source;
     score: number;
-    [k: string]: unknown;
   }[];
   nextCursor?: string | null;
   indexWatermark: number;
-  [k: string]: unknown;
+  configurationVersion: "search-ranking-v1";
 }
 export interface OpenApi__Source {
-  kind: string;
-  stableId: OpenApi__Id;
-  documentId?: OpenApi__NullableId;
-  regionId?: OpenApi__NullableId;
-  authority: string;
+  kind: "PUBLISHED" | "DRAFT";
+  stableId: string;
+  documentId: OpenApi__Id;
+  regionId: OpenApi__Id;
+  version?: number | null;
+  draftRevision?: number | null;
+  authority: "OFFICIAL" | "WORKING";
   snapshotHash: string;
-  [k: string]: unknown;
+  displaySnapshot: {
+    title: string;
+    excerpt: string;
+    updatedAt: string;
+  };
 }
 export interface OpenApi__Reference {
   id: OpenApi__Id;
@@ -3010,6 +3021,8 @@ export interface Operation__SearchKnowledgeRequest {
   };
   query: {
     q: string;
+    includeDrafts?: boolean;
+    limit?: number;
     cursor?: string;
   };
 }

@@ -47,6 +47,7 @@ Workspace별 index를 만들지 않고 routing에 `workspace_id`를 사용하며
       "embedding": { "type": "knn_vector", "dimension": 1536, "method": { "name": "hnsw", "space_type": "cosinesimil", "engine": "lucene" } },
       "permission_scope": { "type": "keyword" },
       "permission_fingerprint": { "type": "keyword" },
+      "permission_key": { "type": "keyword" },
       "snapshot_hash": { "type": "keyword" },
       "authority": { "type": "keyword" },
       "updated_at": { "type": "date" },
@@ -73,7 +74,8 @@ tombstone도 같은 ordering을 사용하므로 늦게 도착한 upsert가 삭�
 저장한다. `permission_fingerprint`는 root에서 대상까지의
 `{document_id, parent_id, permission_revision}` 열을 hash한 값이다. Search scope compiler는 현재
 Membership·Group으로 접근 가능한 문서의 `{scope token, ancestry fingerprint}` 쌍을 만들고,
-`workspace_id`와 함께 bool filter에 먼저 적용한다. 쌍이 다른 결과는 반환하지 않고
+둘의 canonical 결합을 SHA-256한 `permission_key`를 만든다. query는 이 key를 bounded terms
+batch로 나누고 `workspace_id`와 함께 candidate 생성 전에 적용한다. 쌍이 다른 결과는 반환하지 않고
 재색인을 예약한다. 검색 후 권한 필터링은 금지한다.
 
 ## Query pipeline
@@ -83,6 +85,11 @@ Membership·Group으로 접근 가능한 문서의 `{scope token, ancestry finge
 3. `k=60` reciprocal rank fusion으로 합친다.
 4. authority, exact term, freshness를 deterministic weight로 재정렬한다.
 5. 같은 Document·Region·snapshot hash를 제거하고 top 30 Source를 반환한다.
+
+scope key는 한 query에 4,096개까지만 넣는다. 더 큰 scope는 동일 modality query를 여러
+batch로 실행한 뒤 provider score와 deterministic ID로 modality별 global top 100을 다시
+선정한다. domain 규모를 제한하거나 OpenSearch boolean clause 설정을 늘리는 방식으로
+우회하지 않는다.
 
 weight와 top-k는 configuration version에 묶고 Search response에 그 version을 기록한다. 실험
 변경은 정본을 바꾸지 않으며 offline relevance gate를 통과한 version만 배포한다.

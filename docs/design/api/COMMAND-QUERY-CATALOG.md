@@ -113,7 +113,7 @@ type은 [OpenAPI](openapi.yaml), 오류 의미는 [Error Catalog](ERROR-CATALOG.
 
 | Operation ID | Method·path | 종류 | 최소 권한 | 동시성 | 핵심 오류 |
 |---|---|---|---|---|---|
-| searchKnowledge | `GET /workspaces/{workspaceId}/search` | Q | Member | cursor | `SEARCH_UNAVAILABLE` |
+| searchKnowledge | `GET /workspaces/{workspaceId}/search` | Q | Member | query·scope·index-bound cursor | `SEARCH_UNAVAILABLE`, `SEARCH_CURSOR_EXPIRED` |
 | listBacklinks | `GET /workspaces/{workspaceId}/documents/{documentId}/backlinks` | Q | Viewer | cursor | — |
 | createReference | `POST /workspaces/{workspaceId}/documents/{documentId}/references` | C | Contributor | draft R+L | `REFERENCE_TARGET_INVALID` |
 | deleteReference | `DELETE /workspaces/{workspaceId}/documents/{documentId}/references/{referenceId}` | C | Contributor | draft R+L | `REFERENCE_NOT_FOUND` |

@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use adoc_adapters::{
     identity::{SystemClock, SystemSecureRandom},
-    postgres::{PostgresKnowledgeRepository, PostgresStore},
+    postgres::{PostgresKnowledgeRepository, PostgresSearchRetrievalRepository, PostgresStore},
+    search_retrieval::OpenSearchRetrievalIndex,
 };
 use adoc_application::{
     document::DocumentService,
@@ -10,7 +11,9 @@ use adoc_application::{
         CreateReferenceInput, DeprecateVocabularyConceptInput, KnowledgeService,
         WriteVocabularyConceptInput,
     },
+    search::{KnowledgeRetrievalService, SearchRetrievalError},
 };
+use adoc_configuration::AppConfig;
 use axum::{
     Json, Router,
     extract::{Path, Query, State},
@@ -30,22 +33,44 @@ use crate::{
 #[derive(Clone)]
 pub(crate) struct KnowledgeRuntime {
     pub(crate) service: Arc<KnowledgeService>,
+    pub(crate) retrieval: Arc<KnowledgeRetrievalService>,
 }
 impl KnowledgeRuntime {
-    pub(crate) fn new(store: &PostgresStore, documents: Arc<DocumentService>) -> Self {
-        Self {
+    pub(crate) fn new(
+        config: &AppConfig,
+        store: &PostgresStore,
+        documents: Arc<DocumentService>,
+    ) -> Result<Self, SearchRetrievalError> {
+        let retrieval_repository = Arc::new(PostgresSearchRetrievalRepository::new(store));
+        let index = Arc::new(OpenSearchRetrievalIndex::new(
+            config.dependencies.opensearch_url.clone(),
+            config.dependencies.search_index_prefix.clone(),
+            config
+                .dependencies
+                .opensearch_credential
+                .as_ref()
+                .map(|value| value.value.expose()),
+        )?);
+        Ok(Self {
             service: Arc::new(KnowledgeService::new(
                 Arc::new(PostgresKnowledgeRepository::new(store)),
                 documents,
                 Arc::new(SystemClock),
                 Arc::new(SystemSecureRandom),
             )),
-        }
+            retrieval: Arc::new(KnowledgeRetrievalService::new(
+                retrieval_repository.clone(),
+                index,
+                retrieval_repository,
+                config.dependencies.embedding_dimension as usize,
+            )?),
+        })
     }
 }
 
 pub(crate) fn knowledge_routes() -> Router<HealthState> {
     Router::new()
+        .route("/workspaces/{workspace_id}/search", get(search_knowledge))
         .route(
             "/workspaces/{workspace_id}/documents/{document_id}/backlinks",
             get(list_backlinks),
@@ -70,6 +95,50 @@ pub(crate) fn knowledge_routes() -> Router<HealthState> {
             "/workspaces/{workspace_id}/vocabulary/{concept_id}/deprecate",
             post(deprecate_vocabulary),
         )
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SearchQuery {
+    q: String,
+    #[serde(default = "default_true")]
+    include_drafts: bool,
+    #[serde(default = "default_search_limit")]
+    limit: usize,
+    cursor: Option<String>,
+}
+
+async fn search_knowledge(
+    State(state): State<HealthState>,
+    auth: Authenticated,
+    Path(workspace): Path<Uuid>,
+    Query(query): Query<SearchQuery>,
+) -> Result<Json<serde_json::Value>, Problem> {
+    json(
+        state
+            .knowledge
+            .retrieval
+            .search(
+                auth.principal.user.id,
+                workspace,
+                &query.q,
+                None,
+                query.include_drafts,
+                query.limit,
+                query.cursor.as_deref(),
+                chrono::Utc::now(),
+            )
+            .await
+            .map_err(Problem::from)?,
+    )
+}
+
+const fn default_true() -> bool {
+    true
+}
+
+const fn default_search_limit() -> usize {
+    20
 }
 
 #[derive(Deserialize)]
@@ -245,4 +314,44 @@ fn json<T: serde::Serialize>(value: T) -> Result<Json<serde_json::Value>, Proble
     Ok(Json(
         serde_json::to_value(value).map_err(|_| Problem::internal())?,
     ))
+}
+
+impl From<SearchRetrievalError> for Problem {
+    fn from(error: SearchRetrievalError) -> Self {
+        match error {
+            SearchRetrievalError::Validation => Self {
+                status: StatusCode::UNPROCESSABLE_ENTITY,
+                code: "VALIDATION_FAILED",
+                retryable: false,
+                current_revision: None,
+                reference_count: None,
+                publish_conflict: None,
+            },
+            SearchRetrievalError::CursorExpired => Self {
+                status: StatusCode::CONFLICT,
+                code: "SEARCH_CURSOR_EXPIRED",
+                retryable: false,
+                current_revision: None,
+                reference_count: None,
+                publish_conflict: None,
+            },
+            SearchRetrievalError::WorkspaceNotFound => Self {
+                status: StatusCode::NOT_FOUND,
+                code: "RESOURCE_NOT_FOUND",
+                retryable: false,
+                current_revision: None,
+                reference_count: None,
+                publish_conflict: None,
+            },
+            SearchRetrievalError::Unavailable => Self {
+                status: StatusCode::SERVICE_UNAVAILABLE,
+                code: "SEARCH_UNAVAILABLE",
+                retryable: true,
+                current_revision: None,
+                reference_count: None,
+                publish_conflict: None,
+            },
+            SearchRetrievalError::Internal => Self::internal(),
+        }
+    }
 }

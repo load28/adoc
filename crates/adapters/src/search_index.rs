@@ -1,7 +1,7 @@
 use adoc_application::search::{
     ProjectionMutation, SEARCH_PROJECTION_SCHEMA, SearchIndex, SearchProjection,
-    SearchProjectionError, SearchSourceKind, TOMBSTONE_REGION_ID, permission_scope_token,
-    projection_id,
+    SearchProjectionError, SearchSourceKind, TOMBSTONE_REGION_ID, permission_composite_key,
+    permission_scope_token, projection_id,
 };
 use adoc_ports::BoxFuture;
 use chrono::Utc;
@@ -704,6 +704,7 @@ fn tombstone_projection(
     kind: SearchSourceKind,
     sequence: i64,
 ) -> SearchProjection {
+    let permission_scope = permission_scope_token(workspace_id, document_id);
     SearchProjection {
         projection_schema: SEARCH_PROJECTION_SCHEMA,
         workspace_id,
@@ -719,8 +720,9 @@ fn tombstone_projection(
         body: String::new(),
         terms: Vec::new(),
         embedding: None,
-        permission_scope: permission_scope_token(workspace_id, document_id),
+        permission_scope: permission_scope.clone(),
         permission_fingerprint: "deleted".to_owned(),
+        permission_key: permission_composite_key(&permission_scope, "deleted"),
         snapshot_hash: "deleted".to_owned(),
         authority: "NONE".to_owned(),
         updated_at: Utc::now(),
@@ -745,6 +747,7 @@ fn mapping(dimension: u32) -> Value {
             "body":{"type":"text","analyzer":"adoc_ko_en"},"terms":{"type":"keyword"},
             "embedding":{"type":"knn_vector","dimension":dimension,"method":{"name":"hnsw","space_type":"cosinesimil","engine":"lucene"}},
             "permission_scope":{"type":"keyword"},"permission_fingerprint":{"type":"keyword"},
+            "permission_key":{"type":"keyword"},
             "snapshot_hash":{"type":"keyword"},"authority":{"type":"keyword"},
             "updated_at":{"type":"date"},"outbox_sequence":{"type":"long"},"deleted":{"type":"boolean"}
         }}

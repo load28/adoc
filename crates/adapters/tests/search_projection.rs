@@ -4,16 +4,19 @@ use adoc_adapters::{
     job_executor::WorkerJobExecutor,
     postgres::{
         DatabaseSettings, OutboxEventInput, PgUnitOfWork, PostgresJobRepository,
-        PostgresSearchProjectionRepository, PostgresStore, append_outbox_event,
+        PostgresSearchProjectionRepository, PostgresSearchRetrievalRepository, PostgresStore,
+        append_outbox_event,
     },
     search_index::OpenSearchIndex,
     search_rebuild::SearchRebuilder,
+    search_retrieval::OpenSearchRetrievalIndex,
 };
 use adoc_application::{
     jobs::{JobExecutor, JobRepository},
     operations::EventAudience,
     search::{
-        ProjectionMutation, SearchIndex, SearchProjectionRepository, SearchProjectionService,
+        KnowledgeRetrievalService, ProjectionMutation, SearchIndex, SearchProjectionRepository,
+        SearchProjectionService, SearchRetrievalError,
     },
 };
 use adoc_ports::UnitOfWork;
@@ -102,9 +105,13 @@ async fn search_projection_prefilter_ordering_and_tombstone_contract() {
     );
 
     let new_block = Uuid::now_v7();
+    let second_block = Uuid::now_v7();
     sqlx::query("UPDATE drafts SET content_json=$2,revision=revision+1,updated_at=$3 WHERE document_id=$1")
         .bind(document)
-        .bind(json!({"schemaVersion":1,"root":{"type":"doc","children":[{"id":new_block,"type":"paragraph","children":[{"type":"text","text":"newvalue"}]}]}}))
+        .bind(json!({"schemaVersion":1,"root":{"type":"doc","children":[
+            {"id":new_block,"type":"paragraph","children":[{"type":"text","text":"newvalue primary"}]},
+            {"id":second_block,"type":"paragraph","children":[{"type":"text","text":"newvalue secondary"}]}
+        ]}}))
         .bind(Utc::now())
         .execute(store.pool()).await.unwrap();
     sqlx::query("UPDATE documents SET permission_revision=permission_revision+1 WHERE id=$1")
@@ -153,7 +160,7 @@ async fn search_projection_prefilter_ordering_and_tombstone_contract() {
             "newvalue"
         )
         .await,
-        1
+        2
     );
 
     let generation = SearchRebuilder::new(
@@ -188,6 +195,148 @@ async fn search_projection_prefilter_ordering_and_tombstone_contract() {
         .await
         .unwrap(),
         "ACTIVE"
+    );
+
+    let mut embedded = new_work.mutations.clone();
+    for mutation in &mut embedded {
+        if let ProjectionMutation::Replace { regions, .. } = mutation {
+            for (position, region) in regions.iter_mut().enumerate() {
+                let mut vector = vec![0.0_f32; 1536];
+                vector[position] = 1.0;
+                region.embedding = Some(vector);
+            }
+        }
+    }
+    index.apply(&embedded).await.unwrap();
+    let retrieval_repository = Arc::new(PostgresSearchRetrievalRepository::new(&store));
+    let retrieval = KnowledgeRetrievalService::new(
+        retrieval_repository.clone(),
+        Arc::new(OpenSearchRetrievalIndex::new(endpoint.clone(), prefix.clone(), None).unwrap()),
+        retrieval_repository,
+        1536,
+    )
+    .unwrap();
+    let mut query_vector = vec![0.0_f32; 1536];
+    query_vector[0] = 1.0;
+    let first_page = retrieval
+        .search(
+            owner,
+            workspace,
+            "newvalue",
+            Some(query_vector.clone()),
+            true,
+            1,
+            None,
+            Utc::now(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(first_page.items.len(), 1);
+    assert_eq!(first_page.items[0].source.authority, "WORKING");
+    assert!(first_page.items[0].source.version.is_none());
+    assert!(first_page.items[0].source.draft_revision.is_some());
+    let cursor = first_page.next_cursor.as_deref().unwrap();
+    let second_page = retrieval
+        .search(
+            owner,
+            workspace,
+            "newvalue",
+            Some(query_vector),
+            true,
+            1,
+            Some(cursor),
+            Utc::now(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(second_page.items.len(), 1);
+    assert!(second_page.next_cursor.is_none());
+    assert!(matches!(
+        retrieval
+            .search(
+                owner,
+                workspace,
+                "different",
+                None,
+                true,
+                1,
+                Some(cursor),
+                Utc::now()
+            )
+            .await,
+        Err(SearchRetrievalError::CursorExpired)
+    ));
+
+    let denied = Uuid::now_v7();
+    seed_member(&store, workspace, denied).await;
+    assert!(
+        retrieval
+            .search(
+                denied,
+                workspace,
+                "newvalue",
+                None,
+                true,
+                20,
+                None,
+                Utc::now()
+            )
+            .await
+            .unwrap()
+            .items
+            .is_empty()
+    );
+
+    sqlx::query("UPDATE documents SET permission_revision=permission_revision+1 WHERE id=$1")
+        .bind(root)
+        .execute(store.pool())
+        .await
+        .unwrap();
+    for _ in 0..2 {
+        assert!(
+            retrieval
+                .search(
+                    owner,
+                    workspace,
+                    "newvalue",
+                    None,
+                    true,
+                    20,
+                    None,
+                    Utc::now()
+                )
+                .await
+                .unwrap()
+                .items
+                .is_empty()
+        );
+    }
+    let repairs: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT id FROM outbox_events WHERE workspace_id=$1 AND event_type='SearchProjectionRepairScheduled.v1'",
+    )
+    .bind(workspace)
+    .fetch_all(store.pool())
+    .await
+    .unwrap();
+    assert_eq!(repairs.len(), 1);
+    execute_search_job(&store, &job_repository, &executor, repairs[0]).await;
+    assert_eq!(
+        retrieval
+            .search(
+                owner,
+                workspace,
+                "newvalue",
+                None,
+                true,
+                20,
+                None,
+                Utc::now()
+            )
+            .await
+            .unwrap()
+            .items
+            .len(),
+        2
     );
 
     let sequence = sqlx::query_scalar::<_, i64>(
@@ -354,11 +503,34 @@ async fn seed(store: &PostgresStore, owner: Uuid, workspace: Uuid, root: Uuid, d
         .bind(root).bind(workspace).bind("00000000000000000000000000000001").bind(owner)
         .bind(document).bind("00000000000000000000000000000002")
         .execute(store.pool()).await.unwrap();
+    sqlx::query("INSERT INTO permission_grants(id,workspace_id,document_id,subject_kind,subject_id,access,can_manage,granted_by) VALUES($1,$2,$3,'USER',$4,'EDITOR',true,$4)")
+        .bind(Uuid::now_v7()).bind(workspace).bind(root).bind(owner)
+        .execute(store.pool()).await.unwrap();
     let block = Uuid::now_v7();
     sqlx::query("INSERT INTO drafts(id,workspace_id,document_id,content_json,schema_version,updated_by) VALUES($1,$2,$3,$4,1,$5)")
         .bind(Uuid::now_v7()).bind(workspace).bind(document)
         .bind(json!({"schemaVersion":1,"root":{"type":"doc","children":[{"id":block,"type":"paragraph","children":[{"type":"text","text":"oldsecret"}]}]}}))
         .bind(owner).execute(store.pool()).await.unwrap();
+}
+
+async fn seed_member(store: &PostgresStore, workspace: Uuid, user: Uuid) {
+    sqlx::query(
+        "INSERT INTO users(id,google_subject,email,display_name) VALUES($1,$2,$3,'Denied')",
+    )
+    .bind(user)
+    .bind(format!("subject-{user}"))
+    .bind(format!("{user}@example.test"))
+    .execute(store.pool())
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO memberships(workspace_id,user_id,role,status) VALUES($1,$2,'MEMBER','ACTIVE')",
+    )
+    .bind(workspace)
+    .bind(user)
+    .execute(store.pool())
+    .await
+    .unwrap();
 }
 
 fn secret(plain: &str, file: &str) -> String {

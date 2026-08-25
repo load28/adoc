@@ -3,7 +3,8 @@ use adoc_application::{
     search::{
         PermissionPathNode, ProjectionMutation, ProjectionWork, SEARCH_PROJECTION_SCHEMA,
         SearchProjection, SearchProjectionError, SearchProjectionRepository, SearchSourceKind,
-        extract_search_regions, permission_fingerprint, permission_scope_token, snapshot_hash,
+        extract_search_regions, permission_composite_key, permission_fingerprint,
+        permission_scope_token, snapshot_hash,
     },
 };
 use adoc_ports::BoxFuture;
@@ -170,6 +171,11 @@ impl SearchProjectionRepository for PostgresSearchProjectionRepository {
                 "VocabularyChanged.v1" => {
                     let documents = all_active_documents(&self.pool, workspace_id).await?;
                     materialize_documents(&self.pool, workspace_id, documents, sequence).await?
+                }
+                "SearchProjectionRepairScheduled.v1" => {
+                    let document_id = uuid_field(&payload, "documentId")?;
+                    materialize_documents(&self.pool, workspace_id, vec![document_id], sequence)
+                        .await?
                 }
                 "PurgeChanged.v1" => {
                     let target = uuid_field(&payload, "targetId")?;
@@ -380,6 +386,9 @@ fn projections(
     sequence: i64,
 ) -> Result<Vec<SearchProjection>, SearchProjectionError> {
     let hash = snapshot_hash(&source.content);
+    let permission_scope = permission_scope_token(context.workspace_id, context.document_id);
+    let permission_key =
+        permission_composite_key(&permission_scope, &context.permission_fingerprint);
     let regions = extract_search_regions(&source.content)
         .ok_or(SearchProjectionError::Permanent("CONTENT_SCHEMA_INVALID"))?;
     Ok(regions
@@ -406,8 +415,9 @@ fn projections(
                 body: region.body,
                 terms,
                 embedding: None,
-                permission_scope: permission_scope_token(context.workspace_id, context.document_id),
+                permission_scope: permission_scope.clone(),
                 permission_fingerprint: context.permission_fingerprint.clone(),
+                permission_key: permission_key.clone(),
                 snapshot_hash: hash.clone(),
                 authority: if source_kind == SearchSourceKind::Published {
                     "OFFICIAL"

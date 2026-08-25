@@ -7,17 +7,17 @@
     "typify": "0.7.0"
   },
   "sources": {
-    "docs/design/api/openapi.yaml": "2195badde04d633197412025b2ac19fcc1418771388375aea05ec5ead5615378",
+    "docs/design/api/openapi.yaml": "c2de6cdd38021ffb2db713005f7b77bcd6dad1ce396d021dfc3465949c7957d9",
     "docs/design/api/asyncapi.yaml": "987f600805d0b851054058984978c1f0a6642063cf6d06a5eba7228a04af5ea1",
     "docs/design/contracts/ai-contracts.schema.json": "b2a2b5c20d34fa7652350a0061e00ed8c3574d719e3fd073d80a3c62dfc43901",
     "docs/design/contracts/document-content.schema.json": "bb8eec6392aaa24c16740cfe5e823add8cb2bb3a925db2def1c15237ed0d0c7c",
     "docs/design/contracts/document-operation.schema.json": "2fc8309585ea8b9190fe0f5eb605fee632c785dfdc1b3e5ad20145f7e232b8ff",
-    "docs/design/contracts/event-payloads.schema.json": "ff4fc1aee21f2af928bc37bdac35b619e1945d83b96d04e25a59ea6a7527e0cd"
+    "docs/design/contracts/event-payloads.schema.json": "7686a4df58896bc7fba5200bc8a1bc2a56f47465150bed98a345a9a3ba788faa"
   },
   "counts": {
     "openapiOperations": 107,
     "asyncapiOperations": 3,
     "asyncapiMessages": 2,
-    "definitions": 352
+    "definitions": 353
   }
 }

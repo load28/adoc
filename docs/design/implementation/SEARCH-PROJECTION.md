@@ -32,7 +32,7 @@ SearchProjection = {
   sourceKind, sourceRevision, versionNumber?,
   regionId, regionKind, ancestorIds,
   title, body, terms[], embedding?,
-  permissionScope, permissionFingerprint,
+  permissionScope, permissionFingerprint, permissionKey,
   snapshotHash, authority, updatedAt,
   outboxSequence, deleted: false
 }
@@ -70,7 +70,9 @@ Korean·English lexical field는 `analysis-nori` plugin의 `nori_tokenizer`·`no
 
 `permissionScope = SHA-256("scope:v1:" + workspaceId + ":" + documentId)`다.
 `permissionFingerprint`는 root→target path의 `{id,parentId,permissionRevision}` 정렬 JSON을
-SHA-256한다. 이 fingerprint는 user·group에 독립적이며 문서 조상 권한 상태만
+SHA-256한다. `permissionKey`는
+`SHA-256("permission-key:v1:" + permissionScope + ":" + permissionFingerprint)`다.
+이 fingerprint와 key는 user·group에 독립적이며 문서 조상 권한 상태만
 표현한다.
 
 IMP-19 scope compiler는 현재 resolver로 접근 가능한 Document ID를 구한 뒤 각 Document의
@@ -92,6 +94,7 @@ Outbox append는 `workspace_sequences.next_projection_sequence`를 원자적으�
 - PermissionChanged
 - VocabularyChanged
 - PurgeChanged
+- SearchProjectionRepairScheduled
 
 Job payload는 `{outboxEventId}` 한 field만 허용한다. dedupe key는
 `search-projection:{outboxEventId}`다. consumer receipt는 `search-projection-v1`을 사용한다.

@@ -133,6 +133,7 @@ pub(super) fn is_search_projection_event(value: &str) -> bool {
             | "PermissionChanged.v1"
             | "VocabularyChanged.v1"
             | "PurgeChanged.v1"
+            | "SearchProjectionRepairScheduled.v1"
     )
 }
 

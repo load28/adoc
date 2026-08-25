@@ -11,3 +11,4 @@ pub mod postgres;
 pub mod rate_limit;
 pub mod search_index;
 pub mod search_rebuild;
+pub mod search_retrieval;

@@ -29,7 +29,8 @@
 | TASK-023 | Audit·Retention 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-023](TASK-023-audit-retention.md) |
 | TASK-024 | Job Runtime·SSE 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-024](TASK-024-job-runtime-sse.md) |
 | TASK-025 | Search Projection 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-025](TASK-025-search-projection.md) |
+| TASK-026 | Hybrid Retrieval·Source 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-026](TASK-026-hybrid-retrieval-source.md) |
 
 ## 다음 태스크 번호
 
-**TASK-026**
+**TASK-027**

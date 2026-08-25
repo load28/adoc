@@ -216,6 +216,9 @@ pub mod error {
 ///      "$ref": "#/$defs/EventPayloads__versionPublished"
 ///    },
 ///    {
+///      "$ref": "#/$defs/EventPayloads__searchProjectionRepairScheduled"
+///    },
+///    {
 ///      "$ref": "#/$defs/EventPayloads__jobChanged"
 ///    },
 ///    {
@@ -1158,6 +1161,7 @@ pub enum AdocContractBundle {
     EventPayloadsDraftChanged(EventPayloadsDraftChanged),
     EventPayloadsLeaseChanged(EventPayloadsLeaseChanged),
     EventPayloadsVersionPublished(EventPayloadsVersionPublished),
+    EventPayloadsSearchProjectionRepairScheduled(EventPayloadsSearchProjectionRepairScheduled),
     EventPayloadsJobChanged(EventPayloadsJobChanged),
     EventPayloadsProposalApplied(EventPayloadsProposalApplied),
     EventPayloadsPurgeChanged(EventPayloadsPurgeChanged),
@@ -1749,6 +1753,11 @@ impl ::std::convert::From<EventPayloadsLeaseChanged> for AdocContractBundle {
 impl ::std::convert::From<EventPayloadsVersionPublished> for AdocContractBundle {
     fn from(value: EventPayloadsVersionPublished) -> Self {
         Self::EventPayloadsVersionPublished(value)
+    }
+}
+impl ::std::convert::From<EventPayloadsSearchProjectionRepairScheduled> for AdocContractBundle {
+    fn from(value: EventPayloadsSearchProjectionRepairScheduled) -> Self {
+        Self::EventPayloadsSearchProjectionRepairScheduled(value)
     }
 }
 impl ::std::convert::From<EventPayloadsJobChanged> for AdocContractBundle {
@@ -9548,6 +9557,7 @@ impl<'de> ::serde::Deserialize<'de> for DocumentOperationTextAnchorContextHash {
 ///    {},
 ///    {},
 ///    {},
+///    {},
 ///    {}
 ///  ],
 ///  "required": [
@@ -9605,6 +9615,7 @@ impl<'de> ::serde::Deserialize<'de> for DocumentOperationTextAnchorContextHash {
 ///        "INBOX_CHANGED",
 ///        "REFERENCE_CHANGED",
 ///        "VOCABULARY_CHANGED",
+///        "SEARCH_PROJECTION_REPAIR_SCHEDULED",
 ///        "AI_JOB_CHANGED",
 ///        "PROPOSAL_APPLIED",
 ///        "FILE_CHANGED",
@@ -10379,6 +10390,9 @@ pub struct EventPayloadsLeaseChanged {
 ///      "$ref": "#/$defs/EventPayloads__versionPublished"
 ///    },
 ///    {
+///      "$ref": "#/$defs/EventPayloads__searchProjectionRepairScheduled"
+///    },
+///    {
 ///      "$ref": "#/$defs/EventPayloads__jobChanged"
 ///    },
 ///    {
@@ -10400,6 +10414,7 @@ pub enum EventPayloadsPayload {
     DraftChanged(EventPayloadsDraftChanged),
     LeaseChanged(EventPayloadsLeaseChanged),
     VersionPublished(EventPayloadsVersionPublished),
+    SearchProjectionRepairScheduled(EventPayloadsSearchProjectionRepairScheduled),
     JobChanged(EventPayloadsJobChanged),
     ProposalApplied(EventPayloadsProposalApplied),
     PurgeChanged(EventPayloadsPurgeChanged),
@@ -10432,6 +10447,11 @@ impl ::std::convert::From<EventPayloadsLeaseChanged> for EventPayloadsPayload {
 impl ::std::convert::From<EventPayloadsVersionPublished> for EventPayloadsPayload {
     fn from(value: EventPayloadsVersionPublished) -> Self {
         Self::VersionPublished(value)
+    }
+}
+impl ::std::convert::From<EventPayloadsSearchProjectionRepairScheduled> for EventPayloadsPayload {
+    fn from(value: EventPayloadsSearchProjectionRepairScheduled) -> Self {
+        Self::SearchProjectionRepairScheduled(value)
     }
 }
 impl ::std::convert::From<EventPayloadsJobChanged> for EventPayloadsPayload {
@@ -10749,6 +10769,118 @@ impl ::std::fmt::Display for EventPayloadsRevision {
         self.0.fmt(f)
     }
 }
+///`EventPayloadsSearchProjectionRepairScheduled`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "object",
+///  "required": [
+///    "detectedFingerprint",
+///    "documentId"
+///  ],
+///  "properties": {
+///    "detectedFingerprint": {
+///      "type": "string",
+///      "pattern": "^[a-f0-9]{64}$"
+///    },
+///    "documentId": {
+///      "$ref": "#/$defs/EventPayloads__id"
+///    }
+///  },
+///  "additionalProperties": false
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct EventPayloadsSearchProjectionRepairScheduled {
+    #[serde(rename = "detectedFingerprint")]
+    pub detected_fingerprint: EventPayloadsSearchProjectionRepairScheduledDetectedFingerprint,
+    #[serde(rename = "documentId")]
+    pub document_id: EventPayloadsId,
+}
+///`EventPayloadsSearchProjectionRepairScheduledDetectedFingerprint`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "pattern": "^[a-f0-9]{64}$"
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct EventPayloadsSearchProjectionRepairScheduledDetectedFingerprint(::std::string::String);
+impl ::std::ops::Deref for EventPayloadsSearchProjectionRepairScheduledDetectedFingerprint {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<EventPayloadsSearchProjectionRepairScheduledDetectedFingerprint>
+    for ::std::string::String
+{
+    fn from(value: EventPayloadsSearchProjectionRepairScheduledDetectedFingerprint) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for EventPayloadsSearchProjectionRepairScheduledDetectedFingerprint {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        static PATTERN: ::std::sync::LazyLock<::regress::Regex> =
+            ::std::sync::LazyLock::new(|| ::regress::Regex::new("^[a-f0-9]{64}$").unwrap());
+        if PATTERN.find(value).is_none() {
+            return Err("doesn't match pattern \"^[a-f0-9]{64}$\"".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str>
+    for EventPayloadsSearchProjectionRepairScheduledDetectedFingerprint
+{
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for EventPayloadsSearchProjectionRepairScheduledDetectedFingerprint
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for EventPayloadsSearchProjectionRepairScheduledDetectedFingerprint
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de>
+    for EventPayloadsSearchProjectionRepairScheduledDetectedFingerprint
+{
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
 ///`EventPayloadsType`
 ///
 /// <details><summary>JSON schema</summary>
@@ -10773,6 +10905,7 @@ impl ::std::fmt::Display for EventPayloadsRevision {
 ///    "INBOX_CHANGED",
 ///    "REFERENCE_CHANGED",
 ///    "VOCABULARY_CHANGED",
+///    "SEARCH_PROJECTION_REPAIR_SCHEDULED",
 ///    "AI_JOB_CHANGED",
 ///    "PROPOSAL_APPLIED",
 ///    "FILE_CHANGED",
@@ -10829,6 +10962,8 @@ pub enum EventPayloadsType {
     ReferenceChanged,
     #[serde(rename = "VOCABULARY_CHANGED")]
     VocabularyChanged,
+    #[serde(rename = "SEARCH_PROJECTION_REPAIR_SCHEDULED")]
+    SearchProjectionRepairScheduled,
     #[serde(rename = "AI_JOB_CHANGED")]
     AiJobChanged,
     #[serde(rename = "PROPOSAL_APPLIED")]
@@ -10860,6 +10995,9 @@ impl ::std::fmt::Display for EventPayloadsType {
             Self::InboxChanged => f.write_str("INBOX_CHANGED"),
             Self::ReferenceChanged => f.write_str("REFERENCE_CHANGED"),
             Self::VocabularyChanged => f.write_str("VOCABULARY_CHANGED"),
+            Self::SearchProjectionRepairScheduled => {
+                f.write_str("SEARCH_PROJECTION_REPAIR_SCHEDULED")
+            }
             Self::AiJobChanged => f.write_str("AI_JOB_CHANGED"),
             Self::ProposalApplied => f.write_str("PROPOSAL_APPLIED"),
             Self::FileChanged => f.write_str("FILE_CHANGED"),
@@ -10889,6 +11027,7 @@ impl ::std::str::FromStr for EventPayloadsType {
             "INBOX_CHANGED" => Ok(Self::InboxChanged),
             "REFERENCE_CHANGED" => Ok(Self::ReferenceChanged),
             "VOCABULARY_CHANGED" => Ok(Self::VocabularyChanged),
+            "SEARCH_PROJECTION_REPAIR_SCHEDULED" => Ok(Self::SearchProjectionRepairScheduled),
             "AI_JOB_CHANGED" => Ok(Self::AiJobChanged),
             "PROPOSAL_APPLIED" => Ok(Self::ProposalApplied),
             "FILE_CHANGED" => Ok(Self::FileChanged),
@@ -17019,12 +17158,18 @@ pub struct OpenApiRichMessage {
 ///{
 ///  "type": "object",
 ///  "required": [
+///    "configurationVersion",
 ///    "indexWatermark",
 ///    "items"
 ///  ],
 ///  "properties": {
+///    "configurationVersion": {
+///      "type": "string",
+///      "const": "search-ranking-v1"
+///    },
 ///    "indexWatermark": {
-///      "type": "integer"
+///      "type": "integer",
+///      "minimum": 0.0
 ///    },
 ///    "items": {
 ///      "type": "array",
@@ -17041,7 +17186,8 @@ pub struct OpenApiRichMessage {
 ///          "source": {
 ///            "$ref": "#/$defs/OpenApi__Source"
 ///          }
-///        }
+///        },
+///        "additionalProperties": false
 ///      }
 ///    },
 ///    "nextCursor": {
@@ -17050,14 +17196,18 @@ pub struct OpenApiRichMessage {
 ///        "null"
 ///      ]
 ///    }
-///  }
+///  },
+///  "additionalProperties": false
 ///}
 /// ```
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct OpenApiSearchPage {
+    #[serde(rename = "configurationVersion")]
+    pub configuration_version: ::std::string::String,
     #[serde(rename = "indexWatermark")]
-    pub index_watermark: i64,
+    pub index_watermark: u64,
     pub items: ::std::vec::Vec<OpenApiSearchPageItemsItem>,
     #[serde(
         rename = "nextCursor",
@@ -17084,11 +17234,13 @@ pub struct OpenApiSearchPage {
 ///    "source": {
 ///      "$ref": "#/$defs/OpenApi__Source"
 ///    }
-///  }
+///  },
+///  "additionalProperties": false
 ///}
 /// ```
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct OpenApiSearchPageItemsItem {
     pub score: f64,
     pub source: OpenApiSource,
@@ -17134,53 +17286,495 @@ pub struct OpenApiSessionView {
 ///  "type": "object",
 ///  "required": [
 ///    "authority",
+///    "displaySnapshot",
+///    "documentId",
 ///    "kind",
+///    "regionId",
 ///    "snapshotHash",
 ///    "stableId"
 ///  ],
 ///  "properties": {
 ///    "authority": {
-///      "type": "string"
+///      "type": "string",
+///      "enum": [
+///        "OFFICIAL",
+///        "WORKING"
+///      ]
+///    },
+///    "displaySnapshot": {
+///      "type": "object",
+///      "required": [
+///        "excerpt",
+///        "title",
+///        "updatedAt"
+///      ],
+///      "properties": {
+///        "excerpt": {
+///          "type": "string",
+///          "maxLength": 500
+///        },
+///        "title": {
+///          "type": "string"
+///        },
+///        "updatedAt": {
+///          "type": "string",
+///          "format": "date-time"
+///        }
+///      },
+///      "additionalProperties": false
 ///    },
 ///    "documentId": {
-///      "$ref": "#/$defs/OpenApi__NullableId"
+///      "$ref": "#/$defs/OpenApi__Id"
+///    },
+///    "draftRevision": {
+///      "type": [
+///        "integer",
+///        "null"
+///      ],
+///      "minimum": 0.0
 ///    },
 ///    "kind": {
-///      "type": "string"
+///      "type": "string",
+///      "enum": [
+///        "PUBLISHED",
+///        "DRAFT"
+///      ]
 ///    },
 ///    "regionId": {
-///      "$ref": "#/$defs/OpenApi__NullableId"
+///      "$ref": "#/$defs/OpenApi__Id"
 ///    },
 ///    "snapshotHash": {
-///      "type": "string"
+///      "type": "string",
+///      "pattern": "^[a-f0-9]{64}$"
 ///    },
 ///    "stableId": {
-///      "$ref": "#/$defs/OpenApi__Id"
+///      "type": "string",
+///      "pattern": "^[a-f0-9]{64}$"
+///    },
+///    "version": {
+///      "type": [
+///        "integer",
+///        "null"
+///      ],
+///      "minimum": 1.0
 ///    }
-///  }
+///  },
+///  "additionalProperties": false
 ///}
 /// ```
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct OpenApiSource {
-    pub authority: ::std::string::String,
+    pub authority: OpenApiSourceAuthority,
+    #[serde(rename = "displaySnapshot")]
+    pub display_snapshot: OpenApiSourceDisplaySnapshot,
+    #[serde(rename = "documentId")]
+    pub document_id: OpenApiId,
     #[serde(
-        rename = "documentId",
+        rename = "draftRevision",
         default,
         skip_serializing_if = "::std::option::Option::is_none"
     )]
-    pub document_id: ::std::option::Option<OpenApiNullableId>,
-    pub kind: ::std::string::String,
-    #[serde(
-        rename = "regionId",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub region_id: ::std::option::Option<OpenApiNullableId>,
+    pub draft_revision: ::std::option::Option<u64>,
+    pub kind: OpenApiSourceKind,
+    #[serde(rename = "regionId")]
+    pub region_id: OpenApiId,
     #[serde(rename = "snapshotHash")]
-    pub snapshot_hash: ::std::string::String,
+    pub snapshot_hash: OpenApiSourceSnapshotHash,
     #[serde(rename = "stableId")]
-    pub stable_id: OpenApiId,
+    pub stable_id: OpenApiSourceStableId,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub version: ::std::option::Option<::std::num::NonZeroU64>,
+}
+///`OpenApiSourceAuthority`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "enum": [
+///    "OFFICIAL",
+///    "WORKING"
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum OpenApiSourceAuthority {
+    #[serde(rename = "OFFICIAL")]
+    Official,
+    #[serde(rename = "WORKING")]
+    Working,
+}
+impl ::std::fmt::Display for OpenApiSourceAuthority {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Official => f.write_str("OFFICIAL"),
+            Self::Working => f.write_str("WORKING"),
+        }
+    }
+}
+impl ::std::str::FromStr for OpenApiSourceAuthority {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "OFFICIAL" => Ok(Self::Official),
+            "WORKING" => Ok(Self::Working),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for OpenApiSourceAuthority {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for OpenApiSourceAuthority {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OpenApiSourceAuthority {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`OpenApiSourceDisplaySnapshot`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "object",
+///  "required": [
+///    "excerpt",
+///    "title",
+///    "updatedAt"
+///  ],
+///  "properties": {
+///    "excerpt": {
+///      "type": "string",
+///      "maxLength": 500
+///    },
+///    "title": {
+///      "type": "string"
+///    },
+///    "updatedAt": {
+///      "type": "string",
+///      "format": "date-time"
+///    }
+///  },
+///  "additionalProperties": false
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct OpenApiSourceDisplaySnapshot {
+    pub excerpt: OpenApiSourceDisplaySnapshotExcerpt,
+    pub title: ::std::string::String,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: ::chrono::DateTime<::chrono::offset::Utc>,
+}
+///`OpenApiSourceDisplaySnapshotExcerpt`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 500
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OpenApiSourceDisplaySnapshotExcerpt(::std::string::String);
+impl ::std::ops::Deref for OpenApiSourceDisplaySnapshotExcerpt {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OpenApiSourceDisplaySnapshotExcerpt> for ::std::string::String {
+    fn from(value: OpenApiSourceDisplaySnapshotExcerpt) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OpenApiSourceDisplaySnapshotExcerpt {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 500usize {
+            return Err("longer than 500 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OpenApiSourceDisplaySnapshotExcerpt {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for OpenApiSourceDisplaySnapshotExcerpt {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OpenApiSourceDisplaySnapshotExcerpt {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OpenApiSourceDisplaySnapshotExcerpt {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OpenApiSourceKind`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "enum": [
+///    "PUBLISHED",
+///    "DRAFT"
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum OpenApiSourceKind {
+    #[serde(rename = "PUBLISHED")]
+    Published,
+    #[serde(rename = "DRAFT")]
+    Draft,
+}
+impl ::std::fmt::Display for OpenApiSourceKind {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Published => f.write_str("PUBLISHED"),
+            Self::Draft => f.write_str("DRAFT"),
+        }
+    }
+}
+impl ::std::str::FromStr for OpenApiSourceKind {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "PUBLISHED" => Ok(Self::Published),
+            "DRAFT" => Ok(Self::Draft),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for OpenApiSourceKind {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for OpenApiSourceKind {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OpenApiSourceKind {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`OpenApiSourceSnapshotHash`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "pattern": "^[a-f0-9]{64}$"
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OpenApiSourceSnapshotHash(::std::string::String);
+impl ::std::ops::Deref for OpenApiSourceSnapshotHash {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OpenApiSourceSnapshotHash> for ::std::string::String {
+    fn from(value: OpenApiSourceSnapshotHash) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OpenApiSourceSnapshotHash {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        static PATTERN: ::std::sync::LazyLock<::regress::Regex> =
+            ::std::sync::LazyLock::new(|| ::regress::Regex::new("^[a-f0-9]{64}$").unwrap());
+        if PATTERN.find(value).is_none() {
+            return Err("doesn't match pattern \"^[a-f0-9]{64}$\"".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OpenApiSourceSnapshotHash {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for OpenApiSourceSnapshotHash {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OpenApiSourceSnapshotHash {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OpenApiSourceSnapshotHash {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OpenApiSourceStableId`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "pattern": "^[a-f0-9]{64}$"
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OpenApiSourceStableId(::std::string::String);
+impl ::std::ops::Deref for OpenApiSourceStableId {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OpenApiSourceStableId> for ::std::string::String {
+    fn from(value: OpenApiSourceStableId) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OpenApiSourceStableId {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        static PATTERN: ::std::sync::LazyLock<::regress::Regex> =
+            ::std::sync::LazyLock::new(|| ::regress::Regex::new("^[a-f0-9]{64}$").unwrap());
+        if PATTERN.find(value).is_none() {
+            return Err("doesn't match pattern \"^[a-f0-9]{64}$\"".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OpenApiSourceStableId {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for OpenApiSourceStableId {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OpenApiSourceStableId {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OpenApiSourceStableId {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
 }
 ///`OpenApiTopic`
 ///
@@ -47939,6 +48533,16 @@ impl ::std::convert::From<OpenApiProblem> for OperationScheduleWorkspaceDeletion
 ///        "cursor": {
 ///          "type": "string"
 ///        },
+///        "includeDrafts": {
+///          "default": true,
+///          "type": "boolean"
+///        },
+///        "limit": {
+///          "default": 20,
+///          "type": "integer",
+///          "maximum": 30.0,
+///          "minimum": 1.0
+///        },
 ///        "q": {
 ///          "type": "string",
 ///          "maxLength": 500,
@@ -47997,6 +48601,16 @@ pub struct OperationSearchKnowledgeRequestPath {
 ///    "cursor": {
 ///      "type": "string"
 ///    },
+///    "includeDrafts": {
+///      "default": true,
+///      "type": "boolean"
+///    },
+///    "limit": {
+///      "default": 20,
+///      "type": "integer",
+///      "maximum": 30.0,
+///      "minimum": 1.0
+///    },
 ///    "q": {
 ///      "type": "string",
 ///      "maxLength": 500,
@@ -48012,6 +48626,10 @@ pub struct OperationSearchKnowledgeRequestPath {
 pub struct OperationSearchKnowledgeRequestQuery {
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub cursor: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "includeDrafts", default = "defaults::default_bool::<true>")]
+    pub include_drafts: bool,
+    #[serde(default = "defaults::default_nzu64::<::std::num::NonZeroU64, 20>")]
+    pub limit: ::std::num::NonZeroU64,
     pub q: OperationSearchKnowledgeRequestQueryQ,
 }
 ///`OperationSearchKnowledgeRequestQueryQ`
@@ -56042,5 +56660,18 @@ pub enum OperationUploadFileContentResponse {
 impl ::std::convert::From<OpenApiProblem> for OperationUploadFileContentResponse {
     fn from(value: OpenApiProblem) -> Self {
         Self::Default(value)
+    }
+}
+/// Generation of default values for serde.
+pub mod defaults {
+    pub(super) fn default_bool<const V: bool>() -> bool {
+        V
+    }
+    pub(super) fn default_nzu64<T, const V: u64>() -> T
+    where
+        T: ::std::convert::TryFrom<::std::num::NonZeroU64>,
+        <T as ::std::convert::TryFrom<::std::num::NonZeroU64>>::Error: ::std::fmt::Debug,
+    {
+        T::try_from(::std::num::NonZeroU64::try_from(V).unwrap()).unwrap()
     }
 }

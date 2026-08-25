@@ -136,7 +136,7 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     let document = DocumentRuntime::new(&store);
     let publishing = PublishingRuntime::new(&store);
     let collaboration = CollaborationRuntime::new(&store);
-    let knowledge = KnowledgeRuntime::new(&store, document.service.clone());
+    let knowledge = KnowledgeRuntime::new(&config, &store, document.service.clone())?;
     let files = FileRuntime::new(&config, &store)?;
     let operations = OperationsRuntime::new(&config, &store)?;
     let state = HealthState {

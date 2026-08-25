@@ -10,7 +10,7 @@
     "workspaceId": { "type": "string", "format": "uuid" },
     "aggregateId": { "type": "string", "format": "uuid" },
     "sequence": { "type": "integer", "minimum": 1 },
-    "type": { "enum": ["WORKSPACE_CHANGED", "MEMBERSHIP_CHANGED", "INVITATION_CHANGED", "GROUP_CHANGED", "PERMISSION_CHANGED", "PUBLISH_POLICY_CHANGED", "DOCUMENT_CHANGED", "DOCUMENT_MOVED", "DRAFT_CHANGED", "LEASE_CHANGED", "VERSION_PUBLISHED", "DISCUSSION_CHANGED", "MESSAGE_CHANGED", "REVIEW_CHANGED", "INBOX_CHANGED", "REFERENCE_CHANGED", "VOCABULARY_CHANGED", "AI_JOB_CHANGED", "PROPOSAL_APPLIED", "FILE_CHANGED", "PUBLIC_LINK_CHANGED", "PURGE_CHANGED"] },
+    "type": { "enum": ["WORKSPACE_CHANGED", "MEMBERSHIP_CHANGED", "INVITATION_CHANGED", "GROUP_CHANGED", "PERMISSION_CHANGED", "PUBLISH_POLICY_CHANGED", "DOCUMENT_CHANGED", "DOCUMENT_MOVED", "DRAFT_CHANGED", "LEASE_CHANGED", "VERSION_PUBLISHED", "DISCUSSION_CHANGED", "MESSAGE_CHANGED", "REVIEW_CHANGED", "INBOX_CHANGED", "REFERENCE_CHANGED", "VOCABULARY_CHANGED", "SEARCH_PROJECTION_REPAIR_SCHEDULED", "AI_JOB_CHANGED", "PROPOSAL_APPLIED", "FILE_CHANGED", "PUBLIC_LINK_CHANGED", "PURGE_CHANGED"] },
     "version": { "const": 1 }, "occurredAt": { "type": "string", "format": "date-time" },
     "correlationId": { "type": "string", "minLength": 8, "maxLength": 128 },
     "payload": { "$ref": "#/$defs/payload" }
@@ -22,6 +22,7 @@
     { "if": { "properties": { "type": { "const": "DRAFT_CHANGED" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/draftChanged" } } } },
     { "if": { "properties": { "type": { "const": "LEASE_CHANGED" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/leaseChanged" } } } },
     { "if": { "properties": { "type": { "const": "VERSION_PUBLISHED" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/versionPublished" } } } },
+    { "if": { "properties": { "type": { "const": "SEARCH_PROJECTION_REPAIR_SCHEDULED" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/searchProjectionRepairScheduled" } } } },
     { "if": { "properties": { "type": { "const": "AI_JOB_CHANGED" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/jobChanged" } } } },
     { "if": { "properties": { "type": { "const": "PROPOSAL_APPLIED" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/proposalApplied" } } } },
     { "if": { "properties": { "type": { "const": "PURGE_CHANGED" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/purgeChanged" } } } }
@@ -32,7 +33,7 @@
     "payload": { "oneOf": [
       { "$ref": "#/$defs/entityChanged" }, { "$ref": "#/$defs/documentChanged" }, { "$ref": "#/$defs/documentMoved" },
       { "$ref": "#/$defs/draftChanged" }, { "$ref": "#/$defs/leaseChanged" },
-      { "$ref": "#/$defs/versionPublished" }, { "$ref": "#/$defs/jobChanged" },
+      { "$ref": "#/$defs/versionPublished" }, { "$ref": "#/$defs/searchProjectionRepairScheduled" }, { "$ref": "#/$defs/jobChanged" },
       { "$ref": "#/$defs/proposalApplied" }, { "$ref": "#/$defs/purgeChanged" }
     ] },
     "entityChanged": { "type": "object", "additionalProperties": false, "required": ["entityId", "revision", "action"], "properties": { "entityId": { "$ref": "#/$defs/id" }, "revision": { "$ref": "#/$defs/revision" }, "action": { "enum": ["CREATED", "UPDATED", "DELETED", "INVALIDATED", "RESTORED", "CLOSED", "REOPENED"] } } },
@@ -41,6 +42,7 @@
     "draftChanged": { "type": "object", "additionalProperties": false, "required": ["documentId", "draftId", "revision", "operationIds"], "properties": { "documentId": { "$ref": "#/$defs/id" }, "draftId": { "$ref": "#/$defs/id" }, "revision": { "$ref": "#/$defs/revision" }, "operationIds": { "type": "array", "items": { "$ref": "#/$defs/id" } } } },
     "leaseChanged": { "type": "object", "additionalProperties": false, "required": ["documentId", "holderUserId", "expiresAt", "revision"], "properties": { "documentId": { "$ref": "#/$defs/id" }, "holderUserId": { "type": ["string", "null"], "format": "uuid" }, "expiresAt": { "type": ["string", "null"], "format": "date-time" }, "revision": { "$ref": "#/$defs/revision" } } },
     "versionPublished": { "type": "object", "additionalProperties": false, "required": ["documentId", "versionId", "number", "sourceDraftRevision"], "properties": { "documentId": { "$ref": "#/$defs/id" }, "versionId": { "$ref": "#/$defs/id" }, "number": { "type": "integer", "minimum": 1 }, "sourceDraftRevision": { "$ref": "#/$defs/revision" } } },
+    "searchProjectionRepairScheduled": { "type": "object", "additionalProperties": false, "required": ["documentId", "detectedFingerprint"], "properties": { "documentId": { "$ref": "#/$defs/id" }, "detectedFingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" } } },
     "jobChanged": { "type": "object", "additionalProperties": false, "required": ["jobId", "status", "jobSequence"], "properties": { "jobId": { "$ref": "#/$defs/id" }, "status": { "enum": ["QUEUED", "RUNNING", "CANCEL_REQUESTED", "SUCCEEDED", "FAILED", "CANCELLED", "TIMED_OUT"] }, "jobSequence": { "type": "integer", "minimum": 1 }, "phase": { "type": ["string", "null"] }, "queuePosition": { "type": ["integer", "null"], "minimum": 0 } } },
     "proposalApplied": { "type": "object", "additionalProperties": false, "required": ["proposalId", "documentId", "appliedOperationIds", "resultRevision"], "properties": { "proposalId": { "$ref": "#/$defs/id" }, "documentId": { "$ref": "#/$defs/id" }, "appliedOperationIds": { "type": "array", "items": { "$ref": "#/$defs/id" } }, "resultRevision": { "$ref": "#/$defs/revision" } } },
     "purgeChanged": { "type": "object", "additionalProperties": false, "required": ["targetKind", "targetId", "step", "status"], "properties": { "targetKind": { "enum": ["DOCUMENT", "WORKSPACE", "FILE"] }, "targetId": { "$ref": "#/$defs/id" }, "step": { "type": "string" }, "status": { "enum": ["STARTED", "COMPLETED", "FAILED"] } } }
