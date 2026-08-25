@@ -49,8 +49,9 @@ dependency gate는 Cargo와 Bun lockfile의 exact dependency 집합, advisory da
 allowlist ID·owner·expiry를 evidence로 남긴다. 만료·근거 없는 예외, audit command 실패와 해석 불가능한
 출력은 실패다. secret·license·contract gate와 함께 실행한다.
 
-API·worker·web image별 SPDX JSON SBOM을 생성하고 package count·document namespace·image digest를
-검증한다. provenance statement는 SLSA provenance predicate와 subject image digest, source SHA,
+API·worker·web image별 SPDX JSON SBOM을 생성한다. provider가 실제 선언한 `SPDX-2.2` 또는
+`SPDX-2.3`과 document namespace·package count·image digest를 검증하고 실제 version을 release manifest에
+보존한다. provenance statement는 SLSA provenance predicate와 subject image digest, source SHA,
 source digest, builder ID, lockfile·Dockerfile material digest를 포함한다. local candidate는 task 전용
 ephemeral Ed25519 key로 statement를 서명하고 즉시 public key로 검증하며 private key는 artifact에 남기지
 않는다. 이 서명은 무결성 self-proof이며 production identity가 아니다.

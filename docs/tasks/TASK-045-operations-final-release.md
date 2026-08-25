@@ -85,4 +85,4 @@ release candidate를 다시 생성한다.
 RQ-01~20, SCR-01~22와 7개 quality gate의 `partial`을 0으로 만들었다. 저장소에서 실행 가능한 검증은
 실제로 통과시켰고 production traffic·registry OIDC·외부 backup·실 credential만 6개 구조화된
 `environment_skip`으로 남겼다. 같은 clean main SHA에서 생성하는 release candidate는 API·worker·web
-image, SPDX 2.3 SBOM, provenance, DR·acceptance evidence와 전체 checksum을 하나의 identity로 고정한다.
+image, SPDX JSON SBOM, provenance, DR·acceptance evidence와 전체 checksum을 하나의 identity로 고정한다.

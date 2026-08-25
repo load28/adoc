@@ -25,7 +25,7 @@
     "check:licenses": "bun run check:cargo-licenses && bun run check:js-licenses",
     "check:postgres": "cargo test --locked -p adoc-adapters --test postgres_foundation -- --ignored --nocapture",
     "check:security": "node scripts/check-secrets.mjs",
-    "check:hardening": "node scripts/check-performance-smoke.mjs --self-test && node scripts/check-performance-profiles.mjs --self-test && node scripts/check-observability.mjs --self-test && node scripts/check-provenance.mjs --self-test && node scripts/check-supply-chain.mjs --self-test && node scripts/check-dr-proof.mjs --self-test && node scripts/check-release-inputs.mjs",
+    "check:hardening": "node scripts/check-performance-smoke.mjs --self-test && node scripts/check-performance-profiles.mjs --self-test && node scripts/check-observability.mjs --self-test && node scripts/check-provenance.mjs --self-test && node scripts/check-supply-chain.mjs --self-test && node scripts/check-sbom.mjs --self-test && node scripts/check-dr-proof.mjs --self-test && node scripts/check-release-inputs.mjs",
     "check:production-readiness": "node scripts/check-production-readiness.mjs --self-test",
     "check:toolchains": "node scripts/check-toolchains.mjs",
     "contracts:check": "cargo run --quiet -p adoc-contract-codegen -- --check && bun run packages/contracts/scripts/generate.mjs --self-test && node scripts/check-contracts.mjs && node scripts/check-web-contract-coverage.mjs --self-test && node scripts/check-exact-contract-coverage.mjs --self-test && bun run --cwd packages/contracts test",

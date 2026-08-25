@@ -11,6 +11,7 @@ import {
 } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { signAndVerify, statement } from "./lib/provenance.mjs";
+import { validateSpdxDocument } from "./lib/spdx.mjs";
 
 const root = resolve(new URL("..", import.meta.url).pathname);
 const run = (command, args, options = {}) => {
@@ -180,8 +181,7 @@ for (const target of ["api", "worker", "web"]) {
   const sbomPath = join(directory, "sbom", `${target}.spdx.json`);
   const sbom = run("docker", ["sbom", "--format", "spdx-json", tag]);
   const parsedSbom = JSON.parse(sbom);
-  if (parsedSbom.spdxVersion !== "SPDX-2.3" || !Array.isArray(parsedSbom.packages))
-    throw new Error(`${target} SBOM is not a valid SPDX 2.3 document`);
+  const sbomIdentity = validateSpdxDocument(parsedSbom);
   writeFileSync(sbomPath, `${sbom}\n`);
   images.push({
     title: expectedTitle,
@@ -190,7 +190,9 @@ for (const target of ["api", "worker", "web"]) {
     revision: sourceSha,
     version,
     sbom: `sbom/${target}.spdx.json`,
-    sbomPackages: parsedSbom.packages.length,
+    sbomVersion: sbomIdentity.version,
+    sbomNamespace: sbomIdentity.namespace,
+    sbomPackages: sbomIdentity.packages,
   });
   imageTags.push(tag);
 }
