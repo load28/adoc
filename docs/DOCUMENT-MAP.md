@@ -203,6 +203,7 @@
 | PLAN-30 | `design/implementation/COLLABORATION-KNOWLEDGE-UX.md` | Collaboration panel·Inbox·Search·Vocabulary UX 계약 | 구현 기준 |
 | PLAN-31 | `design/implementation/AI-UX.md` | AI Inspector·Job·Result·Proposal UX 구현 계약 | 구현 기준 |
 | PLAN-32 | `design/implementation/SETTINGS-AUDIT-PUBLIC-UX.md` | Settings·Audit·Trash·Public Viewer UX 구현 계약 | 구현 기준 |
+| PLAN-33 | `design/implementation/SYSTEM-HARDENING.md` | Security·performance·DR·observability release gate 계약 | 구현 기준 |
 | PLAN-15 | `design/implementation/CONTENT-OPERATION-REDUCER.md` | Content·Region·Operation reducer 구현 계약 | 구현 기준 |
 | PLAN-16 | `design/implementation/DOCUMENT-TREE-DRAFT-LEASE.md` | Document Tree·Draft·Lease 구현 계약 | 구현 기준 |
 

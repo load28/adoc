@@ -3,13 +3,14 @@ set -eu
 
 project=adoc-task017
 response_file=$(mktemp)
+response_headers_file=$(mktemp)
 export ADOC_API_PORT=18081
 export ADOC_WEB_PORT=18080
 export ADOC_RELEASE_SHA=task012
 
 cleanup() {
   docker compose -p "$project" down --volumes --remove-orphans >/dev/null 2>&1 || true
-  rm -f "$response_file"
+  rm -f "$response_file" "$response_headers_file"
 }
 trap cleanup EXIT INT TERM
 cleanup
@@ -18,7 +19,11 @@ docker compose -p "$project" config --quiet
 docker compose -p "$project" up --build --wait
 curl --fail --silent http://127.0.0.1:18081/health/ready >/dev/null
 curl --fail --silent http://127.0.0.1:18080/health/live >/dev/null
+node scripts/check-performance-smoke.mjs
 curl --fail --silent http://127.0.0.1:18080/login >"$response_file"
+curl --fail --silent --head http://127.0.0.1:18080/login >"$response_headers_file"
+grep -qi '^content-security-policy:.*frame-ancestors' "$response_headers_file"
+grep -qi '^cache-control: no-store' "$response_headers_file"
 grep -q '<html lang="ko"' "$response_file"
 grep -q 'data-theme-preference="SYSTEM"' "$response_file"
 theme_script=$(sed -n 's/.*src="\([^"]*theme-bootstrap[^\"]*\.js\)".*/\1/p' "$response_file")
@@ -141,6 +146,21 @@ docker compose -p "$project" --profile test run --rm test-runner \
 docker compose -p "$project" --profile backup run --rm backup >/dev/null
 docker compose -p "$project" --profile backup run --rm --entrypoint sh backup -c \
   'test -s /backup/latest/manifest.json && cd /backup/latest && sha256sum -c checksums.sha256'
+docker compose -p "$project" --profile backup run --rm --entrypoint sh backup -c '
+  password=$(cat /run/secrets/postgres_password)
+  export PGPASSWORD="$password"
+  dropdb --host postgres --username postgres --if-exists adoc_restore
+  createdb --host postgres --username postgres adoc_restore
+  pg_restore --host postgres --username postgres --dbname adoc_restore --exit-on-error /backup/latest/postgres.dump
+  source_version=$(psql --host postgres --username postgres --dbname adoc --tuples-only --no-align --command "SELECT coalesce(max(version), 0) FROM _sqlx_migrations WHERE success")
+  restore_version=$(psql --host postgres --username postgres --dbname adoc_restore --tuples-only --no-align --command "SELECT coalesce(max(version), 0) FROM _sqlx_migrations WHERE success")
+  test "$source_version" = "$restore_version"
+  bad_documents=$(psql --host postgres --username postgres --dbname adoc_restore --tuples-only --no-align --command "SELECT count(*) FROM documents WHERE revision < 0")
+  duplicate_audit=$(psql --host postgres --username postgres --dbname adoc_restore --tuples-only --no-align --command "SELECT count(*) FROM (SELECT workspace_id, sequence FROM audit_events GROUP BY workspace_id, sequence HAVING count(*) > 1) duplicate")
+  test "$bad_documents" = 0
+  test "$duplicate_audit" = 0
+  dropdb --host postgres --username postgres adoc_restore
+'
 docker compose -p "$project" --profile search stop opensearch >/dev/null
 curl --fail --silent http://127.0.0.1:18081/health/ready >/dev/null
 cleanup
