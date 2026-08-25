@@ -390,7 +390,16 @@ pub mod error {
 ///      "$ref": "#/$defs/OpenApi__VocabularyPage"
 ///    },
 ///    {
+///      "$ref": "#/$defs/OpenApi__AIContextRequest"
+///    },
+///    {
 ///      "$ref": "#/$defs/OpenApi__CreateAIJob"
+///    },
+///    {
+///      "$ref": "#/$defs/OpenApi__AIContextSourcePreview"
+///    },
+///    {
+///      "$ref": "#/$defs/OpenApi__AIContextPreview"
 ///    },
 ///    {
 ///      "$ref": "#/$defs/OpenApi__AIJob"
@@ -951,6 +960,12 @@ pub mod error {
 ///      "$ref": "#/$defs/Operation__CancelAIJobResponse"
 ///    },
 ///    {
+///      "$ref": "#/$defs/Operation__PreviewAIContextRequest"
+///    },
+///    {
+///      "$ref": "#/$defs/Operation__PreviewAIContextResponse"
+///    },
+///    {
 ///      "$ref": "#/$defs/Operation__ApplyProposalRequest"
 ///    },
 ///    {
@@ -1219,7 +1234,10 @@ pub enum AdocContractBundle {
     OpenApiVocabularyTerm(OpenApiVocabularyTerm),
     OpenApiVocabularyConcept(OpenApiVocabularyConcept),
     OpenApiVocabularyPage(OpenApiVocabularyPage),
+    OpenApiAiContextRequest(OpenApiAiContextRequest),
     OpenApiCreateAiJob(OpenApiCreateAiJob),
+    OpenApiAiContextSourcePreview(OpenApiAiContextSourcePreview),
+    OpenApiAiContextPreview(OpenApiAiContextPreview),
     OpenApiAiJob(OpenApiAiJob),
     OpenApiAiJobPage(OpenApiAiJobPage),
     OpenApiProposal(OpenApiProposal),
@@ -1406,6 +1424,8 @@ pub enum AdocContractBundle {
     OperationGetAiJobResponse(OperationGetAiJobResponse),
     OperationCancelAiJobRequest(OperationCancelAiJobRequest),
     OperationCancelAiJobResponse(OperationCancelAiJobResponse),
+    OperationPreviewAiContextRequest(OperationPreviewAiContextRequest),
+    OperationPreviewAiContextResponse(OperationPreviewAiContextResponse),
     OperationApplyProposalRequest(OperationApplyProposalRequest),
     OperationApplyProposalResponse(OperationApplyProposalResponse),
     OperationGetProposalRequest(OperationGetProposalRequest),
@@ -2045,9 +2065,24 @@ impl ::std::convert::From<OpenApiVocabularyPage> for AdocContractBundle {
         Self::OpenApiVocabularyPage(value)
     }
 }
+impl ::std::convert::From<OpenApiAiContextRequest> for AdocContractBundle {
+    fn from(value: OpenApiAiContextRequest) -> Self {
+        Self::OpenApiAiContextRequest(value)
+    }
+}
 impl ::std::convert::From<OpenApiCreateAiJob> for AdocContractBundle {
     fn from(value: OpenApiCreateAiJob) -> Self {
         Self::OpenApiCreateAiJob(value)
+    }
+}
+impl ::std::convert::From<OpenApiAiContextSourcePreview> for AdocContractBundle {
+    fn from(value: OpenApiAiContextSourcePreview) -> Self {
+        Self::OpenApiAiContextSourcePreview(value)
+    }
+}
+impl ::std::convert::From<OpenApiAiContextPreview> for AdocContractBundle {
+    fn from(value: OpenApiAiContextPreview) -> Self {
+        Self::OpenApiAiContextPreview(value)
     }
 }
 impl ::std::convert::From<OpenApiAiJob> for AdocContractBundle {
@@ -2978,6 +3013,16 @@ impl ::std::convert::From<OperationCancelAiJobRequest> for AdocContractBundle {
 impl ::std::convert::From<OperationCancelAiJobResponse> for AdocContractBundle {
     fn from(value: OperationCancelAiJobResponse) -> Self {
         Self::OperationCancelAiJobResponse(value)
+    }
+}
+impl ::std::convert::From<OperationPreviewAiContextRequest> for AdocContractBundle {
+    fn from(value: OperationPreviewAiContextRequest) -> Self {
+        Self::OperationPreviewAiContextRequest(value)
+    }
+}
+impl ::std::convert::From<OperationPreviewAiContextResponse> for AdocContractBundle {
+    fn from(value: OperationPreviewAiContextResponse) -> Self {
+        Self::OperationPreviewAiContextResponse(value)
     }
 }
 impl ::std::convert::From<OperationApplyProposalRequest> for AdocContractBundle {
@@ -4097,9 +4142,13 @@ impl ::std::convert::TryFrom<::std::string::String> for AiContractsResultTaskKin
 ///  "type": "object",
 ///  "required": [
 ///    "authority",
+///    "includeReason",
+///    "included",
 ///    "kind",
 ///    "snapshotHash",
+///    "snapshotText",
 ///    "sourceId",
+///    "sourceRevision",
 ///    "stableId"
 ///  ],
 ///  "properties": {
@@ -4113,6 +4162,19 @@ impl ::std::convert::TryFrom<::std::string::String> for AiContractsResultTaskKin
 ///        "EXTERNAL"
 ///      ]
 ///    },
+///    "includeReason": {
+///      "enum": [
+///        "CURRENT_TARGET",
+///        "EXPLICIT_REFERENCE",
+///        "DISCUSSION_CONTEXT",
+///        "VOCABULARY_POLICY",
+///        "RETRIEVED_RELATED",
+///        "USER_PROVIDED"
+///      ]
+///    },
+///    "included": {
+///      "type": "boolean"
+///    },
 ///    "kind": {
 ///      "enum": [
 ///        "DRAFT",
@@ -4122,6 +4184,13 @@ impl ::std::convert::TryFrom<::std::string::String> for AiContractsResultTaskKin
 ///        "EXTERNAL_WEB",
 ///        "USER_INPUT"
 ///      ]
+///    },
+///    "permissionKey": {
+///      "type": [
+///        "string",
+///        "null"
+///      ],
+///      "pattern": "^[a-f0-9]{64}$"
 ///    },
 ///    "retrievedAt": {
 ///      "type": [
@@ -4134,8 +4203,16 @@ impl ::std::convert::TryFrom<::std::string::String> for AiContractsResultTaskKin
 ///      "type": "string",
 ///      "pattern": "^[a-f0-9]{64}$"
 ///    },
+///    "snapshotText": {
+///      "type": "string",
+///      "maxLength": 65536
+///    },
 ///    "sourceId": {
 ///      "$ref": "#/$defs/AiContracts__id"
+///    },
+///    "sourceRevision": {
+///      "type": "integer",
+///      "minimum": 0.0
 ///    },
 ///    "stableId": {
 ///      "type": "string"
@@ -4149,7 +4226,16 @@ impl ::std::convert::TryFrom<::std::string::String> for AiContractsResultTaskKin
 #[serde(deny_unknown_fields)]
 pub struct AiContractsSource {
     pub authority: AiContractsSourceAuthority,
+    #[serde(rename = "includeReason")]
+    pub include_reason: AiContractsSourceIncludeReason,
+    pub included: bool,
     pub kind: AiContractsSourceKind,
+    #[serde(
+        rename = "permissionKey",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub permission_key: ::std::option::Option<AiContractsSourcePermissionKey>,
     #[serde(
         rename = "retrievedAt",
         default,
@@ -4158,8 +4244,12 @@ pub struct AiContractsSource {
     pub retrieved_at: ::std::option::Option<::chrono::DateTime<::chrono::offset::Utc>>,
     #[serde(rename = "snapshotHash")]
     pub snapshot_hash: AiContractsSourceSnapshotHash,
+    #[serde(rename = "snapshotText")]
+    pub snapshot_text: AiContractsSourceSnapshotText,
     #[serde(rename = "sourceId")]
     pub source_id: AiContractsId,
+    #[serde(rename = "sourceRevision")]
+    pub source_revision: u64,
     #[serde(rename = "stableId")]
     pub stable_id: ::std::string::String,
 }
@@ -4247,6 +4337,97 @@ impl ::std::convert::TryFrom<&::std::string::String> for AiContractsSourceAuthor
     }
 }
 impl ::std::convert::TryFrom<::std::string::String> for AiContractsSourceAuthority {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`AiContractsSourceIncludeReason`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "enum": [
+///    "CURRENT_TARGET",
+///    "EXPLICIT_REFERENCE",
+///    "DISCUSSION_CONTEXT",
+///    "VOCABULARY_POLICY",
+///    "RETRIEVED_RELATED",
+///    "USER_PROVIDED"
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum AiContractsSourceIncludeReason {
+    #[serde(rename = "CURRENT_TARGET")]
+    CurrentTarget,
+    #[serde(rename = "EXPLICIT_REFERENCE")]
+    ExplicitReference,
+    #[serde(rename = "DISCUSSION_CONTEXT")]
+    DiscussionContext,
+    #[serde(rename = "VOCABULARY_POLICY")]
+    VocabularyPolicy,
+    #[serde(rename = "RETRIEVED_RELATED")]
+    RetrievedRelated,
+    #[serde(rename = "USER_PROVIDED")]
+    UserProvided,
+}
+impl ::std::fmt::Display for AiContractsSourceIncludeReason {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::CurrentTarget => f.write_str("CURRENT_TARGET"),
+            Self::ExplicitReference => f.write_str("EXPLICIT_REFERENCE"),
+            Self::DiscussionContext => f.write_str("DISCUSSION_CONTEXT"),
+            Self::VocabularyPolicy => f.write_str("VOCABULARY_POLICY"),
+            Self::RetrievedRelated => f.write_str("RETRIEVED_RELATED"),
+            Self::UserProvided => f.write_str("USER_PROVIDED"),
+        }
+    }
+}
+impl ::std::str::FromStr for AiContractsSourceIncludeReason {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "CURRENT_TARGET" => Ok(Self::CurrentTarget),
+            "EXPLICIT_REFERENCE" => Ok(Self::ExplicitReference),
+            "DISCUSSION_CONTEXT" => Ok(Self::DiscussionContext),
+            "VOCABULARY_POLICY" => Ok(Self::VocabularyPolicy),
+            "RETRIEVED_RELATED" => Ok(Self::RetrievedRelated),
+            "USER_PROVIDED" => Ok(Self::UserProvided),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for AiContractsSourceIncludeReason {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for AiContractsSourceIncludeReason {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for AiContractsSourceIncludeReason {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -4345,6 +4526,76 @@ impl ::std::convert::TryFrom<::std::string::String> for AiContractsSourceKind {
         value.parse()
     }
 }
+///`AiContractsSourcePermissionKey`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "pattern": "^[a-f0-9]{64}$"
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct AiContractsSourcePermissionKey(::std::string::String);
+impl ::std::ops::Deref for AiContractsSourcePermissionKey {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<AiContractsSourcePermissionKey> for ::std::string::String {
+    fn from(value: AiContractsSourcePermissionKey) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for AiContractsSourcePermissionKey {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        static PATTERN: ::std::sync::LazyLock<::regress::Regex> =
+            ::std::sync::LazyLock::new(|| ::regress::Regex::new("^[a-f0-9]{64}$").unwrap());
+        if PATTERN.find(value).is_none() {
+            return Err("doesn't match pattern \"^[a-f0-9]{64}$\"".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for AiContractsSourcePermissionKey {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for AiContractsSourcePermissionKey {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for AiContractsSourcePermissionKey {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for AiContractsSourcePermissionKey {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
 ///`AiContractsSourceSnapshotHash`
 ///
 /// <details><summary>JSON schema</summary>
@@ -4404,6 +4655,74 @@ impl ::std::convert::TryFrom<::std::string::String> for AiContractsSourceSnapsho
     }
 }
 impl<'de> ::serde::Deserialize<'de> for AiContractsSourceSnapshotHash {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`AiContractsSourceSnapshotText`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 65536
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct AiContractsSourceSnapshotText(::std::string::String);
+impl ::std::ops::Deref for AiContractsSourceSnapshotText {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<AiContractsSourceSnapshotText> for ::std::string::String {
+    fn from(value: AiContractsSourceSnapshotText) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for AiContractsSourceSnapshotText {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 65536usize {
+            return Err("longer than 65536 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for AiContractsSourceSnapshotText {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for AiContractsSourceSnapshotText {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for AiContractsSourceSnapshotText {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for AiContractsSourceSnapshotText {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -11338,6 +11657,902 @@ impl ::std::convert::TryFrom<::std::string::String> for OpenApiAiConfigurationPr
         value.parse()
     }
 }
+///`OpenApiAiContextPreview`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "object",
+///  "required": [
+///    "artifactFingerprint",
+///    "estimatedInputUnits",
+///    "expiresAt",
+///    "omissions",
+///    "sources"
+///  ],
+///  "properties": {
+///    "artifactFingerprint": {
+///      "type": "string",
+///      "pattern": "^[a-f0-9]{64}$"
+///    },
+///    "estimatedInputUnits": {
+///      "type": "integer",
+///      "minimum": 0.0
+///    },
+///    "expiresAt": {
+///      "type": "string",
+///      "format": "date-time"
+///    },
+///    "omissions": {
+///      "type": "array",
+///      "items": {
+///        "type": "string",
+///        "enum": [
+///          "SOURCE_UNAVAILABLE",
+///          "SOURCE_EXCLUDED",
+///          "CONTEXT_BUDGET"
+///        ]
+///      },
+///      "maxItems": 200
+///    },
+///    "sources": {
+///      "type": "array",
+///      "items": {
+///        "$ref": "#/$defs/OpenApi__AIContextSourcePreview"
+///      },
+///      "maxItems": 200
+///    }
+///  },
+///  "additionalProperties": false
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct OpenApiAiContextPreview {
+    #[serde(rename = "artifactFingerprint")]
+    pub artifact_fingerprint: OpenApiAiContextPreviewArtifactFingerprint,
+    #[serde(rename = "estimatedInputUnits")]
+    pub estimated_input_units: u64,
+    #[serde(rename = "expiresAt")]
+    pub expires_at: ::chrono::DateTime<::chrono::offset::Utc>,
+    pub omissions: ::std::vec::Vec<OpenApiAiContextPreviewOmissionsItem>,
+    pub sources: ::std::vec::Vec<OpenApiAiContextSourcePreview>,
+}
+///`OpenApiAiContextPreviewArtifactFingerprint`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "pattern": "^[a-f0-9]{64}$"
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OpenApiAiContextPreviewArtifactFingerprint(::std::string::String);
+impl ::std::ops::Deref for OpenApiAiContextPreviewArtifactFingerprint {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OpenApiAiContextPreviewArtifactFingerprint> for ::std::string::String {
+    fn from(value: OpenApiAiContextPreviewArtifactFingerprint) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OpenApiAiContextPreviewArtifactFingerprint {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        static PATTERN: ::std::sync::LazyLock<::regress::Regex> =
+            ::std::sync::LazyLock::new(|| ::regress::Regex::new("^[a-f0-9]{64}$").unwrap());
+        if PATTERN.find(value).is_none() {
+            return Err("doesn't match pattern \"^[a-f0-9]{64}$\"".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OpenApiAiContextPreviewArtifactFingerprint {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OpenApiAiContextPreviewArtifactFingerprint
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OpenApiAiContextPreviewArtifactFingerprint {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OpenApiAiContextPreviewArtifactFingerprint {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OpenApiAiContextPreviewOmissionsItem`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "enum": [
+///    "SOURCE_UNAVAILABLE",
+///    "SOURCE_EXCLUDED",
+///    "CONTEXT_BUDGET"
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum OpenApiAiContextPreviewOmissionsItem {
+    #[serde(rename = "SOURCE_UNAVAILABLE")]
+    SourceUnavailable,
+    #[serde(rename = "SOURCE_EXCLUDED")]
+    SourceExcluded,
+    #[serde(rename = "CONTEXT_BUDGET")]
+    ContextBudget,
+}
+impl ::std::fmt::Display for OpenApiAiContextPreviewOmissionsItem {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::SourceUnavailable => f.write_str("SOURCE_UNAVAILABLE"),
+            Self::SourceExcluded => f.write_str("SOURCE_EXCLUDED"),
+            Self::ContextBudget => f.write_str("CONTEXT_BUDGET"),
+        }
+    }
+}
+impl ::std::str::FromStr for OpenApiAiContextPreviewOmissionsItem {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "SOURCE_UNAVAILABLE" => Ok(Self::SourceUnavailable),
+            "SOURCE_EXCLUDED" => Ok(Self::SourceExcluded),
+            "CONTEXT_BUDGET" => Ok(Self::ContextBudget),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for OpenApiAiContextPreviewOmissionsItem {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for OpenApiAiContextPreviewOmissionsItem {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OpenApiAiContextPreviewOmissionsItem {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`OpenApiAiContextRequest`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "object",
+///  "required": [
+///    "expectedRevision",
+///    "externalWebEnabled",
+///    "kind",
+///    "target"
+///  ],
+///  "properties": {
+///    "excludeSourceIds": {
+///      "type": "array",
+///      "items": {
+///        "$ref": "#/$defs/OpenApi__Id"
+///      },
+///      "maxItems": 200,
+///      "uniqueItems": true
+///    },
+///    "expectedRevision": {
+///      "type": "integer",
+///      "minimum": 0.0
+///    },
+///    "externalWebEnabled": {
+///      "type": "boolean"
+///    },
+///    "includeSourceIds": {
+///      "type": "array",
+///      "items": {
+///        "$ref": "#/$defs/OpenApi__Id"
+///      },
+///      "maxItems": 200,
+///      "uniqueItems": true
+///    },
+///    "instruction": {
+///      "type": "string",
+///      "maxLength": 10000
+///    },
+///    "kind": {
+///      "type": "string",
+///      "enum": [
+///        "COMPOSE",
+///        "REWRITE",
+///        "REVIEW",
+///        "DISCUSSION_APPLY",
+///        "CONFLICT_MERGE",
+///        "KNOWLEDGE_QUERY"
+///      ]
+///    },
+///    "target": {
+///      "$ref": "#/$defs/AiContracts__target"
+///    }
+///  },
+///  "additionalProperties": false
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct OpenApiAiContextRequest {
+    #[serde(
+        rename = "excludeSourceIds",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub exclude_source_ids: ::std::option::Option<Vec<OpenApiId>>,
+    #[serde(rename = "expectedRevision")]
+    pub expected_revision: u64,
+    #[serde(rename = "externalWebEnabled")]
+    pub external_web_enabled: bool,
+    #[serde(
+        rename = "includeSourceIds",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub include_source_ids: ::std::option::Option<Vec<OpenApiId>>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub instruction: ::std::option::Option<OpenApiAiContextRequestInstruction>,
+    pub kind: OpenApiAiContextRequestKind,
+    pub target: AiContractsTarget,
+}
+///`OpenApiAiContextRequestInstruction`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 10000
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OpenApiAiContextRequestInstruction(::std::string::String);
+impl ::std::ops::Deref for OpenApiAiContextRequestInstruction {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OpenApiAiContextRequestInstruction> for ::std::string::String {
+    fn from(value: OpenApiAiContextRequestInstruction) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OpenApiAiContextRequestInstruction {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 10000usize {
+            return Err("longer than 10000 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OpenApiAiContextRequestInstruction {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for OpenApiAiContextRequestInstruction {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OpenApiAiContextRequestInstruction {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OpenApiAiContextRequestInstruction {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OpenApiAiContextRequestKind`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "enum": [
+///    "COMPOSE",
+///    "REWRITE",
+///    "REVIEW",
+///    "DISCUSSION_APPLY",
+///    "CONFLICT_MERGE",
+///    "KNOWLEDGE_QUERY"
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum OpenApiAiContextRequestKind {
+    #[serde(rename = "COMPOSE")]
+    Compose,
+    #[serde(rename = "REWRITE")]
+    Rewrite,
+    #[serde(rename = "REVIEW")]
+    Review,
+    #[serde(rename = "DISCUSSION_APPLY")]
+    DiscussionApply,
+    #[serde(rename = "CONFLICT_MERGE")]
+    ConflictMerge,
+    #[serde(rename = "KNOWLEDGE_QUERY")]
+    KnowledgeQuery,
+}
+impl ::std::fmt::Display for OpenApiAiContextRequestKind {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Compose => f.write_str("COMPOSE"),
+            Self::Rewrite => f.write_str("REWRITE"),
+            Self::Review => f.write_str("REVIEW"),
+            Self::DiscussionApply => f.write_str("DISCUSSION_APPLY"),
+            Self::ConflictMerge => f.write_str("CONFLICT_MERGE"),
+            Self::KnowledgeQuery => f.write_str("KNOWLEDGE_QUERY"),
+        }
+    }
+}
+impl ::std::str::FromStr for OpenApiAiContextRequestKind {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "COMPOSE" => Ok(Self::Compose),
+            "REWRITE" => Ok(Self::Rewrite),
+            "REVIEW" => Ok(Self::Review),
+            "DISCUSSION_APPLY" => Ok(Self::DiscussionApply),
+            "CONFLICT_MERGE" => Ok(Self::ConflictMerge),
+            "KNOWLEDGE_QUERY" => Ok(Self::KnowledgeQuery),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for OpenApiAiContextRequestKind {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for OpenApiAiContextRequestKind {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OpenApiAiContextRequestKind {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`OpenApiAiContextSourcePreview`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "object",
+///  "required": [
+///    "authority",
+///    "includeReason",
+///    "included",
+///    "kind",
+///    "snapshotHash",
+///    "sourceId",
+///    "stableId"
+///  ],
+///  "properties": {
+///    "authority": {
+///      "type": "string",
+///      "enum": [
+///        "USER_EXPLICIT",
+///        "OFFICIAL",
+///        "VOCABULARY",
+///        "DISCUSSION_CONFIRMED",
+///        "RELATED_INTERNAL"
+///      ]
+///    },
+///    "includeReason": {
+///      "type": "string",
+///      "enum": [
+///        "CURRENT_TARGET",
+///        "EXPLICIT_REFERENCE",
+///        "DISCUSSION_CONTEXT",
+///        "VOCABULARY_POLICY",
+///        "RETRIEVED_RELATED",
+///        "USER_PROVIDED"
+///      ]
+///    },
+///    "included": {
+///      "type": "boolean"
+///    },
+///    "kind": {
+///      "type": "string",
+///      "enum": [
+///        "DRAFT",
+///        "PUBLISHED_REGION",
+///        "DISCUSSION",
+///        "VOCABULARY",
+///        "USER_INPUT"
+///      ]
+///    },
+///    "snapshotHash": {
+///      "type": "string",
+///      "pattern": "^[a-f0-9]{64}$"
+///    },
+///    "sourceId": {
+///      "$ref": "#/$defs/OpenApi__Id"
+///    },
+///    "stableId": {
+///      "type": "string"
+///    },
+///    "title": {
+///      "type": [
+///        "string",
+///        "null"
+///      ]
+///    },
+///    "updatedAt": {
+///      "type": [
+///        "string",
+///        "null"
+///      ],
+///      "format": "date-time"
+///    }
+///  },
+///  "additionalProperties": false
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct OpenApiAiContextSourcePreview {
+    pub authority: OpenApiAiContextSourcePreviewAuthority,
+    #[serde(rename = "includeReason")]
+    pub include_reason: OpenApiAiContextSourcePreviewIncludeReason,
+    pub included: bool,
+    pub kind: OpenApiAiContextSourcePreviewKind,
+    #[serde(rename = "snapshotHash")]
+    pub snapshot_hash: OpenApiAiContextSourcePreviewSnapshotHash,
+    #[serde(rename = "sourceId")]
+    pub source_id: OpenApiId,
+    #[serde(rename = "stableId")]
+    pub stable_id: ::std::string::String,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub title: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "updatedAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub updated_at: ::std::option::Option<::chrono::DateTime<::chrono::offset::Utc>>,
+}
+///`OpenApiAiContextSourcePreviewAuthority`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "enum": [
+///    "USER_EXPLICIT",
+///    "OFFICIAL",
+///    "VOCABULARY",
+///    "DISCUSSION_CONFIRMED",
+///    "RELATED_INTERNAL"
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum OpenApiAiContextSourcePreviewAuthority {
+    #[serde(rename = "USER_EXPLICIT")]
+    UserExplicit,
+    #[serde(rename = "OFFICIAL")]
+    Official,
+    #[serde(rename = "VOCABULARY")]
+    Vocabulary,
+    #[serde(rename = "DISCUSSION_CONFIRMED")]
+    DiscussionConfirmed,
+    #[serde(rename = "RELATED_INTERNAL")]
+    RelatedInternal,
+}
+impl ::std::fmt::Display for OpenApiAiContextSourcePreviewAuthority {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::UserExplicit => f.write_str("USER_EXPLICIT"),
+            Self::Official => f.write_str("OFFICIAL"),
+            Self::Vocabulary => f.write_str("VOCABULARY"),
+            Self::DiscussionConfirmed => f.write_str("DISCUSSION_CONFIRMED"),
+            Self::RelatedInternal => f.write_str("RELATED_INTERNAL"),
+        }
+    }
+}
+impl ::std::str::FromStr for OpenApiAiContextSourcePreviewAuthority {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "USER_EXPLICIT" => Ok(Self::UserExplicit),
+            "OFFICIAL" => Ok(Self::Official),
+            "VOCABULARY" => Ok(Self::Vocabulary),
+            "DISCUSSION_CONFIRMED" => Ok(Self::DiscussionConfirmed),
+            "RELATED_INTERNAL" => Ok(Self::RelatedInternal),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for OpenApiAiContextSourcePreviewAuthority {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for OpenApiAiContextSourcePreviewAuthority {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OpenApiAiContextSourcePreviewAuthority {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`OpenApiAiContextSourcePreviewIncludeReason`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "enum": [
+///    "CURRENT_TARGET",
+///    "EXPLICIT_REFERENCE",
+///    "DISCUSSION_CONTEXT",
+///    "VOCABULARY_POLICY",
+///    "RETRIEVED_RELATED",
+///    "USER_PROVIDED"
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum OpenApiAiContextSourcePreviewIncludeReason {
+    #[serde(rename = "CURRENT_TARGET")]
+    CurrentTarget,
+    #[serde(rename = "EXPLICIT_REFERENCE")]
+    ExplicitReference,
+    #[serde(rename = "DISCUSSION_CONTEXT")]
+    DiscussionContext,
+    #[serde(rename = "VOCABULARY_POLICY")]
+    VocabularyPolicy,
+    #[serde(rename = "RETRIEVED_RELATED")]
+    RetrievedRelated,
+    #[serde(rename = "USER_PROVIDED")]
+    UserProvided,
+}
+impl ::std::fmt::Display for OpenApiAiContextSourcePreviewIncludeReason {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::CurrentTarget => f.write_str("CURRENT_TARGET"),
+            Self::ExplicitReference => f.write_str("EXPLICIT_REFERENCE"),
+            Self::DiscussionContext => f.write_str("DISCUSSION_CONTEXT"),
+            Self::VocabularyPolicy => f.write_str("VOCABULARY_POLICY"),
+            Self::RetrievedRelated => f.write_str("RETRIEVED_RELATED"),
+            Self::UserProvided => f.write_str("USER_PROVIDED"),
+        }
+    }
+}
+impl ::std::str::FromStr for OpenApiAiContextSourcePreviewIncludeReason {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "CURRENT_TARGET" => Ok(Self::CurrentTarget),
+            "EXPLICIT_REFERENCE" => Ok(Self::ExplicitReference),
+            "DISCUSSION_CONTEXT" => Ok(Self::DiscussionContext),
+            "VOCABULARY_POLICY" => Ok(Self::VocabularyPolicy),
+            "RETRIEVED_RELATED" => Ok(Self::RetrievedRelated),
+            "USER_PROVIDED" => Ok(Self::UserProvided),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for OpenApiAiContextSourcePreviewIncludeReason {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OpenApiAiContextSourcePreviewIncludeReason
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OpenApiAiContextSourcePreviewIncludeReason {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`OpenApiAiContextSourcePreviewKind`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "enum": [
+///    "DRAFT",
+///    "PUBLISHED_REGION",
+///    "DISCUSSION",
+///    "VOCABULARY",
+///    "USER_INPUT"
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum OpenApiAiContextSourcePreviewKind {
+    #[serde(rename = "DRAFT")]
+    Draft,
+    #[serde(rename = "PUBLISHED_REGION")]
+    PublishedRegion,
+    #[serde(rename = "DISCUSSION")]
+    Discussion,
+    #[serde(rename = "VOCABULARY")]
+    Vocabulary,
+    #[serde(rename = "USER_INPUT")]
+    UserInput,
+}
+impl ::std::fmt::Display for OpenApiAiContextSourcePreviewKind {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Draft => f.write_str("DRAFT"),
+            Self::PublishedRegion => f.write_str("PUBLISHED_REGION"),
+            Self::Discussion => f.write_str("DISCUSSION"),
+            Self::Vocabulary => f.write_str("VOCABULARY"),
+            Self::UserInput => f.write_str("USER_INPUT"),
+        }
+    }
+}
+impl ::std::str::FromStr for OpenApiAiContextSourcePreviewKind {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "DRAFT" => Ok(Self::Draft),
+            "PUBLISHED_REGION" => Ok(Self::PublishedRegion),
+            "DISCUSSION" => Ok(Self::Discussion),
+            "VOCABULARY" => Ok(Self::Vocabulary),
+            "USER_INPUT" => Ok(Self::UserInput),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for OpenApiAiContextSourcePreviewKind {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for OpenApiAiContextSourcePreviewKind {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OpenApiAiContextSourcePreviewKind {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`OpenApiAiContextSourcePreviewSnapshotHash`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "pattern": "^[a-f0-9]{64}$"
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OpenApiAiContextSourcePreviewSnapshotHash(::std::string::String);
+impl ::std::ops::Deref for OpenApiAiContextSourcePreviewSnapshotHash {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OpenApiAiContextSourcePreviewSnapshotHash> for ::std::string::String {
+    fn from(value: OpenApiAiContextSourcePreviewSnapshotHash) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OpenApiAiContextSourcePreviewSnapshotHash {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        static PATTERN: ::std::sync::LazyLock<::regress::Regex> =
+            ::std::sync::LazyLock::new(|| ::regress::Regex::new("^[a-f0-9]{64}$").unwrap());
+        if PATTERN.find(value).is_none() {
+            return Err("doesn't match pattern \"^[a-f0-9]{64}$\"".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OpenApiAiContextSourcePreviewSnapshotHash {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for OpenApiAiContextSourcePreviewSnapshotHash {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OpenApiAiContextSourcePreviewSnapshotHash {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OpenApiAiContextSourcePreviewSnapshotHash {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
 ///`OpenApiAiJob`
 ///
 /// <details><summary>JSON schema</summary>
@@ -12408,12 +13623,17 @@ pub struct OpenApiAuditPage {
 ///{
 ///  "type": "object",
 ///  "required": [
+///    "contextFingerprint",
 ///    "expectedRevision",
 ///    "externalWebEnabled",
 ///    "kind",
 ///    "target"
 ///  ],
 ///  "properties": {
+///    "contextFingerprint": {
+///      "type": "string",
+///      "pattern": "^[a-f0-9]{64}$"
+///    },
 ///    "excludeSourceIds": {
 ///      "type": "array",
 ///      "items": {
@@ -12463,6 +13683,8 @@ pub struct OpenApiAuditPage {
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct OpenApiCreateAiJob {
+    #[serde(rename = "contextFingerprint")]
+    pub context_fingerprint: OpenApiCreateAiJobContextFingerprint,
     #[serde(
         rename = "excludeSourceIds",
         default,
@@ -12483,6 +13705,76 @@ pub struct OpenApiCreateAiJob {
     pub instruction: ::std::option::Option<OpenApiCreateAiJobInstruction>,
     pub kind: OpenApiCreateAiJobKind,
     pub target: AiContractsTarget,
+}
+///`OpenApiCreateAiJobContextFingerprint`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "pattern": "^[a-f0-9]{64}$"
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OpenApiCreateAiJobContextFingerprint(::std::string::String);
+impl ::std::ops::Deref for OpenApiCreateAiJobContextFingerprint {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OpenApiCreateAiJobContextFingerprint> for ::std::string::String {
+    fn from(value: OpenApiCreateAiJobContextFingerprint) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OpenApiCreateAiJobContextFingerprint {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        static PATTERN: ::std::sync::LazyLock<::regress::Regex> =
+            ::std::sync::LazyLock::new(|| ::regress::Regex::new("^[a-f0-9]{64}$").unwrap());
+        if PATTERN.find(value).is_none() {
+            return Err("doesn't match pattern \"^[a-f0-9]{64}$\"".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OpenApiCreateAiJobContextFingerprint {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for OpenApiCreateAiJobContextFingerprint {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OpenApiCreateAiJobContextFingerprint {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OpenApiCreateAiJobContextFingerprint {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
 }
 ///`OpenApiCreateAiJobInstruction`
 ///
@@ -22362,7 +23654,8 @@ impl ::std::convert::From<OpenApiProblem> for OperationBeginGoogleLoginResponse 
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
-///        "If-Match"
+///        "If-Match",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
@@ -22373,6 +23666,11 @@ impl ::std::convert::From<OpenApiProblem> for OperationBeginGoogleLoginResponse 
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -22413,7 +23711,8 @@ pub struct OperationCancelAiJobRequest {
 ///  "type": "object",
 ///  "required": [
 ///    "Idempotency-Key",
-///    "If-Match"
+///    "If-Match",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
@@ -22424,6 +23723,11 @@ pub struct OperationCancelAiJobRequest {
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -22437,6 +23741,8 @@ pub struct OperationCancelAiJobRequestHeader {
     pub idempotency_key: OperationCancelAiJobRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationCancelAiJobRequestHeaderIfMatch,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationCancelAiJobRequestHeaderXCsrfToken,
 }
 ///`OperationCancelAiJobRequestHeaderIdempotencyKey`
 ///
@@ -22575,6 +23881,82 @@ impl ::std::convert::TryFrom<::std::string::String> for OperationCancelAiJobRequ
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationCancelAiJobRequestHeaderIfMatch {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationCancelAiJobRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationCancelAiJobRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationCancelAiJobRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationCancelAiJobRequestHeaderXCsrfToken> for ::std::string::String {
+    fn from(value: OperationCancelAiJobRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationCancelAiJobRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationCancelAiJobRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationCancelAiJobRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationCancelAiJobRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationCancelAiJobRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -25042,7 +26424,8 @@ impl ::std::convert::From<OpenApiProblem> for OperationCompleteGoogleLoginRespon
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
-///        "If-Match"
+///        "If-Match",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
@@ -25053,6 +26436,11 @@ impl ::std::convert::From<OpenApiProblem> for OperationCompleteGoogleLoginRespon
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -25090,7 +26478,8 @@ pub struct OperationCreateAiJobRequest {
 ///  "type": "object",
 ///  "required": [
 ///    "Idempotency-Key",
-///    "If-Match"
+///    "If-Match",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
@@ -25101,6 +26490,11 @@ pub struct OperationCreateAiJobRequest {
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -25114,6 +26508,8 @@ pub struct OperationCreateAiJobRequestHeader {
     pub idempotency_key: OperationCreateAiJobRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationCreateAiJobRequestHeaderIfMatch,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationCreateAiJobRequestHeaderXCsrfToken,
 }
 ///`OperationCreateAiJobRequestHeaderIdempotencyKey`
 ///
@@ -25252,6 +26648,82 @@ impl ::std::convert::TryFrom<::std::string::String> for OperationCreateAiJobRequ
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationCreateAiJobRequestHeaderIfMatch {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationCreateAiJobRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationCreateAiJobRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationCreateAiJobRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationCreateAiJobRequestHeaderXCsrfToken> for ::std::string::String {
+    fn from(value: OperationCreateAiJobRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationCreateAiJobRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationCreateAiJobRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationCreateAiJobRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationCreateAiJobRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationCreateAiJobRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -40685,6 +42157,130 @@ pub enum OperationOpenWorkspaceStreamResponse {
     Default(OpenApiProblem),
 }
 impl ::std::convert::From<OpenApiProblem> for OperationOpenWorkspaceStreamResponse {
+    fn from(value: OpenApiProblem) -> Self {
+        Self::Default(value)
+    }
+}
+///`OperationPreviewAiContextRequest`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "object",
+///  "required": [
+///    "body",
+///    "path"
+///  ],
+///  "properties": {
+///    "body": {
+///      "$ref": "#/$defs/OpenApi__AIContextRequest"
+///    },
+///    "path": {
+///      "type": "object",
+///      "required": [
+///        "workspaceId"
+///      ],
+///      "properties": {
+///        "workspaceId": {
+///          "$ref": "#/$defs/OpenApi__Id"
+///        }
+///      },
+///      "additionalProperties": false
+///    }
+///  },
+///  "additionalProperties": false
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct OperationPreviewAiContextRequest {
+    pub body: OpenApiAiContextRequest,
+    pub path: OperationPreviewAiContextRequestPath,
+}
+///`OperationPreviewAiContextRequestPath`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "object",
+///  "required": [
+///    "workspaceId"
+///  ],
+///  "properties": {
+///    "workspaceId": {
+///      "$ref": "#/$defs/OpenApi__Id"
+///    }
+///  },
+///  "additionalProperties": false
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct OperationPreviewAiContextRequestPath {
+    #[serde(rename = "workspaceId")]
+    pub workspace_id: OpenApiId,
+}
+///`OperationPreviewAiContextResponse`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "oneOf": [
+///    {
+///      "type": "object",
+///      "required": [
+///        "body",
+///        "status"
+///      ],
+///      "properties": {
+///        "body": {
+///          "$ref": "#/$defs/OpenApi__AIContextPreview"
+///        },
+///        "status": {
+///          "const": "200"
+///        }
+///      },
+///      "additionalProperties": false
+///    },
+///    {
+///      "type": "object",
+///      "required": [
+///        "body",
+///        "status"
+///      ],
+///      "properties": {
+///        "body": {
+///          "$ref": "#/$defs/OpenApi__Problem"
+///        },
+///        "status": {
+///          "const": "default"
+///        }
+///      },
+///      "additionalProperties": false
+///    }
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(tag = "status", content = "body")]
+pub enum OperationPreviewAiContextResponse {
+    #[serde(rename = "200")]
+    X200(OpenApiAiContextPreview),
+    #[serde(rename = "default")]
+    Default(OpenApiProblem),
+}
+impl ::std::convert::From<OpenApiAiContextPreview> for OperationPreviewAiContextResponse {
+    fn from(value: OpenApiAiContextPreview) -> Self {
+        Self::X200(value)
+    }
+}
+impl ::std::convert::From<OpenApiProblem> for OperationPreviewAiContextResponse {
     fn from(value: OpenApiProblem) -> Self {
         Self::Default(value)
     }

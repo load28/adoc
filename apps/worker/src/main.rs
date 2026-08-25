@@ -3,23 +3,26 @@
 use std::{process::ExitCode, sync::Arc, time::Duration};
 
 use adoc_adapters::{
+    ai_runtime::{CodexCliRuntime, OpenAiRuntime},
     identity::SystemClock,
     job_executor::WorkerJobExecutor,
     job_queue::RedisJobSignalQueue,
     object_storage::LocalObjectStorage,
     postgres::{
-        DatabaseSettings, PostgresFileRepository, PostgresJobRepository,
-        PostgresRetentionRepository, PostgresSearchProjectionRepository, PostgresStore,
+        DatabaseSettings, PostgresAiContextRepository, PostgresFileRepository,
+        PostgresJobRepository, PostgresRetentionRepository, PostgresSearchProjectionRepository,
+        PostgresStore,
     },
     search_index::OpenSearchIndex,
 };
 use adoc_application::{
+    ai::{AiJobExecutionService, AiRuntime},
     jobs::JobRuntime,
     operations::{FileGarbageCollector, RetentionService},
     search::SearchProjectionService,
 };
 use adoc_configuration::{
-    AppConfig, ConfigError, ConfigSource, Environment, ObjectStorageDriver, ServiceKind,
+    AiDriver, AppConfig, ConfigError, ConfigSource, Environment, ObjectStorageDriver, ServiceKind,
 };
 use adoc_telemetry::{SafeEvent, TelemetryConfig};
 
@@ -125,6 +128,46 @@ async fn run(health_only: bool) -> Result<(), Box<dyn std::error::Error>> {
         Arc::from(format!("retention-{}", config.common.release_sha)),
     );
     let job_repository = Arc::new(PostgresJobRepository::new(&store));
+    let ai_repository = Arc::new(PostgresAiContextRepository::new(&store));
+    let ai_runtime: Arc<dyn AiRuntime> = match config.ai.driver {
+        AiDriver::CodexCli => Arc::new(
+            CodexCliRuntime::new(
+                config
+                    .ai
+                    .codex_executable
+                    .clone()
+                    .ok_or("Codex executable is missing")?,
+                config.ai.kill_grace,
+            )
+            .map_err(|_| "Codex runtime configuration is invalid")?,
+        ),
+        AiDriver::OpenAiResponses => Arc::new(
+            OpenAiRuntime::new(
+                "https://api.openai.com/".parse()?,
+                config
+                    .ai
+                    .openai_api_key
+                    .as_ref()
+                    .ok_or("OpenAI API key is missing")?
+                    .value
+                    .expose(),
+                "text-embedding-3-small",
+            )
+            .map_err(|_| "OpenAI runtime configuration is invalid")?,
+        ),
+    };
+    let ai_executor = Arc::new(
+        AiJobExecutionService::new(
+            ai_repository,
+            ai_runtime,
+            config
+                .ai
+                .request_timeout
+                .as_millis()
+                .min(u128::from(u64::MAX)) as u64,
+        )
+        .map_err(|_| "AI execution service configuration is invalid")?,
+    );
     let search_index = Arc::new(OpenSearchIndex::new(
         config.dependencies.opensearch_url.clone(),
         config.dependencies.search_index_prefix.clone(),
@@ -135,13 +178,16 @@ async fn run(health_only: bool) -> Result<(), Box<dyn std::error::Error>> {
             .as_ref()
             .map(|secret| secret.value.expose()),
     )?);
-    let job_executor = Arc::new(WorkerJobExecutor::new(
-        job_repository.clone(),
-        SearchProjectionService::new(
-            Arc::new(PostgresSearchProjectionRepository::new(&store)),
-            search_index,
-        ),
-    ));
+    let job_executor = Arc::new(
+        WorkerJobExecutor::new(
+            job_repository.clone(),
+            SearchProjectionService::new(
+                Arc::new(PostgresSearchProjectionRepository::new(&store)),
+                search_index,
+            ),
+        )
+        .with_ai(ai_executor),
+    );
     let job_runtime = JobRuntime::new(
         job_repository.clone(),
         job_executor,

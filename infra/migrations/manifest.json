@@ -72,6 +72,14 @@
     {
       "file": "0018_search_projection.sql",
       "sha256": "10d248e4c89c84a1eadbb43a9f7c188a3c5353b8e769e66ede960fd259de37e0"
+    },
+    {
+      "file": "0019_ai_context_runtime.sql",
+      "sha256": "06d26792317d0aeeacdba34701a45cf73fbb50da935663092a3d721d43e3a87b"
+    },
+    {
+      "file": "0020_ai_job_admission.sql",
+      "sha256": "a26ad6b77acca403daa5f7654c2e3df18bf7f2a7c177e58d83149a56623e3ed2"
     }
   ]
 }

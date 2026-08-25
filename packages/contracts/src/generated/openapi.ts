@@ -1008,6 +1008,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/ai/context-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["previewAIContext"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/proposals/{proposalId}/apply": {
         parameters: {
             query?: never;
@@ -1676,7 +1692,7 @@ export interface components {
             items: components["schemas"]["VocabularyConcept"][];
             nextCursor?: string | null;
         };
-        CreateAIJob: {
+        AIContextRequest: {
             /** @enum {string} */
             kind: "COMPOSE" | "REWRITE" | "REVIEW" | "DISCUSSION_APPLY" | "CONFLICT_MERGE" | "KNOWLEDGE_QUERY";
             target: components["schemas"]["target"];
@@ -1685,6 +1701,40 @@ export interface components {
             instruction?: string;
             includeSourceIds?: components["schemas"]["Id"][];
             excludeSourceIds?: components["schemas"]["Id"][];
+        };
+        CreateAIJob: {
+            /** @enum {string} */
+            kind: "COMPOSE" | "REWRITE" | "REVIEW" | "DISCUSSION_APPLY" | "CONFLICT_MERGE" | "KNOWLEDGE_QUERY";
+            target: components["schemas"]["target"];
+            expectedRevision: number;
+            externalWebEnabled: boolean;
+            contextFingerprint: string;
+            instruction?: string;
+            includeSourceIds?: components["schemas"]["Id"][];
+            excludeSourceIds?: components["schemas"]["Id"][];
+        };
+        AIContextSourcePreview: {
+            sourceId: components["schemas"]["Id"];
+            /** @enum {string} */
+            kind: "DRAFT" | "PUBLISHED_REGION" | "DISCUSSION" | "VOCABULARY" | "USER_INPUT";
+            stableId: string;
+            /** @enum {string} */
+            authority: "USER_EXPLICIT" | "OFFICIAL" | "VOCABULARY" | "DISCUSSION_CONFIRMED" | "RELATED_INTERNAL";
+            /** @enum {string} */
+            includeReason: "CURRENT_TARGET" | "EXPLICIT_REFERENCE" | "DISCUSSION_CONTEXT" | "VOCABULARY_POLICY" | "RETRIEVED_RELATED" | "USER_PROVIDED";
+            snapshotHash: string;
+            included: boolean;
+            title?: string | null;
+            /** Format: date-time */
+            updatedAt?: string | null;
+        };
+        AIContextPreview: {
+            artifactFingerprint: string;
+            /** Format: date-time */
+            expiresAt: string;
+            sources: components["schemas"]["AIContextSourcePreview"][];
+            omissions: ("SOURCE_UNAVAILABLE" | "SOURCE_EXCLUDED" | "CONTEXT_BUDGET")[];
+            estimatedInputUnits: number;
         };
         AIJob: {
             id: components["schemas"]["Id"];
@@ -4858,6 +4908,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -4911,6 +4962,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -4926,6 +4978,33 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    previewAIContext: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AIContextRequest"];
+            };
+        };
+        responses: {
+            /** @description Permission-safe context preview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AIContextPreview"];
+                };
             };
             default: components["responses"]["Problem"];
         };

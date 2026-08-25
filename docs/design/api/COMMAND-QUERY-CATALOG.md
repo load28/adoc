@@ -122,6 +122,7 @@ type은 [OpenAPI](openapi.yaml), 오류 의미는 [Error Catalog](ERROR-CATALOG.
 | getVocabularyConcept | `GET /workspaces/{workspaceId}/vocabulary/{conceptId}` | Q | Member | — | `VOCABULARY_NOT_FOUND` |
 | updateVocabularyConcept | `PUT /workspaces/{workspaceId}/vocabulary/{conceptId}` | C | Admin | R | `VOCABULARY_TERM_CONFLICT` |
 | deprecateVocabularyConcept | `POST /workspaces/{workspaceId}/vocabulary/{conceptId}/deprecate` | C | Admin | R | `VOCABULARY_STATE_INVALID` |
+| previewAIContext | `POST /workspaces/{workspaceId}/ai/context-preview` | Q | target Contributor 또는 Member query | context fingerprint | `AI_CONTEXT_LIMIT_EXCEEDED` |
 | createAIJob | `POST /workspaces/{workspaceId}/ai/jobs` | C | target Contributor | key+target R | `AI_QUOTA_EXCEEDED` |
 | listAIJobs | `GET /workspaces/{workspaceId}/ai/jobs` | Q | self | cursor | — |
 | getAIJob | `GET /workspaces/{workspaceId}/ai/jobs/{jobId}` | Q | owner | — | `AI_JOB_NOT_FOUND` |

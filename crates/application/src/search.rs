@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 pub use adoc_knowledge::{
     PermissionPathNode, SEARCH_PROJECTION_SCHEMA, SearchHit, SearchPermissionKey, SearchProjection,
-    SearchResultItem, SearchSourceKind, TOMBSTONE_REGION_ID, extract_search_regions,
+    SearchResultItem, SearchSource, SearchSourceKind, TOMBSTONE_REGION_ID, extract_search_regions,
     fuse_search_hits, normalize_search_query, permission_composite_key, permission_fingerprint,
     permission_scope_token, projection_id, snapshot_hash, valid_query_vector,
 };

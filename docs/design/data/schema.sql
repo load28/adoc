@@ -597,6 +597,10 @@ CREATE TABLE ai_jobs (
   kind text NOT NULL,
   target_json jsonb NOT NULL,
   expected_revision bigint NOT NULL CHECK (expected_revision >= 0),
+  context_fingerprint text NOT NULL CHECK (context_fingerprint ~ '^[a-f0-9]{64}$'),
+  context_metadata_json jsonb NOT NULL,
+  request_key text NOT NULL CHECK (char_length(request_key) BETWEEN 8 AND 200),
+  runtime_job_id uuid UNIQUE,
   status ai_job_status NOT NULL DEFAULT 'QUEUED',
   priority smallint NOT NULL CHECK (priority BETWEEN 0 AND 100),
   provider text NOT NULL,
@@ -610,6 +614,7 @@ CREATE TABLE ai_jobs (
   completed_at timestamptz,
   PRIMARY KEY (id),
   UNIQUE (workspace_id, id),
+  UNIQUE (workspace_id, user_id, request_key),
   FOREIGN KEY (workspace_id, user_id) REFERENCES memberships(workspace_id, user_id),
   CHECK ((status IN ('SUCCEEDED', 'FAILED', 'CANCELLED', 'TIMED_OUT')) = (completed_at IS NOT NULL))
 );
@@ -623,8 +628,13 @@ CREATE TABLE ai_context_sources (
   ordinal integer NOT NULL CHECK (ordinal >= 0),
   source_kind text NOT NULL,
   source_id text NOT NULL,
+  stable_id text NOT NULL,
   authority text NOT NULL,
+  include_reason text NOT NULL CHECK (include_reason IN ('CURRENT_TARGET', 'EXPLICIT_REFERENCE', 'DISCUSSION_CONTEXT', 'VOCABULARY_POLICY', 'RETRIEVED_RELATED', 'USER_PROVIDED')),
   snapshot_hash text NOT NULL CHECK (snapshot_hash ~ '^[a-f0-9]{64}$'),
+  snapshot_text text NOT NULL CHECK (octet_length(snapshot_text) <= 65536),
+  source_revision bigint NOT NULL CHECK (source_revision >= 0),
+  permission_key text CHECK (permission_key IS NULL OR permission_key ~ '^[a-f0-9]{64}$'),
   included boolean NOT NULL,
   metadata_json jsonb NOT NULL,
   PRIMARY KEY (job_id, ordinal),
@@ -738,7 +748,7 @@ CREATE INDEX audit_events_target_idx ON audit_events (workspace_id, (target_json
 CREATE TABLE jobs (
   id uuid PRIMARY KEY,
   workspace_id uuid REFERENCES workspaces(id) ON DELETE CASCADE,
-  kind text NOT NULL CHECK (kind IN ('OUTBOX_TO_STREAM', 'OUTBOX_TO_SEARCH')),
+  kind text NOT NULL CHECK (kind IN ('OUTBOX_TO_STREAM', 'OUTBOX_TO_SEARCH', 'AI_RUNTIME')),
   payload_json jsonb NOT NULL CHECK (octet_length(payload_json::text) <= 65536),
   dedupe_key text NOT NULL CHECK (char_length(dedupe_key) BETWEEN 1 AND 200),
   status job_status NOT NULL DEFAULT 'QUEUED',
@@ -764,6 +774,8 @@ CREATE TABLE jobs (
   CHECK ((status = 'CANCEL_REQUESTED') = (cancel_requested_at IS NOT NULL) OR status IN ('CANCELLED'))
 );
 CREATE INDEX jobs_dequeue_idx ON jobs (priority DESC, run_after, id) WHERE status = 'QUEUED';
+ALTER TABLE ai_jobs ADD CONSTRAINT ai_jobs_runtime_job_fk
+  FOREIGN KEY (runtime_job_id) REFERENCES jobs(id) ON DELETE SET NULL;
 CREATE INDEX jobs_expired_lease_idx ON jobs (lease_until, id) WHERE status IN ('RUNNING', 'CANCEL_REQUESTED');
 
 CREATE TABLE outbox_events (

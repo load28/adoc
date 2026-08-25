@@ -1,3 +1,4 @@
+mod ai;
 mod audit;
 mod collaboration;
 mod document;
@@ -18,6 +19,7 @@ mod store;
 mod stream;
 mod transaction;
 
+pub use ai::PostgresAiContextRepository;
 pub use audit::{PostgresAuditRepository, append_audit_event};
 pub use collaboration::PostgresCollaborationRepository;
 pub use document::PostgresDocumentRepository;

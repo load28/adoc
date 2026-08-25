@@ -358,7 +358,16 @@
       "$ref": "#/$defs/OpenApi__VocabularyPage"
     },
     {
+      "$ref": "#/$defs/OpenApi__AIContextRequest"
+    },
+    {
       "$ref": "#/$defs/OpenApi__CreateAIJob"
+    },
+    {
+      "$ref": "#/$defs/OpenApi__AIContextSourcePreview"
+    },
+    {
+      "$ref": "#/$defs/OpenApi__AIContextPreview"
     },
     {
       "$ref": "#/$defs/OpenApi__AIJob"
@@ -919,6 +928,12 @@
       "$ref": "#/$defs/Operation__CancelAIJobResponse"
     },
     {
+      "$ref": "#/$defs/Operation__PreviewAIContextRequest"
+    },
+    {
+      "$ref": "#/$defs/Operation__PreviewAIContextResponse"
+    },
+    {
       "$ref": "#/$defs/Operation__ApplyProposalRequest"
     },
     {
@@ -1093,7 +1108,11 @@
         "kind",
         "stableId",
         "authority",
-        "snapshotHash"
+        "includeReason",
+        "snapshotHash",
+        "snapshotText",
+        "sourceRevision",
+        "included"
       ],
       "properties": {
         "sourceId": {
@@ -1122,9 +1141,37 @@
             "EXTERNAL"
           ]
         },
+        "includeReason": {
+          "enum": [
+            "CURRENT_TARGET",
+            "EXPLICIT_REFERENCE",
+            "DISCUSSION_CONTEXT",
+            "VOCABULARY_POLICY",
+            "RETRIEVED_RELATED",
+            "USER_PROVIDED"
+          ]
+        },
         "snapshotHash": {
           "type": "string",
           "pattern": "^[a-f0-9]{64}$"
+        },
+        "snapshotText": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "sourceRevision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "permissionKey": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "included": {
+          "type": "boolean"
         },
         "retrievedAt": {
           "type": [
@@ -5041,7 +5088,7 @@
         }
       }
     },
-    "OpenApi__CreateAIJob": {
+    "OpenApi__AIContextRequest": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -5091,6 +5138,180 @@
           "items": {
             "$ref": "#/$defs/OpenApi__Id"
           }
+        }
+      }
+    },
+    "OpenApi__CreateAIJob": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "target",
+        "expectedRevision",
+        "externalWebEnabled",
+        "contextFingerprint"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "COMPOSE",
+            "REWRITE",
+            "REVIEW",
+            "DISCUSSION_APPLY",
+            "CONFLICT_MERGE",
+            "KNOWLEDGE_QUERY"
+          ]
+        },
+        "target": {
+          "$ref": "#/$defs/AiContracts__target"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "externalWebEnabled": {
+          "type": "boolean"
+        },
+        "contextFingerprint": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "instruction": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "includeSourceIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 200,
+          "items": {
+            "$ref": "#/$defs/OpenApi__Id"
+          }
+        },
+        "excludeSourceIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 200,
+          "items": {
+            "$ref": "#/$defs/OpenApi__Id"
+          }
+        }
+      }
+    },
+    "OpenApi__AIContextSourcePreview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceId",
+        "kind",
+        "stableId",
+        "authority",
+        "includeReason",
+        "snapshotHash",
+        "included"
+      ],
+      "properties": {
+        "sourceId": {
+          "$ref": "#/$defs/OpenApi__Id"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "DRAFT",
+            "PUBLISHED_REGION",
+            "DISCUSSION",
+            "VOCABULARY",
+            "USER_INPUT"
+          ]
+        },
+        "stableId": {
+          "type": "string"
+        },
+        "authority": {
+          "type": "string",
+          "enum": [
+            "USER_EXPLICIT",
+            "OFFICIAL",
+            "VOCABULARY",
+            "DISCUSSION_CONFIRMED",
+            "RELATED_INTERNAL"
+          ]
+        },
+        "includeReason": {
+          "type": "string",
+          "enum": [
+            "CURRENT_TARGET",
+            "EXPLICIT_REFERENCE",
+            "DISCUSSION_CONTEXT",
+            "VOCABULARY_POLICY",
+            "RETRIEVED_RELATED",
+            "USER_PROVIDED"
+          ]
+        },
+        "snapshotHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "included": {
+          "type": "boolean"
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "updatedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    },
+    "OpenApi__AIContextPreview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifactFingerprint",
+        "expiresAt",
+        "sources",
+        "omissions",
+        "estimatedInputUnits"
+      ],
+      "properties": {
+        "artifactFingerprint": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "sources": {
+          "type": "array",
+          "maxItems": 200,
+          "items": {
+            "$ref": "#/$defs/OpenApi__AIContextSourcePreview"
+          }
+        },
+        "omissions": {
+          "type": "array",
+          "maxItems": 200,
+          "items": {
+            "type": "string",
+            "enum": [
+              "SOURCE_UNAVAILABLE",
+              "SOURCE_EXCLUDED",
+              "CONTEXT_BUDGET"
+            ]
+          }
+        },
+        "estimatedInputUnits": {
+          "type": "integer",
+          "minimum": 0
         }
       }
     },
@@ -12588,11 +12809,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         },
         "body": {
@@ -12718,11 +12945,17 @@
               "type": "string",
               "minLength": 16,
               "maxLength": 128
+            },
+            "X-CSRF-Token": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 1024
             }
           },
           "required": [
             "If-Match",
-            "Idempotency-Key"
+            "Idempotency-Key",
+            "X-CSRF-Token"
           ]
         }
       },
@@ -12742,6 +12975,67 @@
           "properties": {
             "status": {
               "const": "202"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "body"
+          ],
+          "properties": {
+            "status": {
+              "const": "default"
+            },
+            "body": {
+              "$ref": "#/$defs/OpenApi__Problem"
+            }
+          }
+        }
+      ]
+    },
+    "Operation__PreviewAIContextRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "workspaceId": {
+              "$ref": "#/$defs/OpenApi__Id"
+            }
+          },
+          "required": [
+            "workspaceId"
+          ]
+        },
+        "body": {
+          "$ref": "#/$defs/OpenApi__AIContextRequest"
+        }
+      },
+      "required": [
+        "path",
+        "body"
+      ]
+    },
+    "Operation__PreviewAIContextResponse": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "body"
+          ],
+          "properties": {
+            "status": {
+              "const": "200"
+            },
+            "body": {
+              "$ref": "#/$defs/OpenApi__AIContextPreview"
             }
           }
         },

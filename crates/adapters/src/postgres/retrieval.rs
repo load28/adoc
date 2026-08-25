@@ -12,7 +12,7 @@ use adoc_ports::BoxFuture;
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
-use sqlx::{PgPool, Row};
+use sqlx::{PgPool, Postgres, Row, Transaction};
 use uuid::Uuid;
 
 use super::{PostgresStore, permission::scope_snapshot_tx};
@@ -47,115 +47,121 @@ impl SearchScopeCompiler for PostgresSearchRetrievalRepository {
                 .execute(&mut *tx)
                 .await
                 .map_err(|_| SearchRetrievalError::Internal)?;
-            let snapshot = scope_snapshot_tx(&mut tx, actor_id, workspace_id)
-                .await
-                .map_err(|error| match error {
-                    adoc_application::governance::GovernanceError::WorkspaceNotFound => {
-                        SearchRetrievalError::WorkspaceNotFound
-                    }
-                    _ => SearchRetrievalError::Internal,
-                })?;
-            let resolved = compile_permission_scope(&snapshot.nodes)
-                .map_err(|_| SearchRetrievalError::Internal)?;
-            let rows = sqlx::query("SELECT id,parent_id,status::text,permission_revision FROM documents WHERE workspace_id=$1 AND status<>'PURGING' ORDER BY id")
-                .bind(workspace_id)
-                .fetch_all(&mut *tx)
-                .await
-                .map_err(|_| SearchRetrievalError::Internal)?;
-            let metadata = rows
-                .iter()
-                .map(|row| {
-                    (
-                        row.get::<Uuid, _>("id"),
-                        (
-                            row.get::<Option<Uuid>, _>("parent_id"),
-                            row.get::<String, _>("status"),
-                            row.get::<i64, _>("permission_revision"),
-                        ),
-                    )
-                })
-                .collect::<BTreeMap<_, _>>();
-            let mut paths =
-                BTreeMap::<Uuid, Vec<adoc_application::search::PermissionPathNode>>::new();
-            for node in &snapshot.nodes {
-                let Some((parent_id, _, revision)) = metadata.get(&node.document_id) else {
-                    return Err(SearchRetrievalError::Internal);
-                };
-                if *parent_id != node.parent_id {
-                    return Err(SearchRetrievalError::Internal);
-                }
-                let mut path = match parent_id {
-                    Some(parent) => paths
-                        .get(parent)
-                        .cloned()
-                        .ok_or(SearchRetrievalError::Internal)?,
-                    None => Vec::new(),
-                };
-                path.push(adoc_application::search::PermissionPathNode {
-                    document_id: node.document_id,
-                    parent_id: *parent_id,
-                    permission_revision: *revision,
-                });
-                paths.insert(node.document_id, path);
-            }
-            let mut published_keys = Vec::new();
-            let mut draft_keys = Vec::new();
-            for (document_id, permission) in resolved {
-                let Some((_, status, _)) = metadata.get(&document_id) else {
-                    return Err(SearchRetrievalError::Internal);
-                };
-                if status != "ACTIVE" || permission.access < Access::Viewer {
-                    continue;
-                }
-                let ancestry_fingerprint = permission_fingerprint(
-                    paths
-                        .get(&document_id)
-                        .ok_or(SearchRetrievalError::Internal)?,
-                )
-                .ok_or(SearchRetrievalError::Internal)?;
-                let scope_token = permission_scope_token(workspace_id, document_id);
-                published_keys.push(SearchPermissionKey {
-                    document_id,
-                    source_kind: SearchSourceKind::Published,
-                    composite_key: permission_composite_key(&scope_token, &ancestry_fingerprint),
-                    scope_token: scope_token.clone(),
-                    ancestry_fingerprint: ancestry_fingerprint.clone(),
-                });
-                if include_drafts && permission.access >= Access::Contributor {
-                    draft_keys.push(SearchPermissionKey {
-                        document_id,
-                        source_kind: SearchSourceKind::Draft,
-                        composite_key: permission_composite_key(
-                            &scope_token,
-                            &ancestry_fingerprint,
-                        ),
-                        scope_token,
-                        ancestry_fingerprint,
-                    });
-                }
-            }
-            published_keys.sort_by_key(|key| key.document_id);
-            draft_keys.sort_by_key(|key| key.document_id);
-            let fingerprint = scope_fingerprint(
-                workspace_id,
-                actor_id,
-                snapshot.stamp.permission_revision,
-                snapshot.stamp.membership_revision,
-                &published_keys,
-                &draft_keys,
-            )?;
+            let result = compile_scope_tx(&mut tx, actor_id, workspace_id, include_drafts).await?;
             tx.commit()
                 .await
                 .map_err(|_| SearchRetrievalError::Internal)?;
-            Ok(CompiledSearchScope {
-                workspace_id,
-                actor_id,
-                published_keys,
-                draft_keys,
-                fingerprint,
-            })
+            Ok(result)
         })
     }
+}
+
+pub(super) async fn compile_scope_tx(
+    tx: &mut Transaction<'_, Postgres>,
+    actor_id: Uuid,
+    workspace_id: Uuid,
+    include_drafts: bool,
+) -> Result<CompiledSearchScope, SearchRetrievalError> {
+    let snapshot = scope_snapshot_tx(tx, actor_id, workspace_id)
+        .await
+        .map_err(|error| match error {
+            adoc_application::governance::GovernanceError::WorkspaceNotFound => {
+                SearchRetrievalError::WorkspaceNotFound
+            }
+            _ => SearchRetrievalError::Internal,
+        })?;
+    let resolved =
+        compile_permission_scope(&snapshot.nodes).map_err(|_| SearchRetrievalError::Internal)?;
+    let rows = sqlx::query("SELECT id,parent_id,status::text,permission_revision FROM documents WHERE workspace_id=$1 AND status<>'PURGING' ORDER BY id")
+        .bind(workspace_id)
+        .fetch_all(&mut **tx)
+        .await
+        .map_err(|_| SearchRetrievalError::Internal)?;
+    let metadata = rows
+        .iter()
+        .map(|row| {
+            (
+                row.get::<Uuid, _>("id"),
+                (
+                    row.get::<Option<Uuid>, _>("parent_id"),
+                    row.get::<String, _>("status"),
+                    row.get::<i64, _>("permission_revision"),
+                ),
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    let mut paths = BTreeMap::<Uuid, Vec<adoc_application::search::PermissionPathNode>>::new();
+    for node in &snapshot.nodes {
+        let Some((parent_id, _, revision)) = metadata.get(&node.document_id) else {
+            return Err(SearchRetrievalError::Internal);
+        };
+        if *parent_id != node.parent_id {
+            return Err(SearchRetrievalError::Internal);
+        }
+        let mut path = match parent_id {
+            Some(parent) => paths
+                .get(parent)
+                .cloned()
+                .ok_or(SearchRetrievalError::Internal)?,
+            None => Vec::new(),
+        };
+        path.push(adoc_application::search::PermissionPathNode {
+            document_id: node.document_id,
+            parent_id: *parent_id,
+            permission_revision: *revision,
+        });
+        paths.insert(node.document_id, path);
+    }
+    let mut published_keys = Vec::new();
+    let mut draft_keys = Vec::new();
+    for (document_id, permission) in resolved {
+        let Some((_, status, _)) = metadata.get(&document_id) else {
+            return Err(SearchRetrievalError::Internal);
+        };
+        if status != "ACTIVE" || permission.access < Access::Viewer {
+            continue;
+        }
+        let ancestry_fingerprint = permission_fingerprint(
+            paths
+                .get(&document_id)
+                .ok_or(SearchRetrievalError::Internal)?,
+        )
+        .ok_or(SearchRetrievalError::Internal)?;
+        let scope_token = permission_scope_token(workspace_id, document_id);
+        published_keys.push(SearchPermissionKey {
+            document_id,
+            source_kind: SearchSourceKind::Published,
+            composite_key: permission_composite_key(&scope_token, &ancestry_fingerprint),
+            scope_token: scope_token.clone(),
+            ancestry_fingerprint: ancestry_fingerprint.clone(),
+        });
+        if include_drafts && permission.access >= Access::Contributor {
+            draft_keys.push(SearchPermissionKey {
+                document_id,
+                source_kind: SearchSourceKind::Draft,
+                composite_key: permission_composite_key(&scope_token, &ancestry_fingerprint),
+                scope_token,
+                ancestry_fingerprint,
+            });
+        }
+    }
+    published_keys.sort_by_key(|key| key.document_id);
+    draft_keys.sort_by_key(|key| key.document_id);
+    let fingerprint = scope_fingerprint(
+        workspace_id,
+        actor_id,
+        snapshot.stamp.permission_revision,
+        snapshot.stamp.membership_revision,
+        &published_keys,
+        &draft_keys,
+    )?;
+    Ok(CompiledSearchScope {
+        workspace_id,
+        actor_id,
+        published_keys,
+        draft_keys,
+        fingerprint,
+    })
 }
 
 impl SearchDriftRepair for PostgresSearchRetrievalRepository {

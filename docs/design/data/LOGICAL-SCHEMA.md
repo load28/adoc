@@ -65,8 +65,8 @@ redelivery가 중복 item을 만들지 않는다.
 
 | Table | 핵심 column |
 |---|---|
-| ai_jobs | id, workspace_id, user_id, kind, target_json, expected_revision, status, priority, provider, usage_json, attempt, revision |
-| ai_context_sources | job_id, source_kind, source_id, authority, snapshot_hash, included |
+| ai_jobs | id, workspace_id, user_id, kind, target_json, expected_revision, context_fingerprint, context_metadata_json, request_key, runtime_job_id, status, priority, provider, usage_json, attempt, revision |
+| ai_context_sources | job_id, source_kind, source_id, stable_id, authority, include_reason, snapshot_hash, snapshot_text, source_revision, permission_key, included |
 | ai_results | job_id, schema_version, result_json, validation_json, completed_at |
 | proposals | id, job_id, document_id, base_revision, operations_json, status, applied_revision |
 | file_assets | id, workspace_id, storage_key, name, mime, size, checksum, status, uploaded_by, purge_after |

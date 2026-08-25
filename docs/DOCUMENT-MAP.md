@@ -196,6 +196,7 @@
 | PLAN-23 | `design/implementation/JOB-RUNTIME-SSE.md` | Job Runtime·Outbox·SSE 구현 계약 | 구현 기준 |
 | PLAN-24 | `design/implementation/SEARCH-PROJECTION.md` | OpenSearch projection·indexer·rebuild 구현 계약 | 구현 기준 |
 | PLAN-25 | `design/implementation/HYBRID-RETRIEVAL-SOURCE.md` | 권한 scope·BM25·kNN·RRF·Source 구현 계약 | 구현 기준 |
+| PLAN-26 | `design/implementation/AI-CONTEXT-RUNTIME-ADAPTERS.md` | AI Context·Runtime Adapter 구현 계약 | 구현 기준 |
 | PLAN-15 | `design/implementation/CONTENT-OPERATION-REDUCER.md` | Content·Region·Operation reducer 구현 계약 | 구현 기준 |
 | PLAN-16 | `design/implementation/DOCUMENT-TREE-DRAFT-LEASE.md` | Document Tree·Draft·Lease 구현 계약 | 구현 기준 |
 

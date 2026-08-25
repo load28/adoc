@@ -729,7 +729,7 @@ paths:
     post:
       tags: [AI]
       operationId: createAIJob
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       requestBody:
         required: true
         content: {application/json: {schema: {$ref: '#/components/schemas/CreateAIJob'}}}
@@ -746,9 +746,20 @@ paths:
     delete:
       tags: [AI]
       operationId: cancelAIJob
-      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/JobId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}, {$ref: '#/components/parameters/JobId'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CsrfToken'}]
       responses:
         '202': {description: Cancellation requested}
+        default: {$ref: '#/components/responses/Problem'}
+  /workspaces/{workspaceId}/ai/context-preview:
+    post:
+      tags: [AI]
+      operationId: previewAIContext
+      parameters: [{$ref: '#/components/parameters/WorkspaceId'}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/AIContextRequest'}}}
+      responses:
+        '200': {description: Permission-safe context preview, content: {application/json: {schema: {$ref: '#/components/schemas/AIContextPreview'}}}}
         default: {$ref: '#/components/responses/Problem'}
   /workspaces/{workspaceId}/proposals/{proposalId}/apply:
     post:
@@ -1106,7 +1117,10 @@ components:
     VocabularyTerm: {type: object, additionalProperties: false, required: [term, kind], properties: {term: {type: string, minLength: 1, maxLength: 200}, kind: {type: string, enum: [CANONICAL, SYNONYM, PROHIBITED]}}}
     VocabularyConcept: {type: object, additionalProperties: false, required: [id, canonicalTerm, definition, terms, status, replacementConceptId, revision], properties: {id: {$ref: '#/components/schemas/Id'}, canonicalTerm: {type: string}, definition: {type: string}, terms: {type: array, items: {$ref: '#/components/schemas/VocabularyTerm'}}, status: {type: string, enum: [ACTIVE, DEPRECATED]}, replacementConceptId: {$ref: '#/components/schemas/NullableId'}, revision: {type: integer, minimum: 0}}}
     VocabularyPage: {type: object, additionalProperties: false, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/VocabularyConcept'}}, nextCursor: {type: [string, 'null']}}}
-    CreateAIJob: {type: object, additionalProperties: false, required: [kind, target, expectedRevision, externalWebEnabled], properties: {kind: {type: string, enum: [COMPOSE, REWRITE, REVIEW, DISCUSSION_APPLY, CONFLICT_MERGE, KNOWLEDGE_QUERY]}, target: {$ref: '../contracts/ai-contracts.schema.json#/$defs/target'}, expectedRevision: {type: integer, minimum: 0}, externalWebEnabled: {type: boolean}, instruction: {type: string, maxLength: 10000}, includeSourceIds: {type: array, uniqueItems: true, maxItems: 200, items: {$ref: '#/components/schemas/Id'}}, excludeSourceIds: {type: array, uniqueItems: true, maxItems: 200, items: {$ref: '#/components/schemas/Id'}}}}
+    AIContextRequest: {type: object, additionalProperties: false, required: [kind, target, expectedRevision, externalWebEnabled], properties: {kind: {type: string, enum: [COMPOSE, REWRITE, REVIEW, DISCUSSION_APPLY, CONFLICT_MERGE, KNOWLEDGE_QUERY]}, target: {$ref: '../contracts/ai-contracts.schema.json#/$defs/target'}, expectedRevision: {type: integer, minimum: 0}, externalWebEnabled: {type: boolean}, instruction: {type: string, maxLength: 10000}, includeSourceIds: {type: array, uniqueItems: true, maxItems: 200, items: {$ref: '#/components/schemas/Id'}}, excludeSourceIds: {type: array, uniqueItems: true, maxItems: 200, items: {$ref: '#/components/schemas/Id'}}}}
+    CreateAIJob: {type: object, additionalProperties: false, required: [kind, target, expectedRevision, externalWebEnabled, contextFingerprint], properties: {kind: {type: string, enum: [COMPOSE, REWRITE, REVIEW, DISCUSSION_APPLY, CONFLICT_MERGE, KNOWLEDGE_QUERY]}, target: {$ref: '../contracts/ai-contracts.schema.json#/$defs/target'}, expectedRevision: {type: integer, minimum: 0}, externalWebEnabled: {type: boolean}, contextFingerprint: {type: string, pattern: '^[a-f0-9]{64}$'}, instruction: {type: string, maxLength: 10000}, includeSourceIds: {type: array, uniqueItems: true, maxItems: 200, items: {$ref: '#/components/schemas/Id'}}, excludeSourceIds: {type: array, uniqueItems: true, maxItems: 200, items: {$ref: '#/components/schemas/Id'}}}}
+    AIContextSourcePreview: {type: object, additionalProperties: false, required: [sourceId, kind, stableId, authority, includeReason, snapshotHash, included], properties: {sourceId: {$ref: '#/components/schemas/Id'}, kind: {type: string, enum: [DRAFT, PUBLISHED_REGION, DISCUSSION, VOCABULARY, USER_INPUT]}, stableId: {type: string}, authority: {type: string, enum: [USER_EXPLICIT, OFFICIAL, VOCABULARY, DISCUSSION_CONFIRMED, RELATED_INTERNAL]}, includeReason: {type: string, enum: [CURRENT_TARGET, EXPLICIT_REFERENCE, DISCUSSION_CONTEXT, VOCABULARY_POLICY, RETRIEVED_RELATED, USER_PROVIDED]}, snapshotHash: {type: string, pattern: '^[a-f0-9]{64}$'}, included: {type: boolean}, title: {type: [string, 'null']}, updatedAt: {type: [string, 'null'], format: date-time}}}
+    AIContextPreview: {type: object, additionalProperties: false, required: [artifactFingerprint, expiresAt, sources, omissions, estimatedInputUnits], properties: {artifactFingerprint: {type: string, pattern: '^[a-f0-9]{64}$'}, expiresAt: {type: string, format: date-time}, sources: {type: array, maxItems: 200, items: {$ref: '#/components/schemas/AIContextSourcePreview'}}, omissions: {type: array, maxItems: 200, items: {type: string, enum: [SOURCE_UNAVAILABLE, SOURCE_EXCLUDED, CONTEXT_BUDGET]}}, estimatedInputUnits: {type: integer, minimum: 0}}}
     AIJob: {type: object, additionalProperties: false, required: [id, kind, status, sequence, revision], properties: {id: {$ref: '#/components/schemas/Id'}, kind: {type: string, enum: [COMPOSE, REWRITE, REVIEW, DISCUSSION_APPLY, CONFLICT_MERGE, KNOWLEDGE_QUERY]}, status: {type: string, enum: [QUEUED, RUNNING, CANCEL_REQUESTED, SUCCEEDED, FAILED, CANCELLED, TIMED_OUT]}, sequence: {type: integer}, revision: {type: integer}, result: {oneOf: [{$ref: '../contracts/ai-contracts.schema.json#/$defs/result'}, {type: 'null'}]}, errorCode: {type: [string, 'null']}}}
     AIJobPage: {type: object, additionalProperties: false, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/AIJob'}}, nextCursor: {type: [string, 'null']}}}
     Proposal: {allOf: [{$ref: '../contracts/ai-contracts.schema.json#/$defs/proposal'}, {type: object, properties: {revision: {type: integer, minimum: 0}}}]}

@@ -9,6 +9,7 @@ use adoc_configuration::{
 use adoc_telemetry::{SafeEvent, TelemetryConfig};
 use axum::{Json, Router, extract::State, http::StatusCode, routing::get};
 
+mod ai_http;
 mod collaboration_http;
 mod document_http;
 mod file_http;
@@ -20,6 +21,7 @@ mod permission_http;
 mod publishing_http;
 mod stream_http;
 
+use ai_http::{AiHttpRuntime, ai_routes};
 use collaboration_http::{CollaborationRuntime, collaboration_routes};
 use document_http::{DocumentRuntime, document_routes};
 use file_http::{FileRuntime, file_routes, public_file_routes};
@@ -108,6 +110,7 @@ struct HealthState {
     permission: PermissionRuntime,
     publishing: PublishingRuntime,
     collaboration: CollaborationRuntime,
+    ai: AiHttpRuntime,
     knowledge: KnowledgeRuntime,
     files: FileRuntime,
     operations: OperationsRuntime,
@@ -137,6 +140,7 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     let publishing = PublishingRuntime::new(&store);
     let collaboration = CollaborationRuntime::new(&store);
     let knowledge = KnowledgeRuntime::new(&config, &store, document.service.clone())?;
+    let ai = AiHttpRuntime::new(&config, &store, knowledge.retrieval.clone()).await?;
     let files = FileRuntime::new(&config, &store)?;
     let operations = OperationsRuntime::new(&config, &store)?;
     let state = HealthState {
@@ -148,6 +152,7 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
         permission,
         publishing,
         collaboration,
+        ai,
         knowledge,
         files,
         operations,
@@ -164,6 +169,7 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
                 .merge(permission_routes())
                 .merge(publishing_routes())
                 .merge(collaboration_routes())
+                .merge(ai_routes())
                 .merge(knowledge_routes())
                 .merge(file_routes())
                 .merge(operations_routes())

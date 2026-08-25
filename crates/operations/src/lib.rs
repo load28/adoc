@@ -286,6 +286,7 @@ impl EventAudience {
 pub enum JobKind {
     OutboxToStream,
     OutboxToSearch,
+    AiRuntime,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]

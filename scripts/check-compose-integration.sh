@@ -79,6 +79,10 @@ docker compose -p "$project" exec -T postgres psql --username postgres --dbname 
 docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
   <infra/migrations/0018_search_projection.sql >/dev/null
 docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
+  <infra/migrations/0019_ai_context_runtime.sql >/dev/null
+docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
+  <infra/migrations/0020_ai_job_admission.sql >/dev/null
+docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
   --tuples-only --no-align --command \
   "SELECT count(*) FROM information_schema.columns WHERE table_name='sessions' AND column_name IN ('hash_key_id','idle_expires_at','absolute_expires_at')" \
   | grep -qx 3
@@ -121,6 +125,7 @@ docker compose -p "$project" --profile test run --rm test-runner \
   --test audit_retention \
   --test job_stream \
   --test search_projection \
+  --test ai_context_runtime \
   -- --ignored --nocapture
 docker compose -p "$project" --profile backup run --rm backup >/dev/null
 docker compose -p "$project" --profile backup run --rm --entrypoint sh backup -c \

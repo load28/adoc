@@ -118,7 +118,10 @@ export type AdocContractBundle =
   | OpenApi__VocabularyTerm
   | OpenApi__VocabularyConcept
   | OpenApi__VocabularyPage
+  | OpenApi__AIContextRequest
   | OpenApi__CreateAIJob
+  | OpenApi__AIContextSourcePreview
+  | OpenApi__AIContextPreview
   | OpenApi__AIJob
   | OpenApi__AIJobPage
   | OpenApi__Proposal
@@ -305,6 +308,8 @@ export type AdocContractBundle =
   | Operation__GetAIJobResponse
   | Operation__CancelAIJobRequest
   | Operation__CancelAIJobResponse
+  | Operation__PreviewAIContextRequest
+  | Operation__PreviewAIContextResponse
   | Operation__ApplyProposalRequest
   | Operation__ApplyProposalResponse
   | Operation__GetProposalRequest
@@ -1316,6 +1321,15 @@ export type Operation__CancelAIJobResponse =
       status: "default";
       body: OpenApi__Problem;
     };
+export type Operation__PreviewAIContextResponse =
+  | {
+      status: "200";
+      body: OpenApi__AIContextPreview;
+    }
+  | {
+      status: "default";
+      body: OpenApi__Problem;
+    };
 export type Operation__ApplyProposalResponse =
   | {
       status: "200";
@@ -1547,7 +1561,18 @@ export interface AiContracts_Source {
   kind: "DRAFT" | "PUBLISHED_REGION" | "DISCUSSION" | "VOCABULARY" | "EXTERNAL_WEB" | "USER_INPUT";
   stableId: string;
   authority: "USER_EXPLICIT" | "OFFICIAL" | "VOCABULARY" | "DISCUSSION_CONFIRMED" | "RELATED_INTERNAL" | "EXTERNAL";
+  includeReason:
+    | "CURRENT_TARGET"
+    | "EXPLICIT_REFERENCE"
+    | "DISCUSSION_CONTEXT"
+    | "VOCABULARY_POLICY"
+    | "RETRIEVED_RELATED"
+    | "USER_PROVIDED";
   snapshotHash: string;
+  snapshotText: string;
+  sourceRevision: number;
+  permissionKey?: string | null;
+  included: boolean;
   retrievedAt?: string | null;
 }
 export interface AiContracts_Result {
@@ -2107,7 +2132,7 @@ export interface OpenApi__VocabularyPage {
   items: OpenApi__VocabularyConcept[];
   nextCursor?: string | null;
 }
-export interface OpenApi__CreateAIJob {
+export interface OpenApi__AIContextRequest {
   kind: "COMPOSE" | "REWRITE" | "REVIEW" | "DISCUSSION_APPLY" | "CONFLICT_MERGE" | "KNOWLEDGE_QUERY";
   target: AiContracts_Target;
   expectedRevision: number;
@@ -2121,6 +2146,52 @@ export interface OpenApi__CreateAIJob {
    * @maxItems 200
    */
   excludeSourceIds?: OpenApi__Id[];
+}
+export interface OpenApi__CreateAIJob {
+  kind: "COMPOSE" | "REWRITE" | "REVIEW" | "DISCUSSION_APPLY" | "CONFLICT_MERGE" | "KNOWLEDGE_QUERY";
+  target: AiContracts_Target;
+  expectedRevision: number;
+  externalWebEnabled: boolean;
+  contextFingerprint: string;
+  instruction?: string;
+  /**
+   * @maxItems 200
+   */
+  includeSourceIds?: OpenApi__Id[];
+  /**
+   * @maxItems 200
+   */
+  excludeSourceIds?: OpenApi__Id[];
+}
+export interface OpenApi__AIContextSourcePreview {
+  sourceId: OpenApi__Id;
+  kind: "DRAFT" | "PUBLISHED_REGION" | "DISCUSSION" | "VOCABULARY" | "USER_INPUT";
+  stableId: string;
+  authority: "USER_EXPLICIT" | "OFFICIAL" | "VOCABULARY" | "DISCUSSION_CONFIRMED" | "RELATED_INTERNAL";
+  includeReason:
+    | "CURRENT_TARGET"
+    | "EXPLICIT_REFERENCE"
+    | "DISCUSSION_CONTEXT"
+    | "VOCABULARY_POLICY"
+    | "RETRIEVED_RELATED"
+    | "USER_PROVIDED";
+  snapshotHash: string;
+  included: boolean;
+  title?: string | null;
+  updatedAt?: string | null;
+}
+export interface OpenApi__AIContextPreview {
+  artifactFingerprint: string;
+  expiresAt: string;
+  /**
+   * @maxItems 200
+   */
+  sources: OpenApi__AIContextSourcePreview[];
+  /**
+   * @maxItems 200
+   */
+  omissions: ("SOURCE_UNAVAILABLE" | "SOURCE_EXCLUDED" | "CONTEXT_BUDGET")[];
+  estimatedInputUnits: number;
 }
 export interface OpenApi__AIJob {
   id: OpenApi__Id;
@@ -3148,6 +3219,7 @@ export interface Operation__CreateAIJobRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: OpenApi__CreateAIJob;
 }
@@ -3165,7 +3237,14 @@ export interface Operation__CancelAIJobRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
+}
+export interface Operation__PreviewAIContextRequest {
+  path: {
+    workspaceId: OpenApi__Id;
+  };
+  body: OpenApi__AIContextRequest;
 }
 export interface Operation__ApplyProposalRequest {
   path: {

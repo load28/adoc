@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use adoc_application::{
+    ai::AiJobExecutionService,
     jobs::{JobExecution, JobExecutionError, JobExecutor},
     operations::{Job, JobKind},
     search::SearchProjectionService,
@@ -15,12 +16,23 @@ use crate::postgres::PostgresJobRepository;
 pub struct WorkerJobExecutor {
     stream: Arc<PostgresJobRepository>,
     search: SearchProjectionService,
+    ai: Option<Arc<AiJobExecutionService>>,
 }
 
 impl WorkerJobExecutor {
     #[must_use]
     pub fn new(stream: Arc<PostgresJobRepository>, search: SearchProjectionService) -> Self {
-        Self { stream, search }
+        Self {
+            stream,
+            search,
+            ai: None,
+        }
+    }
+
+    #[must_use]
+    pub fn with_ai(mut self, ai: Arc<AiJobExecutionService>) -> Self {
+        self.ai = Some(ai);
+        self
     }
 }
 
@@ -39,6 +51,10 @@ impl JobExecutor for WorkerJobExecutor {
                         .execute(outbox_id(&job.payload)?, job.id, worker, job.sequence, now)
                         .await
                 }
+                JobKind::AiRuntime => match &self.ai {
+                    Some(ai) => ai.execute(job, worker, now).await,
+                    None => Err(JobExecutionError::Permanent("AI_RUNTIME_UNCONFIGURED")),
+                },
             }
         })
     }

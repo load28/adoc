@@ -7,13 +7,18 @@
     "id": { "type": "string", "format": "uuid" },
     "source": {
       "type": "object", "additionalProperties": false,
-      "required": ["sourceId", "kind", "stableId", "authority", "snapshotHash"],
+      "required": ["sourceId", "kind", "stableId", "authority", "includeReason", "snapshotHash", "snapshotText", "sourceRevision", "included"],
       "properties": {
         "sourceId": { "$ref": "#/$defs/id" },
         "kind": { "enum": ["DRAFT", "PUBLISHED_REGION", "DISCUSSION", "VOCABULARY", "EXTERNAL_WEB", "USER_INPUT"] },
         "stableId": { "type": "string" },
         "authority": { "enum": ["USER_EXPLICIT", "OFFICIAL", "VOCABULARY", "DISCUSSION_CONFIRMED", "RELATED_INTERNAL", "EXTERNAL"] },
+        "includeReason": { "enum": ["CURRENT_TARGET", "EXPLICIT_REFERENCE", "DISCUSSION_CONTEXT", "VOCABULARY_POLICY", "RETRIEVED_RELATED", "USER_PROVIDED"] },
         "snapshotHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "snapshotText": { "type": "string", "maxLength": 65536 },
+        "sourceRevision": { "type": "integer", "minimum": 0 },
+        "permissionKey": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+        "included": { "type": "boolean" },
         "retrievedAt": { "type": ["string", "null"], "format": "date-time" }
       }
     },

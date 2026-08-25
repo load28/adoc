@@ -2,6 +2,7 @@
 
 //! Use-case orchestration across domain owners and ports.
 
+pub mod ai;
 pub mod collaboration;
 pub mod document;
 pub mod governance;

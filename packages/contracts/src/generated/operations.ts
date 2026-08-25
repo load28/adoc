@@ -596,6 +596,13 @@ export const operations = [
     "response": "Operation__CancelAIJobResponse"
   },
   {
+    "operationId": "previewAIContext",
+    "method": "POST",
+    "path": "/workspaces/{workspaceId}/ai/context-preview",
+    "request": "Operation__PreviewAIContextRequest",
+    "response": "Operation__PreviewAIContextResponse"
+  },
+  {
     "operationId": "applyProposal",
     "method": "POST",
     "path": "/workspaces/{workspaceId}/proposals/{proposalId}/apply",

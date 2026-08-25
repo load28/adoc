@@ -15,6 +15,14 @@ actor permission 확인 → explicit current scope → Discussion·Reference →
 → Permission-safe Retrieval → optional external web 순으로 구성한다. 각 item은 authority,
 provenance, freshness와 include reason을 가진다.
 
+Context Inspector는 같은 Builder로 preview를 만들고 canonical artifact fingerprint를 반환한다.
+Job admission은 동일한 Task·Source 선택으로 current Context를 다시 구성해 fingerprint가 같을
+때만 snapshot을 저장한다. preview session을 별도 정본으로 저장하지 않는다.
+
+Source 본문 snapshot은 generic Job payload가 아니라 AI Context 전용 저장소에 보존한다. preview
+응답은 본문을 반환하지 않고 identity, authority, 표시 snapshot, include reason과 omission만
+반환한다. external web fetch adapter가 없으면 opt-in 요청도 명시적으로 거부한다.
+
 ## Result kinds
 
 - Compose/Rewrite/Merge: DocumentOperation[] + explanation + Source mapping

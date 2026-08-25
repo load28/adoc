@@ -2,6 +2,7 @@
 
 //! Infrastructure adapters implementing application ports.
 
+pub mod ai_runtime;
 pub mod identity;
 pub mod job_executor;
 pub mod job_queue;

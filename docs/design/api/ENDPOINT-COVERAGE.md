@@ -16,7 +16,7 @@
 | SCR-08 Review | `getReview` | `requestReview`, `submitReviewDecision`, `cancelReview` |
 | SCR-09 History | `listVersions`, `getVersion`, `compareVersions` | `createOrGetDraft` |
 | SCR-10 References | `listBacklinks` | target navigation only |
-| SCR-11 AI | `listAIJobs`, `getAIJob`, `getProposal` | `createAIJob`, `cancelAIJob`, `applyProposal`, `rejectProposal` |
+| SCR-11 AI | `previewAIContext`, `listAIJobs`, `getAIJob`, `getProposal` | `createAIJob`, `cancelAIJob`, `applyProposal`, `rejectProposal` |
 | SCR-12 Search | `searchKnowledge` | target navigation only |
 | SCR-13 Inbox | `listInbox` | `markInboxItemRead`, `markAllInboxRead`, `resolveInboxItem` |
 | SCR-14 Vocabulary | `listVocabulary`, `getVocabularyConcept` | `createVocabularyConcept`, `updateVocabularyConcept`, `deprecateVocabularyConcept` |

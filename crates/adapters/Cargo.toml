@@ -19,6 +19,7 @@ getrandom = "0.3.4"
 hex = "0.4.3"
 futures-util = "0.3.32"
 jsonwebtoken = "9.3.1"
+nix = { version = "0.30.1", features = ["signal", "process"] }
 reqwest = { version = "0.12.28", default-features = false, features = ["json", "rustls-tls"] }
 redis = { version = "1.6.0", default-features = false, features = ["connection-manager", "tokio-rustls-comp"] }
 serde = { version = "1.0.228", features = ["derive"] }
@@ -27,10 +28,11 @@ sha2 = "0.10.9"
 sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio", "tls-rustls-ring-native-roots", "postgres", "migrate", "macros", "uuid", "chrono", "json"] }
 subtle = "2.6.1"
 thiserror = "2.0.20"
-tokio = { version = "1", features = ["sync", "time", "fs", "io-util", "rt"] }
+tokio = { version = "1", features = ["sync", "time", "fs", "io-util", "process", "rt"] }
 tokio-util = { version = "0.7.19", features = ["io"] }
 unicode-normalization = "0.1.25"
 uuid = { version = "1.25.0", features = ["serde", "v7"] }
+tempfile = "3.23.0"
 
 [dev-dependencies]
 rand = "0.8.7"

@@ -8,10 +8,18 @@
 AITask permission, expected revision, provider health, global·Workspace·User concurrency와 budget을
 검사한 뒤 PostgreSQL Job을 생성하고 Redis priority queue에 signal한다.
 
+AI domain Job과 범용 실행 Job은 같은 transaction에서 생성한다. 범용 Job kind는 `AI_RUNTIME`,
+payload는 `aiJobId`만 포함한다. Context 본문, instruction과 credential은 범용 payload·Outbox·
+Redis에 넣지 않는다.
+
 ## Execution
 
 Worker claim → Context snapshot materialize → isolated Runtime execute → progress event → output
 limit → structured validation → result commit. process crash는 lease expiry 뒤 retry한다.
+
+Worker는 실행 직전에 Membership, target permission·revision과 저장된 Source permission evidence를
+다시 검사한다. generic Job과 AI Job terminal 전이는 한 transaction에서 확정하며 late result는
+이미 terminal인 AI Job에 commit하지 않는다.
 
 ## Priority
 

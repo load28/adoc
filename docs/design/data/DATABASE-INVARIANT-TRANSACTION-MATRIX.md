@@ -49,6 +49,7 @@ application이 검증하고 DB constraint가 가능한 부분을 재검증한다
 | DBI-033 | consumer·Outbox Event당 side effect는 한 번만 의미를 가짐 | DB | consumer receipt primary key | `CONSUMER_DUPLICATE` |
 | DBI-034 | Stream sequence는 Workspace에서 유일·단조이고 Event row는 불변 | DB+Application | sequence row lock+unique+update trigger | `STREAM_SEQUENCE_CONFLICT` |
 | DBI-035 | Browser Event audience는 producer transaction에서 구조화 | DB | audience kind/id/access check | `EVENT_AUDIENCE_INVALID` |
+| DBI-036 | AI Context fingerprint·Source snapshot과 runtime Job은 한 admission에서 결합 | DB+Application | context hash check+AI/runtime Job FK+transaction | `AI_CONTEXT_STALE` |
 
 ## Command transaction
 
@@ -63,6 +64,8 @@ application이 검증하고 DB constraint가 가능한 부분을 재검증한다
 | Trash·restore | `READ COMMITTED`; tree root→descendant | Documents, Audit, Outbox | purge schedule/index tombstone |
 | Permanent purge | `SERIALIZABLE`; purge target → references → immutable content | ledger, dependent rows, tombstone Audit·Outbox | object delete·index removal |
 | Outbox→Stream delivery | `READ COMMITTED`; Job → Outbox → receipt → Workspace sequence | Stream Event, receipt, Outbox published, Job terminal | Redis Stream wake publish |
+| AI Job admission | `REPEATABLE READ`; Workspace → Membership → target → AI configuration | AI Job, Context Source, generic Runtime Job, Outbox | Redis wake signal |
+| AI Runtime completion | `READ COMMITTED`; generic Job → AI Job → Result → Usage | AI Result, usage reconciliation, 두 Job terminal, Outbox | user SSE wake |
 
 모든 command는 transaction 시작 전에 idempotency row를 선점한다. PostgreSQL deadlock은 동일
 command identity로 최대 3회 재시도한다. expected revision, 권한, validation 실패는 재시도하지
