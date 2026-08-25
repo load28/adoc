@@ -5,7 +5,7 @@ use adoc_application::{
         ReferencePage, VocabularyAction, VocabularyCommand, VocabularyConcept, VocabularyPage,
         VocabularyStatus, VocabularyTerm, VocabularyTermKind,
     },
-    operations::{AuditAction, AuditEventInput, AuditTarget, AuditTargetKind},
+    operations::{AuditAction, AuditEventInput, AuditTarget, AuditTargetKind, EventAudience},
     permission::{Access, compile_permission_scope},
 };
 use adoc_ports::BoxFuture;
@@ -150,7 +150,7 @@ impl KnowledgeRepository for PostgresKnowledgeRepository {
                 VocabularyAction::Deprecate => deprecate_concept(&mut tx, &input).await?,
             }
             let result = get_concept(&mut tx, input.workspace_id, input.concept_id, false).await?;
-            append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"VocabularyConcept",aggregate_id:input.concept_id,sequence:result.revision+1,event_type:"VocabularyChanged.v1",payload:json!({"conceptId":input.concept_id,"revision":result.revision,"action":action_text(input.action)}),occurred_at:input.command.now}).await?;
+            append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"VocabularyConcept",aggregate_id:input.concept_id,sequence:result.revision+1,event_type:"VocabularyChanged.v1",payload:json!({"entityId":input.concept_id,"revision":result.revision,"action":if matches!(input.action,VocabularyAction::Create){"CREATED"}else{"UPDATED"}}),audience:EventAudience::workspace(),occurred_at:input.command.now}).await?;
             audit_vocabulary(
                 &mut tx,
                 &input.command,
@@ -418,12 +418,5 @@ fn term_kind_text(value: VocabularyTermKind) -> &'static str {
         VocabularyTermKind::Canonical => "CANONICAL",
         VocabularyTermKind::Synonym => "SYNONYM",
         VocabularyTermKind::Prohibited => "PROHIBITED",
-    }
-}
-fn action_text(value: VocabularyAction) -> &'static str {
-    match value {
-        VocabularyAction::Create => "CREATED",
-        VocabularyAction::Update => "UPDATED",
-        VocabularyAction::Deprecate => "DEPRECATED",
     }
 }

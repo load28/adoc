@@ -2759,7 +2759,9 @@
         },
         "type": {
           "enum": [
+            "WORKSPACE_CHANGED",
             "MEMBERSHIP_CHANGED",
+            "INVITATION_CHANGED",
             "GROUP_CHANGED",
             "PERMISSION_CHANGED",
             "PUBLISH_POLICY_CHANGED",
@@ -2769,6 +2771,7 @@
             "LEASE_CHANGED",
             "VERSION_PUBLISHED",
             "DISCUSSION_CHANGED",
+            "MESSAGE_CHANGED",
             "REVIEW_CHANGED",
             "INBOX_CHANGED",
             "REFERENCE_CHANGED",
@@ -2802,11 +2805,14 @@
             "properties": {
               "type": {
                 "enum": [
+                  "WORKSPACE_CHANGED",
                   "MEMBERSHIP_CHANGED",
+                  "INVITATION_CHANGED",
                   "GROUP_CHANGED",
                   "PERMISSION_CHANGED",
                   "PUBLISH_POLICY_CHANGED",
                   "DISCUSSION_CHANGED",
+                  "MESSAGE_CHANGED",
                   "REVIEW_CHANGED",
                   "INBOX_CHANGED",
                   "REFERENCE_CHANGED",
@@ -14316,6 +14322,15 @@
           "required": [
             "workspaceId"
           ]
+        },
+        "header": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "Last-Event-ID": {
+              "type": "string"
+            }
+          }
         }
       },
       "required": [
@@ -14337,6 +14352,22 @@
             },
             "body": {
               "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "body"
+          ],
+          "properties": {
+            "status": {
+              "const": "default"
+            },
+            "body": {
+              "$ref": "#/$defs/OpenApi__Problem"
             }
           }
         }
@@ -14402,7 +14433,8 @@
       "additionalProperties": false,
       "required": [
         "eventId",
-        "retryMilliseconds"
+        "retryMilliseconds",
+        "cursorVersion"
       ],
       "properties": {
         "eventId": {
@@ -14413,6 +14445,10 @@
           "type": "integer",
           "minimum": 1000,
           "maximum": 30000
+        },
+        "cursorVersion": {
+          "type": "integer",
+          "const": 1
         }
       }
     },

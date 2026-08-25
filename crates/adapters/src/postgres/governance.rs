@@ -5,7 +5,9 @@ use adoc_application::governance::{
     NewWorkspace, PersistedInvitation, PublishMode, Workspace, WorkspaceChange, WorkspaceDeletion,
     WorkspaceStatus, may_change_role,
 };
-use adoc_application::operations::{AuditAction, AuditEventInput, AuditTarget, AuditTargetKind};
+use adoc_application::operations::{
+    AuditAction, AuditEventInput, AuditTarget, AuditTargetKind, EventAudience,
+};
 use adoc_ports::BoxFuture;
 use chrono::{DateTime, Utc};
 use serde::{Serialize, de::DeserializeOwned};
@@ -74,8 +76,9 @@ impl GovernanceRepository for PostgresGovernanceRepository {
                     aggregate_kind: "Workspace",
                     aggregate_id: created.id,
                     sequence: 1,
-                    event_type: "WorkspaceCreated.v1",
-                    payload: json!({"workspaceId":created.id,"ownerId":input.command.actor_id}),
+                    event_type: "WorkspaceChanged.v1",
+                    payload: json!({"entityId":created.id,"revision":0,"action":"CREATED"}),
+                    audience: EventAudience::workspace(),
                     occurred_at: input.command.now,
                 },
             )
@@ -141,8 +144,9 @@ impl GovernanceRepository for PostgresGovernanceRepository {
                     aggregate_kind: "Workspace",
                     aggregate_id: result.id,
                     sequence: result.revision + 1,
-                    event_type: "WorkspaceUpdated.v1",
-                    payload: json!({"workspaceId":result.id,"revision":result.revision}),
+                    event_type: "WorkspaceChanged.v1",
+                    payload: json!({"entityId":result.id,"revision":result.revision,"action":"UPDATED"}),
+                    audience: EventAudience::workspace(),
                     occurred_at: input.command.now,
                 },
             )
@@ -199,12 +203,9 @@ impl GovernanceRepository for PostgresGovernanceRepository {
                 aggregate_kind: "Workspace",
                 aggregate_id: result.id,
                 sequence: result.revision + 1,
-                event_type: if input.delete_after.is_some() {
-                    "WorkspaceDeletionScheduled.v1"
-                } else {
-                    "WorkspaceDeletionCancelled.v1"
-                },
-                payload: json!({"workspaceId":result.id,"revision":result.revision,"reason":input.reason}),
+                event_type: "WorkspaceChanged.v1",
+                payload: json!({"entityId":result.id,"revision":result.revision,"action":"UPDATED"}),
+                audience: EventAudience::workspace(),
                 occurred_at: input.command.now,
             })
             .await?;
@@ -295,7 +296,8 @@ impl GovernanceRepository for PostgresGovernanceRepository {
                 aggregate_id: input.user_id,
                 sequence: result.revision + 1,
                 event_type: "MembershipChanged.v1",
-                payload: json!({"workspaceId":input.workspace_id,"userId":input.user_id,"before":{"role":current.role,"status":current.status},"after":{"role":result.role,"status":result.status},"revision":result.revision}),
+                payload: json!({"entityId":input.user_id,"revision":result.revision,"action":if input.role.is_some(){"UPDATED"}else{"DELETED"}}),
+                audience: EventAudience::workspace(),
                 occurred_at: input.command.now,
             }).await?;
             audit_user(
@@ -381,6 +383,7 @@ impl GovernanceRepository for PostgresGovernanceRepository {
                     sequence: 1,
                     event_type: "InvitationDeliveryRequested.v1",
                     payload: json!({"invitationId":input.id}),
+                    audience: EventAudience::internal(),
                     occurred_at: input.command.now,
                 },
             )
@@ -436,8 +439,9 @@ impl GovernanceRepository for PostgresGovernanceRepository {
                     aggregate_kind: "Invitation",
                     aggregate_id: input.invitation_id,
                     sequence: result.revision + 1,
-                    event_type: "InvitationRevoked.v1",
-                    payload: json!({"invitationId":input.invitation_id,"revision":result.revision}),
+                    event_type: "InvitationChanged.v1",
+                    payload: json!({"entityId":input.invitation_id,"revision":result.revision,"action":"INVALIDATED"}),
+                    audience: EventAudience::admin(),
                     occurred_at: input.command.now,
                 },
             )
@@ -498,8 +502,9 @@ impl GovernanceRepository for PostgresGovernanceRepository {
                     aggregate_kind: "Membership",
                     aggregate_id: input.command.actor_id,
                     sequence: result.revision + 1,
-                    event_type: "InvitationAccepted.v1",
-                    payload: json!({"invitationId":input.invitation_id,"workspaceId":workspace_id,"userId":input.command.actor_id}),
+                    event_type: "MembershipChanged.v1",
+                    payload: json!({"entityId":input.command.actor_id,"revision":result.revision,"action":"CREATED"}),
+                    audience: EventAudience::workspace(),
                     occurred_at: input.command.now,
                 }).await?;
                 audit_user(
@@ -592,8 +597,9 @@ impl GovernanceRepository for PostgresGovernanceRepository {
                     aggregate_kind: "Group",
                     aggregate_id: input.id,
                     sequence: 1,
-                    event_type: "GroupCreated.v1",
-                    payload: json!({"groupId":input.id,"revision":0}),
+                    event_type: "GroupChanged.v1",
+                    payload: json!({"entityId":input.id,"revision":0,"action":"CREATED"}),
+                    audience: EventAudience::workspace(),
                     occurred_at: input.command.now,
                 },
             )
@@ -705,13 +711,9 @@ impl GovernanceRepository for PostgresGovernanceRepository {
                         aggregate_kind: "Group",
                         aggregate_id: input.group_id,
                         sequence,
-                        event_type: match operation {
-                            GroupOperation::Rename => "GroupUpdated.v1",
-                            GroupOperation::Delete => "GroupDeleted.v1",
-                            GroupOperation::AddMember => "GroupMemberAdded.v1",
-                            GroupOperation::RemoveMember => "GroupMemberRemoved.v1",
-                        },
-                        payload: json!({"groupId":input.group_id,"memberId":input.member_id}),
+                        event_type: "GroupChanged.v1",
+                        payload: json!({"entityId":input.group_id,"revision":sequence-1,"action":match operation {GroupOperation::Delete=>"DELETED",_=>"UPDATED"}}),
+                        audience: EventAudience::workspace(),
                         occurred_at: input.command.now,
                     },
                 )
@@ -960,6 +962,7 @@ pub(super) struct OutboxEvent<'a> {
     pub(super) sequence: i64,
     pub(super) event_type: &'a str,
     pub(super) payload: Value,
+    pub(super) audience: EventAudience,
     pub(super) occurred_at: DateTime<Utc>,
 }
 
@@ -967,7 +970,21 @@ pub(super) async fn append_event(
     tx: &mut Transaction<'_, Postgres>,
     event: OutboxEvent<'_>,
 ) -> Result<(), GovernanceError> {
-    sqlx::query("INSERT INTO outbox_events(id,workspace_id,aggregate_kind,aggregate_id,sequence,event_type,event_version,payload_json,occurred_at) VALUES($1,$2,$3,$4,$5,$6,1,$7,$8)").bind(Uuid::now_v7()).bind(event.workspace_id).bind(event.aggregate_kind).bind(event.aggregate_id).bind(event.sequence).bind(event.event_type).bind(event.payload).bind(event.occurred_at).execute(&mut **tx).await.map_err(map_store)?;
+    if !event.audience.is_valid() || event.payload.to_string().len() > 65_536 {
+        return Err(GovernanceError::Internal);
+    }
+    let event_id = Uuid::now_v7();
+    let correlation_id = event_id.to_string();
+    sqlx::query("INSERT INTO outbox_events(id,workspace_id,aggregate_kind,aggregate_id,sequence,event_type,event_version,payload_json,audience_kind,audience_id,minimum_access,correlation_id,occurred_at) VALUES($1,$2,$3,$4,$5,$6,1,$7,$8::event_audience_kind,$9,$10::document_access,$11,$12)")
+        .bind(event_id).bind(event.workspace_id).bind(event.aggregate_kind).bind(event.aggregate_id)
+        .bind(event.sequence).bind(event.event_type).bind(event.payload)
+        .bind(super::outbox::audience_kind(event.audience.kind)).bind(event.audience.id)
+        .bind(event.audience.minimum_access.map(super::outbox::access_text)).bind(&correlation_id)
+        .bind(event.occurred_at).execute(&mut **tx).await.map_err(map_store)?;
+    sqlx::query("INSERT INTO jobs(id,workspace_id,kind,payload_json,dedupe_key,status,priority,sequence,attempt,max_attempts,run_after,correlation_id,created_at,updated_at) VALUES($1,$2,'OUTBOX_TO_STREAM',$3,$4,'QUEUED',50,1,0,5,$5,$6,$5,$5) ON CONFLICT(kind,dedupe_key) DO NOTHING")
+        .bind(Uuid::now_v7()).bind(event.workspace_id).bind(json!({"outboxEventId":event_id}))
+        .bind(format!("workspace-stream:{event_id}")).bind(event.occurred_at).bind(correlation_id)
+        .execute(&mut **tx).await.map_err(map_store)?;
     Ok(())
 }
 

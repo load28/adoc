@@ -4,12 +4,17 @@ use std::{process::ExitCode, sync::Arc, time::Duration};
 
 use adoc_adapters::{
     identity::SystemClock,
+    job_queue::RedisJobSignalQueue,
     object_storage::LocalObjectStorage,
     postgres::{
-        DatabaseSettings, PostgresFileRepository, PostgresRetentionRepository, PostgresStore,
+        DatabaseSettings, PostgresFileRepository, PostgresJobRepository,
+        PostgresRetentionRepository, PostgresStore,
     },
 };
-use adoc_application::operations::{FileGarbageCollector, RetentionService};
+use adoc_application::{
+    jobs::JobRuntime,
+    operations::{FileGarbageCollector, RetentionService},
+};
 use adoc_configuration::{
     AppConfig, ConfigError, ConfigSource, Environment, ObjectStorageDriver, ServiceKind,
 };
@@ -47,6 +52,13 @@ fn check_config() -> ExitCode {
 
 async fn run(health_only: bool) -> Result<(), Box<dyn std::error::Error>> {
     let config = parse_config()?;
+    let worker = config
+        .worker
+        .as_ref()
+        .ok_or("worker configuration is missing")?;
+    let job_lease = chrono::Duration::from_std(worker.job_lease)?;
+    let job_batch_size = i64::from(worker.outbox_batch_size);
+    let reconcile_every = worker.reconcile_interval;
     let telemetry = TelemetryConfig::from(&config.common);
     adoc_telemetry::initialize(&telemetry)?;
     let store = PostgresStore::connect(DatabaseSettings {
@@ -109,13 +121,35 @@ async fn run(health_only: bool) -> Result<(), Box<dyn std::error::Error>> {
         Arc::new(SystemClock),
         Arc::from(format!("retention-{}", config.common.release_sha)),
     );
-    let mut interval = tokio::time::interval(Duration::from_secs(60));
+    let job_runtime = JobRuntime::new(
+        Arc::new(PostgresJobRepository::new(&store)),
+        Arc::new(
+            RedisJobSignalQueue::connect(
+                config.dependencies.redis_url.value.expose(),
+                &config.dependencies.queue_namespace,
+            )
+            .await?,
+        ),
+        Arc::new(SystemClock),
+        Arc::from(format!("worker-{}", config.common.release_sha)),
+        job_lease,
+    );
+    let mut job_interval = tokio::time::interval(Duration::from_secs(1));
+    let mut reconcile_interval = tokio::time::interval(reconcile_every);
+    let mut maintenance_interval = tokio::time::interval(Duration::from_secs(60));
     loop {
         tokio::select! {
             _ = shutdown_signal() => break,
-            _ = interval.tick() => {
+            _ = job_interval.tick() => {
+                job_runtime.run_once(job_batch_size, false).await?;
+            }
+            _ = reconcile_interval.tick() => {
+                job_runtime.run_once(job_batch_size, true).await?;
+            }
+            _ = maintenance_interval.tick() => {
                 retention.run_once(25).await?;
                 gc.run_once(100).await?;
+                job_runtime.cleanup_stream(1_000).await?;
             }
         }
     }

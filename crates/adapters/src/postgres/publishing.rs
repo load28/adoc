@@ -2,7 +2,9 @@ use adoc_application::{
     document::{Draft, ValidatedContent, canonical_hash},
     governance::{Command, GovernanceError, PublishMode},
     identity::TokenHash,
-    operations::{AuditAction, AuditEventInput, AuditTarget, AuditTargetKind},
+    operations::{
+        AuditAction, AuditEventInput, AuditTarget, AuditTargetKind, EventAudience, StreamAccess,
+    },
     permission::{Access, PublishPolicy},
     publishing::{
         CreatePublicLinkCommand, DocumentDiff, PublicDocument, PublicLink, PublishCommand,
@@ -218,8 +220,8 @@ impl PublishingRepository for PostgresPublishingRepository {
             .fetch_one(&mut *tx)
             .await
             .map_err(map_store)?;
-            append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"Version",aggregate_id:input.version_id,sequence:1,event_type:"VersionPublished.v1",payload:json!({"documentId":input.document_id,"versionId":input.version_id,"number":number,"sourceDraftRevision":draft_revision}),occurred_at:input.command.now}).await?;
-            append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"Document",aggregate_id:input.document_id,sequence:document_revision+1,event_type:"DocumentChanged.v1",payload:json!({"documentId":input.document_id,"action":"PUBLISHED","revision":document_revision,"treeRevision":tree_revision}),occurred_at:input.command.now}).await?;
+            append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"Version",aggregate_id:input.version_id,sequence:1,event_type:"VersionPublished.v1",payload:json!({"documentId":input.document_id,"versionId":input.version_id,"number":number,"sourceDraftRevision":draft_revision}),audience:EventAudience::document(input.document_id,StreamAccess::Viewer),occurred_at:input.command.now}).await?;
+            append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"Document",aggregate_id:input.document_id,sequence:document_revision+1,event_type:"DocumentChanged.v1",payload:json!({"documentId":input.document_id,"action":"PUBLISHED","revision":document_revision,"treeRevision":tree_revision}),audience:EventAudience::document(input.document_id,StreamAccess::Viewer),occurred_at:input.command.now}).await?;
             audit_publish(
                 &mut tx,
                 &input.command,
@@ -279,7 +281,7 @@ impl PublishingRepository for PostgresPublishingRepository {
             )
             .await?;
             let result = draft(&inserted)?;
-            append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"Draft",aggregate_id:input.draft_id,sequence:1,event_type:"DraftChanged.v1",payload:json!({"documentId":input.document_id,"draftId":input.draft_id,"revision":0,"operationIds":[]}),occurred_at:input.command.now}).await?;
+            append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"Draft",aggregate_id:input.draft_id,sequence:1,event_type:"DraftChanged.v1",payload:json!({"documentId":input.document_id,"draftId":input.draft_id,"revision":0,"operationIds":[]}),audience:EventAudience::document(input.document_id,StreamAccess::Contributor),occurred_at:input.command.now}).await?;
             audit_publish(
                 &mut tx,
                 &input.command,
@@ -347,6 +349,7 @@ impl PublishingRepository for PostgresPublishingRepository {
                     sequence: 1,
                     event_type: "PublicLinkChanged.v1",
                     payload: json!({"entityId":input.link_id,"revision":0,"action":"CREATED"}),
+                    audience: EventAudience::document(input.document_id, StreamAccess::Editor),
                     occurred_at: input.command.now,
                 },
             )
@@ -400,7 +403,7 @@ impl PublishingRepository for PostgresPublishingRepository {
                 return Err(GovernanceError::PublicLinkStateInvalid);
             }
             let revision:i64=sqlx::query_scalar("UPDATE public_links SET revoked_at=$4,revision=revision+1 WHERE workspace_id=$1 AND document_id=$2 AND id=$3 RETURNING revision").bind(input.workspace_id).bind(input.document_id).bind(input.link_id).bind(input.command.now).fetch_one(&mut *tx).await.map_err(map_store)?;
-            append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"PublicLink",aggregate_id:input.link_id,sequence:revision+1,event_type:"PublicLinkChanged.v1",payload:json!({"entityId":input.link_id,"revision":revision,"action":"INVALIDATED"}),occurred_at:input.command.now}).await?;
+            append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"PublicLink",aggregate_id:input.link_id,sequence:revision+1,event_type:"PublicLinkChanged.v1",payload:json!({"entityId":input.link_id,"revision":revision,"action":"INVALIDATED"}),audience:EventAudience::document(input.document_id,StreamAccess::Editor),occurred_at:input.command.now}).await?;
             audit_publish(
                 &mut tx,
                 &input.command,

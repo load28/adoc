@@ -27,7 +27,7 @@ sha2 = "0.10.9"
 sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio", "tls-rustls-ring-native-roots", "postgres", "migrate", "macros", "uuid", "chrono", "json"] }
 subtle = "2.6.1"
 thiserror = "2.0.20"
-tokio = { version = "1", features = ["sync", "time", "fs", "io-util"] }
+tokio = { version = "1", features = ["sync", "time", "fs", "io-util", "rt"] }
 tokio-util = { version = "0.7.19", features = ["io"] }
 uuid = { version = "1.25.0", features = ["serde", "v7"] }
 

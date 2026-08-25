@@ -18,6 +18,7 @@ mod knowledge_http;
 mod operations_http;
 mod permission_http;
 mod publishing_http;
+mod stream_http;
 
 use collaboration_http::{CollaborationRuntime, collaboration_routes};
 use document_http::{DocumentRuntime, document_routes};
@@ -28,6 +29,7 @@ use knowledge_http::{KnowledgeRuntime, knowledge_routes};
 use operations_http::{OperationsRuntime, operations_routes};
 use permission_http::{PermissionRuntime, permission_routes};
 use publishing_http::{PublishingRuntime, public_routes, publishing_routes};
+use stream_http::{StreamRuntime, stream_routes};
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -109,6 +111,7 @@ struct HealthState {
     knowledge: KnowledgeRuntime,
     files: FileRuntime,
     operations: OperationsRuntime,
+    stream: StreamRuntime,
 }
 
 async fn serve() -> Result<(), Box<dyn std::error::Error>> {
@@ -129,6 +132,7 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     let identity = IdentityRuntime::new(&config, &store).await?;
     let governance = GovernanceRuntime::new(&config, &store)?;
     let permission = PermissionRuntime::new(&config, &store).await?;
+    let stream = StreamRuntime::new(&config, &store, permission.service.clone())?;
     let document = DocumentRuntime::new(&store);
     let publishing = PublishingRuntime::new(&store);
     let collaboration = CollaborationRuntime::new(&store);
@@ -147,6 +151,7 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
         knowledge,
         files,
         operations,
+        stream,
     };
     let app = Router::new()
         .route("/health/live", get(live))
@@ -161,7 +166,8 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
                 .merge(collaboration_routes())
                 .merge(knowledge_routes())
                 .merge(file_routes())
-                .merge(operations_routes()),
+                .merge(operations_routes())
+                .merge(stream_routes()),
         )
         .merge(public_routes())
         .merge(public_file_routes())

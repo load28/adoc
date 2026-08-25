@@ -1499,10 +1499,15 @@ export type Operation__RevokePublicLinkResponse =
       status: "default";
       body: OpenApi__Problem;
     };
-export type Operation__OpenWorkspaceStreamResponse = {
-  status: "200";
-  body: string;
-};
+export type Operation__OpenWorkspaceStreamResponse =
+  | {
+      status: "200";
+      body: string;
+    }
+  | {
+      status: "default";
+      body: OpenApi__Problem;
+    };
 export type Operation__GetPublicDocumentResponse =
   | {
       status: "200";
@@ -3362,6 +3367,9 @@ export interface Operation__OpenWorkspaceStreamRequest {
     workspaceId: OpenApi__Id;
     cursor?: string;
   };
+  header?: {
+    "Last-Event-ID"?: string;
+  };
 }
 export interface Operation__GetPublicDocumentRequest {
   path: {
@@ -3374,6 +3382,7 @@ export interface AsyncApi__StreamHeaders {
    */
   eventId: string;
   retryMilliseconds: number;
+  cursorVersion: 1;
 }
 export interface AsyncApi__OutboxHeaders {
   eventId: string;

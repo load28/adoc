@@ -27,7 +27,8 @@
 | TASK-021 | Reference·Vocabulary 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-021](TASK-021-reference-vocabulary.md) |
 | TASK-022 | File·ObjectStorage 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-022](TASK-022-file-object-storage.md) |
 | TASK-023 | Audit·Retention 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-023](TASK-023-audit-retention.md) |
+| TASK-024 | Job Runtime·SSE 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-024](TASK-024-job-runtime-sse.md) |
 
 ## 다음 태스크 번호
 
-**TASK-024**
+**TASK-025**

@@ -199,6 +199,170 @@ pub struct PurgeObject {
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum EventAudienceKind {
+    Internal,
+    Workspace,
+    Admin,
+    User,
+    Document,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum StreamAccess {
+    Viewer,
+    Contributor,
+    Editor,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct EventAudience {
+    pub kind: EventAudienceKind,
+    pub id: Option<Uuid>,
+    pub minimum_access: Option<StreamAccess>,
+}
+
+impl EventAudience {
+    #[must_use]
+    pub fn internal() -> Self {
+        Self {
+            kind: EventAudienceKind::Internal,
+            id: None,
+            minimum_access: None,
+        }
+    }
+
+    #[must_use]
+    pub fn workspace() -> Self {
+        Self {
+            kind: EventAudienceKind::Workspace,
+            id: None,
+            minimum_access: None,
+        }
+    }
+
+    #[must_use]
+    pub fn admin() -> Self {
+        Self {
+            kind: EventAudienceKind::Admin,
+            id: None,
+            minimum_access: None,
+        }
+    }
+
+    #[must_use]
+    pub fn user(id: Uuid) -> Self {
+        Self {
+            kind: EventAudienceKind::User,
+            id: Some(id),
+            minimum_access: None,
+        }
+    }
+
+    #[must_use]
+    pub fn document(id: Uuid, minimum_access: StreamAccess) -> Self {
+        Self {
+            kind: EventAudienceKind::Document,
+            id: Some(id),
+            minimum_access: Some(minimum_access),
+        }
+    }
+
+    #[must_use]
+    pub fn is_valid(&self) -> bool {
+        match self.kind {
+            EventAudienceKind::Internal
+            | EventAudienceKind::Workspace
+            | EventAudienceKind::Admin => self.id.is_none() && self.minimum_access.is_none(),
+            EventAudienceKind::User => self.id.is_some() && self.minimum_access.is_none(),
+            EventAudienceKind::Document => self.id.is_some() && self.minimum_access.is_some(),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum JobKind {
+    OutboxToStream,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum JobStatus {
+    Queued,
+    Running,
+    CancelRequested,
+    Succeeded,
+    Failed,
+    Cancelled,
+    TimedOut,
+    DeadLetter,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum JobPriorityBucket {
+    Interactive,
+    Normal,
+    Background,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Job {
+    pub id: Uuid,
+    pub workspace_id: Option<Uuid>,
+    pub kind: JobKind,
+    pub payload: serde_json::Value,
+    pub status: JobStatus,
+    pub priority: i16,
+    pub sequence: i64,
+    pub attempt: i32,
+    pub max_attempts: i32,
+    pub correlation_id: String,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct JobSignal {
+    pub id: Uuid,
+    pub bucket: JobPriorityBucket,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct StreamWake {
+    pub workspace_id: Uuid,
+    pub sequence: i64,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct WorkspaceStreamEvent {
+    pub id: Uuid,
+    pub workspace_id: Uuid,
+    pub sequence: i64,
+    pub aggregate_id: Uuid,
+    pub event_type: String,
+    pub version: i32,
+    pub payload: serde_json::Value,
+    pub audience: EventAudience,
+    pub correlation_id: String,
+    pub occurred_at: DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct StreamCursor {
+    pub version: u8,
+    pub workspace_id: Uuid,
+    pub sequence: i64,
+    pub event_id: Uuid,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum FileStatus {
     Uploading,
     Validating,

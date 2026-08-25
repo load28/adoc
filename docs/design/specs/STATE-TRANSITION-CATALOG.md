@@ -91,7 +91,12 @@ APPROVED는 required approval 수를 충족한 시점의 Review aggregate 상태
 | File | UPLOADING | failure/expiry | FAILED | object cleanup 예약 |
 | File | READY | delete request | DELETED | reference 0, 30일 purge_after |
 | Job | QUEUED | claim | RUNNING | `SKIP LOCKED`, lease |
+| Job | QUEUED/RUNNING | cancel request | CANCEL_REQUESTED | owner service·sequence conditional update |
+| Job | CANCEL_REQUESTED | worker ack | CANCELLED | lease side effect 중단 확인 |
 | Job | RUNNING | transient failure | QUEUED | attempt < max, backoff |
+| Job | RUNNING | permanent failure | FAILED | validation·unknown kind·authorization |
+| Job | RUNNING | deadline | TIMED_OUT | handler deadline 초과 |
+| Job | RUNNING | success | SUCCEEDED | handler side effect·receipt commit |
 | Job | RUNNING | attempts exhausted | DEAD_LETTER | operator alert |
 
 terminal state는 다시 active state로 돌아가지 않는다. 재실행은 새 identity가 아니라 명시된

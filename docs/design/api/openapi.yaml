@@ -935,8 +935,10 @@ paths:
       parameters:
         - {name: workspaceId, in: query, required: true, schema: {$ref: '#/components/schemas/Id'}}
         - {name: cursor, in: query, schema: {type: string}}
+        - {name: Last-Event-ID, in: header, schema: {type: string}}
       responses:
-        '200': {description: SSE stream, content: {text/event-stream: {schema: {type: string}}}}
+        '200': {description: Permission-filtered resumable SSE stream, headers: {Cache-Control: {schema: {type: string, const: 'no-cache, no-store'}}, X-Accel-Buffering: {schema: {type: string, const: 'no'}}}, content: {text/event-stream: {schema: {type: string}}}}
+        default: {$ref: '#/components/responses/Problem'}
   /public/v1/documents/{token}:
     get:
       tags: [Document]

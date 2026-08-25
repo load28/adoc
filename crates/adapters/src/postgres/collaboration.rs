@@ -7,7 +7,9 @@ use adoc_application::{
         Topic, TopicInput, TopicKind, may_edit_message, review_status,
     },
     governance::{Command, GovernanceError},
-    operations::{AuditAction, AuditEventInput, AuditTarget, AuditTargetKind},
+    operations::{
+        AuditAction, AuditEventInput, AuditTarget, AuditTargetKind, EventAudience, StreamAccess,
+    },
     permission::{Access, PublishMode, ReviewerRule},
 };
 use adoc_ports::BoxFuture;
@@ -275,7 +277,7 @@ impl CollaborationRepository for PostgresCollaborationRepository {
             let row =
                 discussion_row(&mut tx, input.workspace_id, input.discussion_id, false).await?;
             let result = load_discussion_row(&mut tx, input.workspace_id, &row).await?;
-            append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"Discussion",aggregate_id:input.discussion_id,sequence:result.revision+1,event_type:"DiscussionChanged.v1",payload:json!({"discussionId":result.id,"documentId":result.document_id,"revision":result.revision,"action":format!("{:?}",input.action)}),occurred_at:input.command.now}).await?;
+            append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"Discussion",aggregate_id:input.discussion_id,sequence:result.revision+1,event_type:"DiscussionChanged.v1",payload:json!({"entityId":result.id,"revision":result.revision,"action":match input.action {DiscussionAction::Create=>"CREATED",DiscussionAction::Close=>"CLOSED",DiscussionAction::Reopen=>"REOPENED",_=>"UPDATED"}}),audience:EventAudience::document(result.document_id,StreamAccess::Contributor),occurred_at:input.command.now}).await?;
             if let Some(action) = match input.action {
                 DiscussionAction::Create => Some(AuditAction::DiscussionCreated),
                 DiscussionAction::Close => Some(AuditAction::DiscussionClosed),
@@ -426,7 +428,7 @@ impl CollaborationRepository for PostgresCollaborationRepository {
             }
             let row=sqlx::query("SELECT id,author_id,body_json,mention_user_ids,revision,created_at,edited_at,deleted_at FROM messages WHERE id=$1").bind(input.message_id).fetch_one(&mut *tx).await.map_err(map_store)?;
             let result = message(&row)?;
-            append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"Message",aggregate_id:input.message_id,sequence:result.revision+1,event_type:"MessageChanged.v1",payload:json!({"messageId":result.id,"discussionId":input.discussion_id,"revision":result.revision,"action":format!("{:?}",input.action)}),occurred_at:input.command.now}).await?;
+            append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"Message",aggregate_id:input.message_id,sequence:result.revision+1,event_type:"MessageChanged.v1",payload:json!({"entityId":result.id,"revision":result.revision,"action":match input.action {MessageAction::Create=>"CREATED",MessageAction::Update=>"UPDATED",MessageAction::Redact=>"DELETED"}}),audience:EventAudience::document(document,StreamAccess::Contributor),occurred_at:input.command.now}).await?;
             complete_workspace(&mut tx, input.workspace_id, &input.command, 200, &result).await?;
             tx.commit().await.map_err(map_store)?;
             Ok(result)
@@ -520,6 +522,7 @@ impl CollaborationRepository for PostgresCollaborationRepository {
                         append_inbox_event(
                             &mut tx,
                             input.workspace_id,
+                            input.command.actor_id,
                             &item,
                             if matches!(input.action, InboxAction::Read) {
                                 "READ"
@@ -543,6 +546,7 @@ impl CollaborationRepository for PostgresCollaborationRepository {
                         append_inbox_event(
                             &mut tx,
                             input.workspace_id,
+                            input.command.actor_id,
                             &inbox(row)?,
                             "READ",
                             input.command.now,
@@ -623,11 +627,13 @@ impl CollaborationRepository for PostgresCollaborationRepository {
             let row = review_row(&mut tx, input.workspace_id, input.review_id, false).await?;
             let result = load_review(&mut tx, input.workspace_id, &row).await?;
             let event_action = if result.status == ReviewStatus::Invalidated {
-                "INVALIDATED".to_owned()
+                "INVALIDATED"
+            } else if matches!(input.action, ReviewAction::Request) {
+                "CREATED"
             } else {
-                format!("{:?}", input.action)
+                "UPDATED"
             };
-            append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"Review",aggregate_id:input.review_id,sequence:result.revision+1,event_type:"ReviewChanged.v1",payload:json!({"reviewId":result.id,"documentId":result.document_id,"draftRevision":result.draft_revision,"revision":result.revision,"action":event_action}),occurred_at:input.command.now}).await?;
+            append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"Review",aggregate_id:input.review_id,sequence:result.revision+1,event_type:"ReviewChanged.v1",payload:json!({"entityId":result.id,"revision":result.revision,"action":event_action}),audience:EventAudience::document(result.document_id,StreamAccess::Viewer),occurred_at:input.command.now}).await?;
             let audit_action = match input.action {
                 ReviewAction::Request => Some(AuditAction::ReviewRequested),
                 ReviewAction::Decide => match input.decision.as_ref().map(|value| value.decision) {
@@ -734,6 +740,7 @@ async fn request_review(
         append_inbox_event(
             tx,
             input.workspace_id,
+            reviewer,
             &inbox(&row)?,
             "REVIEW_REQUESTED",
             input.command.now,
@@ -810,6 +817,7 @@ async fn decide_review(
     append_inbox_event(
         tx,
         input.workspace_id,
+        review.get("requested_by"),
         &inbox(&row)?,
         "REVIEW_DECIDED",
         input.command.now,
@@ -950,9 +958,17 @@ async fn resolve_review_inbox(
     review: Uuid,
     now: DateTime<Utc>,
 ) -> Result<(), GovernanceError> {
-    let rows=sqlx::query("UPDATE inbox_items SET resolved_at=$3,revision=revision+1 WHERE workspace_id=$1 AND source_key LIKE $2 AND resolved_at IS NULL RETURNING id,kind,target_json,revision,created_at,read_at,resolved_at").bind(workspace).bind(format!("review:{review}:%")).bind(now).fetch_all(&mut **tx).await.map_err(map_store)?;
+    let rows=sqlx::query("UPDATE inbox_items SET resolved_at=$3,revision=revision+1 WHERE workspace_id=$1 AND source_key LIKE $2 AND resolved_at IS NULL RETURNING user_id,id,kind,target_json,revision,created_at,read_at,resolved_at").bind(workspace).bind(format!("review:{review}:%")).bind(now).fetch_all(&mut **tx).await.map_err(map_store)?;
     for row in rows {
-        append_inbox_event(tx, workspace, &inbox(&row)?, "RESOLVED", now).await?;
+        append_inbox_event(
+            tx,
+            workspace,
+            row.get("user_id"),
+            &inbox(&row)?,
+            "RESOLVED",
+            now,
+        )
+        .await?;
     }
     Ok(())
 }
@@ -996,7 +1012,21 @@ pub(super) async fn invalidate_reviews(
         let review: Uuid = row.get("id");
         let revision:i64=sqlx::query_scalar("UPDATE reviews SET status='INVALIDATED',resolved_at=$3,revision=revision+1 WHERE workspace_id=$1 AND id=$2 RETURNING revision").bind(workspace).bind(review).bind(now).fetch_one(&mut **tx).await.map_err(map_store)?;
         resolve_review_inbox(tx, workspace, review, now).await?;
-        append_event(tx,OutboxEvent{workspace_id:workspace,aggregate_kind:"Review",aggregate_id:review,sequence:revision+1,event_type:"ReviewChanged.v1",payload:json!({"reviewId":review,"documentId":row.get::<Uuid,_>("document_id"),"revision":revision,"action":"INVALIDATED"}),occurred_at:now}).await?;
+        let document: Uuid = row.get("document_id");
+        append_event(
+            tx,
+            OutboxEvent {
+                workspace_id: workspace,
+                aggregate_kind: "Review",
+                aggregate_id: review,
+                sequence: revision + 1,
+                event_type: "ReviewChanged.v1",
+                payload: json!({"entityId":review,"revision":revision,"action":"INVALIDATED"}),
+                audience: EventAudience::document(document, StreamAccess::Viewer),
+                occurred_at: now,
+            },
+        )
+        .await?;
     }
     Ok(())
 }
@@ -1171,14 +1201,14 @@ async fn sync_mentions(
         let source = format!("mention:{message}:{user}");
         let row=sqlx::query("INSERT INTO inbox_items(id,workspace_id,user_id,kind,source_key,target_json,created_at) VALUES($1,$2,$3,'MENTIONED',$4,$5,$6) ON CONFLICT(workspace_id,user_id,source_key) DO UPDATE SET resolved_at=NULL,revision=inbox_items.revision+1 WHERE inbox_items.resolved_at IS NOT NULL RETURNING id,kind,target_json,revision,created_at,read_at,resolved_at").bind(Uuid::now_v7()).bind(workspace).bind(user).bind(source).bind(json!({"kind":"DISCUSSION","id":discussion})).bind(now).fetch_optional(&mut **tx).await.map_err(map_store)?;
         if let Some(row) = row {
-            append_inbox_event(tx, workspace, &inbox(&row)?, "MENTIONED", now).await?;
+            append_inbox_event(tx, workspace, *user, &inbox(&row)?, "MENTIONED", now).await?;
         }
     }
     for user in old.iter().filter(|id| !new.contains(id)) {
         let source = format!("mention:{message}:{user}");
         let row=sqlx::query("UPDATE inbox_items SET resolved_at=$4,revision=revision+1 WHERE workspace_id=$1 AND user_id=$2 AND source_key=$3 AND resolved_at IS NULL RETURNING id,kind,target_json,revision,created_at,read_at,resolved_at").bind(workspace).bind(user).bind(source).bind(now).fetch_optional(&mut **tx).await.map_err(map_store)?;
         if let Some(row) = row {
-            append_inbox_event(tx, workspace, &inbox(&row)?, "RESOLVED", now).await?;
+            append_inbox_event(tx, workspace, *user, &inbox(&row)?, "RESOLVED", now).await?;
         }
     }
     Ok(())
@@ -1186,8 +1216,9 @@ async fn sync_mentions(
 async fn append_inbox_event(
     tx: &mut Transaction<'_, Postgres>,
     workspace: Uuid,
+    user: Uuid,
     item: &InboxItem,
-    action: &'static str,
+    _action: &'static str,
     now: DateTime<Utc>,
 ) -> Result<(), GovernanceError> {
     append_event(
@@ -1198,7 +1229,8 @@ async fn append_inbox_event(
             aggregate_id: item.id,
             sequence: item.revision + 1,
             event_type: "InboxChanged.v1",
-            payload: json!({"itemId":item.id,"revision":item.revision,"action":action}),
+            payload: json!({"entityId":item.id,"revision":item.revision,"action":"UPDATED"}),
+            audience: EventAudience::user(user),
             occurred_at: now,
         },
     )

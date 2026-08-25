@@ -172,7 +172,15 @@ async fn audit_retention_postgres_contract() {
         .execute(store.pool())
         .await
         .unwrap();
-    assert_eq!(retention.run_once(25).await.unwrap(), 1);
+    let completed = retention.run_once(25).await.unwrap();
+    let retry_state: (String, String, Option<String>) = sqlx::query_as(
+        "SELECT status::text,step::text,last_error_code FROM purge_ledger WHERE id=$1",
+    )
+    .bind(job.job_id)
+    .fetch_one(store.pool())
+    .await
+    .unwrap();
+    assert_eq!(completed, 1, "purge retry state: {retry_state:?}");
     assert!(
         !sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM documents WHERE id=$1)")
             .bind(document)

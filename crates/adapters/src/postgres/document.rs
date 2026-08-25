@@ -11,7 +11,9 @@ use adoc_application::{
     },
     governance::{Command, GovernanceError},
     identity::TokenHash,
-    operations::{AuditAction, AuditEventInput, AuditTarget, AuditTargetKind},
+    operations::{
+        AuditAction, AuditEventInput, AuditTarget, AuditTargetKind, EventAudience, StreamAccess,
+    },
     permission::{Access, compile_permission_scope, resolve_permission_path},
 };
 use adoc_ports::BoxFuture;
@@ -365,7 +367,7 @@ impl DocumentRepository for PostgresDocumentRepository {
                     .bind(input.workspace_id).bind(input.document_id).bind(input.input.new_parent_id).bind(rank.to_string()).bind(input.command.now).fetch_one(&mut *tx).await.map_err(map_document_store)?;
                 let result = document(&result_row)?;
                 let tree_revision = bump_tree_revision(&mut tx, input.workspace_id, input.command.now).await?;
-                append_event(&mut tx, OutboxEvent { workspace_id:input.workspace_id, aggregate_kind:"Document", aggregate_id:input.document_id, sequence:result.revision+1, event_type:"DocumentMoved.v1", payload:json!({"documentId":input.document_id,"beforeParentId":row.parent_id,"afterParentId":input.input.new_parent_id,"revision":result.revision,"treeRevision":tree_revision}), occurred_at:input.command.now }).await?;
+                append_event(&mut tx, OutboxEvent { workspace_id:input.workspace_id, aggregate_kind:"Document", aggregate_id:input.document_id, sequence:result.revision+1, event_type:"DocumentMoved.v1", payload:json!({"documentId":input.document_id,"beforeParentId":row.parent_id,"afterParentId":input.input.new_parent_id,"revision":result.revision,"treeRevision":tree_revision}), audience:EventAudience::document(input.document_id,StreamAccess::Viewer), occurred_at:input.command.now }).await?;
                 audit_document(&mut tx, &input.command, input.workspace_id, AuditAction::DocumentMoved, AuditTargetKind::Document, input.document_id).await?;
                 sqlx::query("DELETE FROM document_move_previews WHERE token_hash=$1").bind(input.preview_token_hash.0.as_slice()).execute(&mut *tx).await.map_err(map_store)?;
                 complete_workspace(&mut tx, input.workspace_id, &input.command, 200, &result).await?;
@@ -591,7 +593,7 @@ impl DocumentRepository for PostgresDocumentRepository {
             let result = if input.release {
                 sqlx::query("UPDATE edit_leases SET released_at=clock_timestamp(),expires_at=clock_timestamp(),revision=$3 WHERE workspace_id=$1 AND document_id=$2")
                     .bind(input.workspace_id).bind(input.document_id).bind(revision).execute(&mut *tx).await.map_err(map_store)?;
-                append_event(&mut tx, OutboxEvent { workspace_id:input.workspace_id, aggregate_kind:"EditLease", aggregate_id:input.document_id, sequence:revision+1, event_type:"LeaseChanged.v1", payload:json!({"documentId":input.document_id,"holderUserId":Value::Null,"expiresAt":Value::Null,"revision":revision}), occurred_at:input.command.now }).await?;
+                append_event(&mut tx, OutboxEvent { workspace_id:input.workspace_id, aggregate_kind:"EditLease", aggregate_id:input.document_id, sequence:revision+1, event_type:"LeaseChanged.v1", payload:json!({"documentId":input.document_id,"holderUserId":Value::Null,"expiresAt":Value::Null,"revision":revision}), audience:EventAudience::document(input.document_id,StreamAccess::Contributor), occurred_at:input.command.now }).await?;
                 None
             } else {
                 let renewed = sqlx::query("UPDATE edit_leases SET expires_at=clock_timestamp()+interval '90 seconds',revision=$3 WHERE workspace_id=$1 AND document_id=$2 RETURNING holder_user_id,client_instance_id,expires_at,revision")
@@ -699,7 +701,7 @@ impl DocumentRepository for PostgresDocumentRepository {
                 input.command.now,
             )
             .await?;
-            append_event(&mut tx, OutboxEvent { workspace_id:input.workspace_id, aggregate_kind:"Draft", aggregate_id:draft_row.get("id"), sequence:result.revision+1, event_type:"DraftChanged.v1", payload:json!({"documentId":input.document_id,"draftId":draft_row.get::<Uuid,_>("id"),"revision":result.revision,"operationIds":result.applied_operation_ids}), occurred_at:input.command.now }).await?;
+            append_event(&mut tx, OutboxEvent { workspace_id:input.workspace_id, aggregate_kind:"Draft", aggregate_id:draft_row.get("id"), sequence:result.revision+1, event_type:"DraftChanged.v1", payload:json!({"documentId":input.document_id,"draftId":draft_row.get::<Uuid,_>("id"),"revision":result.revision,"operationIds":result.applied_operation_ids}), audience:EventAudience::document(input.document_id,StreamAccess::Contributor), occurred_at:input.command.now }).await?;
             complete_workspace(&mut tx, input.workspace_id, &input.command, 200, &result).await?;
             tx.commit().await.map_err(map_store)?;
             Ok(result)
@@ -983,7 +985,7 @@ async fn apply_reference_effects(
                     .bind(serde_json::to_value(&reference.source_region).map_err(|_| GovernanceError::Internal)?)
                     .bind(json!({"title":title,"snapshotHash":snapshot_hash})).bind(actor).bind(now)
                     .execute(&mut **tx).await.map_err(map_reference_store)?;
-                append_event(tx, OutboxEvent { workspace_id:workspace, aggregate_kind:"Reference", aggregate_id:reference.reference_id, sequence:1, event_type:"ReferenceChanged.v1", payload:json!({"referenceId":reference.reference_id,"sourceDocumentId":document,"action":"ADDED"}), occurred_at:now }).await?;
+                append_event(tx, OutboxEvent { workspace_id:workspace, aggregate_kind:"Reference", aggregate_id:reference.reference_id, sequence:1, event_type:"ReferenceChanged.v1", payload:json!({"entityId":reference.reference_id,"revision":0,"action":"CREATED"}), audience:EventAudience::document(document,StreamAccess::Viewer), occurred_at:now }).await?;
             }
             ReferenceEffect::Remove { reference } => {
                 let affected = sqlx::query("UPDATE references_graph SET deleted_at=$4 WHERE workspace_id=$1 AND source_kind='DOCUMENT' AND source_id=$2 AND id=$3 AND deleted_at IS NULL")
@@ -991,7 +993,7 @@ async fn apply_reference_effects(
                 if affected == 0 {
                     return Err(GovernanceError::ReferenceNotFound);
                 }
-                append_event(tx, OutboxEvent { workspace_id:workspace, aggregate_kind:"Reference", aggregate_id:reference.reference_id, sequence:2, event_type:"ReferenceChanged.v1", payload:json!({"referenceId":reference.reference_id,"sourceDocumentId":document,"action":"REMOVED"}), occurred_at:now }).await?;
+                append_event(tx, OutboxEvent { workspace_id:workspace, aggregate_kind:"Reference", aggregate_id:reference.reference_id, sequence:2, event_type:"ReferenceChanged.v1", payload:json!({"entityId":reference.reference_id,"revision":1,"action":"DELETED"}), audience:EventAudience::document(document,StreamAccess::Viewer), occurred_at:now }).await?;
             }
         }
     }
@@ -1171,7 +1173,7 @@ async fn append_lease_event(
     lease: &EditLeaseView,
     now: DateTime<Utc>,
 ) -> Result<(), GovernanceError> {
-    append_event(tx,OutboxEvent{workspace_id:workspace,aggregate_kind:"EditLease",aggregate_id:document,sequence:lease.revision+1,event_type:"LeaseChanged.v1",payload:json!({"documentId":document,"holderUserId":lease.holder_user_id,"expiresAt":lease.expires_at,"revision":lease.revision}),occurred_at:now}).await
+    append_event(tx,OutboxEvent{workspace_id:workspace,aggregate_kind:"EditLease",aggregate_id:document,sequence:lease.revision+1,event_type:"LeaseChanged.v1",payload:json!({"documentId":document,"holderUserId":lease.holder_user_id,"expiresAt":lease.expires_at,"revision":lease.revision}),audience:EventAudience::document(document,StreamAccess::Contributor),occurred_at:now}).await
 }
 async fn append_document_changed(
     tx: &mut Transaction<'_, Postgres>,
@@ -1181,7 +1183,7 @@ async fn append_document_changed(
     action: &str,
     now: DateTime<Utc>,
 ) -> Result<(), GovernanceError> {
-    append_event(tx,OutboxEvent{workspace_id:workspace,aggregate_kind:"Document",aggregate_id:document.id,sequence:document.revision+1,event_type:"DocumentChanged.v1",payload:json!({"documentId":document.id,"revision":document.revision,"treeRevision":tree_revision,"action":action}),occurred_at:now}).await
+    append_event(tx,OutboxEvent{workspace_id:workspace,aggregate_kind:"Document",aggregate_id:document.id,sequence:document.revision+1,event_type:"DocumentChanged.v1",payload:json!({"documentId":document.id,"revision":document.revision,"treeRevision":tree_revision,"action":action}),audience:EventAudience::document(document.id,StreamAccess::Viewer),occurred_at:now}).await
 }
 
 fn build_tree(

@@ -5,6 +5,7 @@ use adoc_adapters::postgres::{
     IdempotencyReservation, OutboxAppendError, OutboxEventInput, PgUnitOfWork, PostgresStore,
     StoredResponse, append_outbox_event, complete_idempotency, reserve_idempotency,
 };
+use adoc_application::operations::EventAudience;
 use adoc_ports::{UnitOfWork, UnitOfWorkError};
 use chrono::{Duration, Utc};
 use serde_json::json;
@@ -29,7 +30,7 @@ async fn postgres_foundation_contract() {
     let ledger_before = migration_ledger(&store).await;
     store.migrate().await.expect("second migration run");
     assert_eq!(migration_ledger(&store).await, ledger_before);
-    assert_eq!(ledger_before.len(), 6);
+    assert_eq!(ledger_before.len(), 17);
     assert_eq!(store.preflight().await.unwrap().server_major_version, 16);
 
     let table_count: i64 = sqlx::query_scalar(
@@ -40,7 +41,7 @@ async fn postgres_foundation_contract() {
     .fetch_one(store.pool())
     .await
     .unwrap();
-    assert_eq!(table_count, 45);
+    assert_eq!(table_count, 51);
 
     let user_id = uuid("018f0000-0000-7000-8000-000000000001");
     let workspace_id = uuid("018f0000-0000-7000-8000-000000000002");
@@ -320,6 +321,8 @@ fn outbox_event(id: Uuid, workspace_id: Uuid, aggregate_id: Uuid) -> OutboxEvent
         event_type: "DocumentCreated",
         event_version: 1,
         payload: json!({"revision": 0}),
+        audience: EventAudience::internal(),
+        correlation_id: "postgres-foundation-outbox",
         occurred_at: Utc::now(),
     }
 }

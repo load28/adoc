@@ -4891,10 +4891,15 @@ pub struct AsyncApiOutboxHeaders {
 ///{
 ///  "type": "object",
 ///  "required": [
+///    "cursorVersion",
 ///    "eventId",
 ///    "retryMilliseconds"
 ///  ],
 ///  "properties": {
+///    "cursorVersion": {
+///      "type": "integer",
+///      "const": 1
+///    },
 ///    "eventId": {
 ///      "description": "Opaque SSE resume cursor",
 ///      "type": "string"
@@ -4912,6 +4917,8 @@ pub struct AsyncApiOutboxHeaders {
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct AsyncApiStreamHeaders {
+    #[serde(rename = "cursorVersion")]
+    pub cursor_version: i64,
     ///Opaque SSE resume cursor
     #[serde(rename = "eventId")]
     pub event_id: ::std::string::String,
@@ -9581,7 +9588,9 @@ impl<'de> ::serde::Deserialize<'de> for DocumentOperationTextAnchorContextHash {
 ///    },
 ///    "type": {
 ///      "enum": [
+///        "WORKSPACE_CHANGED",
 ///        "MEMBERSHIP_CHANGED",
+///        "INVITATION_CHANGED",
 ///        "GROUP_CHANGED",
 ///        "PERMISSION_CHANGED",
 ///        "PUBLISH_POLICY_CHANGED",
@@ -9591,6 +9600,7 @@ impl<'de> ::serde::Deserialize<'de> for DocumentOperationTextAnchorContextHash {
 ///        "LEASE_CHANGED",
 ///        "VERSION_PUBLISHED",
 ///        "DISCUSSION_CHANGED",
+///        "MESSAGE_CHANGED",
 ///        "REVIEW_CHANGED",
 ///        "INBOX_CHANGED",
 ///        "REFERENCE_CHANGED",
@@ -10746,7 +10756,9 @@ impl ::std::fmt::Display for EventPayloadsRevision {
 /// ```json
 ///{
 ///  "enum": [
+///    "WORKSPACE_CHANGED",
 ///    "MEMBERSHIP_CHANGED",
+///    "INVITATION_CHANGED",
 ///    "GROUP_CHANGED",
 ///    "PERMISSION_CHANGED",
 ///    "PUBLISH_POLICY_CHANGED",
@@ -10756,6 +10768,7 @@ impl ::std::fmt::Display for EventPayloadsRevision {
 ///    "LEASE_CHANGED",
 ///    "VERSION_PUBLISHED",
 ///    "DISCUSSION_CHANGED",
+///    "MESSAGE_CHANGED",
 ///    "REVIEW_CHANGED",
 ///    "INBOX_CHANGED",
 ///    "REFERENCE_CHANGED",
@@ -10782,8 +10795,12 @@ impl ::std::fmt::Display for EventPayloadsRevision {
     PartialOrd,
 )]
 pub enum EventPayloadsType {
+    #[serde(rename = "WORKSPACE_CHANGED")]
+    WorkspaceChanged,
     #[serde(rename = "MEMBERSHIP_CHANGED")]
     MembershipChanged,
+    #[serde(rename = "INVITATION_CHANGED")]
+    InvitationChanged,
     #[serde(rename = "GROUP_CHANGED")]
     GroupChanged,
     #[serde(rename = "PERMISSION_CHANGED")]
@@ -10802,6 +10819,8 @@ pub enum EventPayloadsType {
     VersionPublished,
     #[serde(rename = "DISCUSSION_CHANGED")]
     DiscussionChanged,
+    #[serde(rename = "MESSAGE_CHANGED")]
+    MessageChanged,
     #[serde(rename = "REVIEW_CHANGED")]
     ReviewChanged,
     #[serde(rename = "INBOX_CHANGED")]
@@ -10824,7 +10843,9 @@ pub enum EventPayloadsType {
 impl ::std::fmt::Display for EventPayloadsType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
+            Self::WorkspaceChanged => f.write_str("WORKSPACE_CHANGED"),
             Self::MembershipChanged => f.write_str("MEMBERSHIP_CHANGED"),
+            Self::InvitationChanged => f.write_str("INVITATION_CHANGED"),
             Self::GroupChanged => f.write_str("GROUP_CHANGED"),
             Self::PermissionChanged => f.write_str("PERMISSION_CHANGED"),
             Self::PublishPolicyChanged => f.write_str("PUBLISH_POLICY_CHANGED"),
@@ -10834,6 +10855,7 @@ impl ::std::fmt::Display for EventPayloadsType {
             Self::LeaseChanged => f.write_str("LEASE_CHANGED"),
             Self::VersionPublished => f.write_str("VERSION_PUBLISHED"),
             Self::DiscussionChanged => f.write_str("DISCUSSION_CHANGED"),
+            Self::MessageChanged => f.write_str("MESSAGE_CHANGED"),
             Self::ReviewChanged => f.write_str("REVIEW_CHANGED"),
             Self::InboxChanged => f.write_str("INBOX_CHANGED"),
             Self::ReferenceChanged => f.write_str("REFERENCE_CHANGED"),
@@ -10850,7 +10872,9 @@ impl ::std::str::FromStr for EventPayloadsType {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
+            "WORKSPACE_CHANGED" => Ok(Self::WorkspaceChanged),
             "MEMBERSHIP_CHANGED" => Ok(Self::MembershipChanged),
+            "INVITATION_CHANGED" => Ok(Self::InvitationChanged),
             "GROUP_CHANGED" => Ok(Self::GroupChanged),
             "PERMISSION_CHANGED" => Ok(Self::PermissionChanged),
             "PUBLISH_POLICY_CHANGED" => Ok(Self::PublishPolicyChanged),
@@ -10860,6 +10884,7 @@ impl ::std::str::FromStr for EventPayloadsType {
             "LEASE_CHANGED" => Ok(Self::LeaseChanged),
             "VERSION_PUBLISHED" => Ok(Self::VersionPublished),
             "DISCUSSION_CHANGED" => Ok(Self::DiscussionChanged),
+            "MESSAGE_CHANGED" => Ok(Self::MessageChanged),
             "REVIEW_CHANGED" => Ok(Self::ReviewChanged),
             "INBOX_CHANGED" => Ok(Self::InboxChanged),
             "REFERENCE_CHANGED" => Ok(Self::ReferenceChanged),
@@ -39915,6 +39940,15 @@ impl ::std::convert::From<OpenApiProblem> for OperationMoveDocumentResponse {
 ///    "query"
 ///  ],
 ///  "properties": {
+///    "header": {
+///      "type": "object",
+///      "properties": {
+///        "Last-Event-ID": {
+///          "type": "string"
+///        }
+///      },
+///      "additionalProperties": false
+///    },
 ///    "query": {
 ///      "type": "object",
 ///      "required": [
@@ -39938,7 +39972,42 @@ impl ::std::convert::From<OpenApiProblem> for OperationMoveDocumentResponse {
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct OperationOpenWorkspaceStreamRequest {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub header: ::std::option::Option<OperationOpenWorkspaceStreamRequestHeader>,
     pub query: OperationOpenWorkspaceStreamRequestQuery,
+}
+///`OperationOpenWorkspaceStreamRequestHeader`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "object",
+///  "properties": {
+///    "Last-Event-ID": {
+///      "type": "string"
+///    }
+///  },
+///  "additionalProperties": false
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct OperationOpenWorkspaceStreamRequestHeader {
+    #[serde(
+        rename = "Last-Event-ID",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub last_event_id: ::std::option::Option<::std::string::String>,
+}
+impl ::std::default::Default for OperationOpenWorkspaceStreamRequestHeader {
+    fn default() -> Self {
+        Self {
+            last_event_id: Default::default(),
+        }
+    }
 }
 ///`OperationOpenWorkspaceStreamRequestQuery`
 ///
@@ -39992,6 +40061,22 @@ pub struct OperationOpenWorkspaceStreamRequestQuery {
 ///        }
 ///      },
 ///      "additionalProperties": false
+///    },
+///    {
+///      "type": "object",
+///      "required": [
+///        "body",
+///        "status"
+///      ],
+///      "properties": {
+///        "body": {
+///          "$ref": "#/$defs/OpenApi__Problem"
+///        },
+///        "status": {
+///          "const": "default"
+///        }
+///      },
+///      "additionalProperties": false
 ///    }
 ///  ]
 ///}
@@ -40002,6 +40087,13 @@ pub struct OperationOpenWorkspaceStreamRequestQuery {
 pub enum OperationOpenWorkspaceStreamResponse {
     #[serde(rename = "200")]
     X200(::std::string::String),
+    #[serde(rename = "default")]
+    Default(OpenApiProblem),
+}
+impl ::std::convert::From<OpenApiProblem> for OperationOpenWorkspaceStreamResponse {
+    fn from(value: OpenApiProblem) -> Self {
+        Self::Default(value)
+    }
 }
 ///`OperationPreviewDocumentMoveRequest`
 ///

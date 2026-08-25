@@ -193,6 +193,7 @@ dependencies = [
  "adoc-kernel",
  "chrono",
  "serde",
+ "serde_json",
  "uuid",
 ]
 
@@ -241,6 +242,7 @@ dependencies = [
  "adoc-application",
  "adoc-configuration",
  "adoc-telemetry",
+ "chrono",
  "serde_json",
  "tempfile",
  "tokio",

@@ -2,8 +2,9 @@ use adoc_application::{
     governance::{Command, GovernanceError},
     identity::TokenHash,
     operations::{
-        AuditAction, AuditEventInput, AuditTarget, AuditTargetKind, CreateFileCommand, FileAccess,
-        FileAsset, FileMutation, FileRepository, FileStatus, GcCandidate, UploadAuthorization,
+        AuditAction, AuditEventInput, AuditTarget, AuditTargetKind, CreateFileCommand,
+        EventAudience, FileAccess, FileAsset, FileMutation, FileRepository, FileStatus,
+        GcCandidate, UploadAuthorization,
     },
 };
 use adoc_ports::BoxFuture;
@@ -70,6 +71,7 @@ impl FileRepository for PostgresFileRepository {
             append_file_event(
                 &mut tx,
                 input.workspace_id,
+                input.command.actor_id,
                 &result,
                 "UPLOAD_CREATED",
                 input.command.now,
@@ -250,6 +252,7 @@ impl FileRepository for PostgresFileRepository {
             append_file_event(
                 &mut tx,
                 input.workspace_id,
+                input.command.actor_id,
                 &result,
                 status,
                 input.command.now,
@@ -300,7 +303,7 @@ impl FileRepository for PostgresFileRepository {
             }
             sqlx::query("UPDATE file_assets SET status='DELETED',deleted_at=$3,purge_after=$3+interval '7 days',revision=revision+1 WHERE workspace_id=$1 AND id=$2").bind(workspace).bind(asset).bind(now).execute(&mut *tx).await.map_err(map_store)?;
             let result = get_asset(&mut tx, workspace, asset, false).await?;
-            append_file_event(&mut tx, workspace, &result, "DELETED", now).await?;
+            append_file_event(&mut tx, workspace, actor, &result, "DELETED", now).await?;
             append_audit_event(
                 &mut tx,
                 AuditEventInput::user(
@@ -406,6 +409,7 @@ fn file_asset(row: &PgRow) -> Result<FileAsset, GovernanceError> {
 async fn append_file_event(
     tx: &mut Transaction<'_, Postgres>,
     workspace: Uuid,
+    actor: Uuid,
     asset: &FileAsset,
     action: &str,
     now: DateTime<Utc>,
@@ -418,7 +422,8 @@ async fn append_file_event(
             aggregate_id: asset.id,
             sequence: asset.revision + 1,
             event_type: "FileChanged.v1",
-            payload: json!({"assetId":asset.id,"revision":asset.revision,"action":action}),
+            payload: json!({"entityId":asset.id,"revision":asset.revision,"action":if action=="UPLOAD_CREATED"{"CREATED"}else if action=="DELETED"{"DELETED"}else{"UPDATED"}}),
+            audience: EventAudience::user(actor),
             occurred_at: now,
         },
     )

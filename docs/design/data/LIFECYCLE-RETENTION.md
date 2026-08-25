@@ -15,6 +15,7 @@
 | Session | 만료+30일 보안 추적 | token hash 제거 |
 | AI Context·Result | 30일 | Proposal provenance 최소 hash·Source ID만 유지 |
 | Job log | 30일 | metric aggregate만 유지 |
+| Workspace Stream Event | 24시간 | client query reset 뒤 만료 row 삭제 |
 | Backup | 35일 | 암호화 key lifecycle과 함께 만료 |
 
 ## Purge 순서

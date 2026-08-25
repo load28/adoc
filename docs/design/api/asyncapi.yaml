@@ -44,10 +44,11 @@ components:
     StreamHeaders:
       type: object
       additionalProperties: false
-      required: [eventId, retryMilliseconds]
+      required: [eventId, retryMilliseconds, cursorVersion]
       properties:
         eventId: {type: string, description: Opaque SSE resume cursor}
         retryMilliseconds: {type: integer, minimum: 1000, maximum: 30000}
+        cursorVersion: {type: integer, const: 1}
     OutboxHeaders:
       type: object
       additionalProperties: false

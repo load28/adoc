@@ -2,8 +2,8 @@ use adoc_application::{
     governance::GovernanceError,
     operations::{
         AuditAction, AuditEventInput, AuditTarget, AuditTargetKind, DocumentPurgeCommand,
-        PurgeAdvance, PurgeJobReference, PurgeObject, PurgeRun, PurgeStatus, PurgeStep,
-        PurgeTargetKind, RetentionRepository,
+        EventAudience, PurgeAdvance, PurgeJobReference, PurgeObject, PurgeRun, PurgeStatus,
+        PurgeStep, PurgeTargetKind, RetentionRepository,
     },
 };
 use adoc_ports::BoxFuture;
@@ -312,6 +312,7 @@ impl RetentionRepository for PostgresRetentionRepository {
                             sequence: 1,
                             event_type: "PurgeChanged.v1",
                             payload: json!({"targetKind":target_kind_text(current.target_kind),"targetId":current.target_id,"step":"COMPLETED","status":"COMPLETED"}),
+                            audience: EventAudience::admin(),
                             occurred_at: now,
                         },
                     )

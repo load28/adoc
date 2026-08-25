@@ -2,7 +2,9 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use adoc_application::{
     governance::{Command, GovernanceError},
-    operations::{AuditAction, AuditEventInput, AuditTarget, AuditTargetKind},
+    operations::{
+        AuditAction, AuditEventInput, AuditTarget, AuditTargetKind, EventAudience, StreamAccess,
+    },
     permission::{
         Access, AccessStamp, PermissionGrant, PermissionMutation, PermissionNode,
         PermissionRepository, PointSnapshot, PolicyMutation, PublishMode, PublishPolicy,
@@ -11,7 +13,7 @@ use adoc_application::{
     },
 };
 use adoc_ports::BoxFuture;
-use serde_json::{Value, json};
+use serde_json::json;
 use sqlx::{PgPool, Postgres, Row, Transaction, postgres::PgRow};
 use uuid::Uuid;
 
@@ -149,7 +151,7 @@ impl PermissionRepository for PostgresPermissionRepository {
                 requested.subject_id,
             )
             .await?;
-            let before = lock_grant_identity(
+            let _before = lock_grant_identity(
                 &mut tx,
                 input.workspace_id,
                 input.document_id,
@@ -176,7 +178,8 @@ impl PermissionRepository for PostgresPermissionRepository {
                 aggregate_id: input.document_id,
                 sequence: new_revision + 1,
                 event_type: "PermissionChanged.v1",
-                payload: json!({"documentId":input.document_id,"affectedRootId":input.document_id,"revision":new_revision,"before":before,"after":result}),
+                payload: json!({"entityId":input.document_id,"revision":new_revision,"action":"UPDATED"}),
+                audience: EventAudience::document(input.document_id, StreamAccess::Viewer),
                 occurred_at: input.command.now,
             }).await?;
             audit_permission(
@@ -225,7 +228,7 @@ impl PermissionRepository for PostgresPermissionRepository {
             let row = sqlx::query("DELETE FROM permission_grants WHERE workspace_id=$1 AND document_id=$2 AND id=$3 RETURNING id,subject_kind::text,subject_id,access::text,can_manage,revision")
                 .bind(input.workspace_id).bind(input.document_id).bind(input.grant_id)
                 .fetch_optional(&mut *tx).await.map_err(map_store)?.ok_or(GovernanceError::DocumentNotFound)?;
-            let before = permission_grant(&row)?;
+            let _before = permission_grant(&row)?;
             let new_revision =
                 increment_permission_revision(&mut tx, input.workspace_id, input.document_id)
                     .await?;
@@ -236,7 +239,8 @@ impl PermissionRepository for PostgresPermissionRepository {
                 aggregate_id: input.document_id,
                 sequence: new_revision + 1,
                 event_type: "PermissionChanged.v1",
-                payload: json!({"documentId":input.document_id,"affectedRootId":input.document_id,"revision":new_revision,"before":before,"after":Value::Null}),
+                payload: json!({"entityId":input.document_id,"revision":new_revision,"action":"UPDATED"}),
+                audience: EventAudience::document(input.document_id, StreamAccess::Viewer),
                 occurred_at: input.command.now,
             }).await?;
             audit_permission(
@@ -317,7 +321,8 @@ impl PermissionRepository for PostgresPermissionRepository {
                 aggregate_id: input.document_id,
                 sequence: new_revision + 1,
                 event_type: "PublishPolicyChanged.v1",
-                payload: json!({"documentId":input.document_id,"revision":new_revision,"effectivePolicy":result}),
+                payload: json!({"entityId":input.document_id,"revision":new_revision,"action":"UPDATED"}),
+                audience: EventAudience::document(input.document_id, StreamAccess::Viewer),
                 occurred_at: input.command.now,
             }).await?;
             audit_permission(

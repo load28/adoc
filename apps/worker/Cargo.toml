@@ -14,6 +14,7 @@ adoc-adapters.workspace = true
 adoc-application.workspace = true
 adoc-configuration.workspace = true
 adoc-telemetry.workspace = true
+chrono = "0.4.42"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal", "time"] }
 
 [dev-dependencies]

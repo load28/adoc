@@ -5477,21 +5477,26 @@ export interface operations {
                 workspaceId: components["schemas"]["Id"];
                 cursor?: string;
             };
-            header?: never;
+            header?: {
+                "Last-Event-ID"?: string;
+            };
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description SSE stream */
+            /** @description Permission-filtered resumable SSE stream */
             200: {
                 headers: {
+                    "Cache-Control"?: "no-cache, no-store";
+                    "X-Accel-Buffering"?: "no";
                     [name: string]: unknown;
                 };
                 content: {
                     "text/event-stream": string;
                 };
             };
+            default: components["responses"]["Problem"];
         };
     };
     getPublicDocument: {

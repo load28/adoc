@@ -768,6 +768,14 @@ pub enum GovernanceError {
     DocumentStateInvalid,
     #[error("purge is not eligible yet")]
     PurgeNotEligible,
+    #[error("job was not found")]
+    JobNotFound,
+    #[error("job state is invalid")]
+    JobStateInvalid,
+    #[error("stream cursor is invalid")]
+    StreamCursorInvalid,
+    #[error("stream reset is required")]
+    StreamResetRequired,
     #[error("document is effectively trashed")]
     DocumentEffectivelyTrashed,
     #[error("document move preview is stale")]

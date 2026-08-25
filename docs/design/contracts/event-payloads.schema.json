@@ -10,13 +10,13 @@
     "workspaceId": { "type": "string", "format": "uuid" },
     "aggregateId": { "type": "string", "format": "uuid" },
     "sequence": { "type": "integer", "minimum": 1 },
-    "type": { "enum": ["MEMBERSHIP_CHANGED", "GROUP_CHANGED", "PERMISSION_CHANGED", "PUBLISH_POLICY_CHANGED", "DOCUMENT_CHANGED", "DOCUMENT_MOVED", "DRAFT_CHANGED", "LEASE_CHANGED", "VERSION_PUBLISHED", "DISCUSSION_CHANGED", "REVIEW_CHANGED", "INBOX_CHANGED", "REFERENCE_CHANGED", "VOCABULARY_CHANGED", "AI_JOB_CHANGED", "PROPOSAL_APPLIED", "FILE_CHANGED", "PUBLIC_LINK_CHANGED", "PURGE_CHANGED"] },
+    "type": { "enum": ["WORKSPACE_CHANGED", "MEMBERSHIP_CHANGED", "INVITATION_CHANGED", "GROUP_CHANGED", "PERMISSION_CHANGED", "PUBLISH_POLICY_CHANGED", "DOCUMENT_CHANGED", "DOCUMENT_MOVED", "DRAFT_CHANGED", "LEASE_CHANGED", "VERSION_PUBLISHED", "DISCUSSION_CHANGED", "MESSAGE_CHANGED", "REVIEW_CHANGED", "INBOX_CHANGED", "REFERENCE_CHANGED", "VOCABULARY_CHANGED", "AI_JOB_CHANGED", "PROPOSAL_APPLIED", "FILE_CHANGED", "PUBLIC_LINK_CHANGED", "PURGE_CHANGED"] },
     "version": { "const": 1 }, "occurredAt": { "type": "string", "format": "date-time" },
     "correlationId": { "type": "string", "minLength": 8, "maxLength": 128 },
     "payload": { "$ref": "#/$defs/payload" }
   },
   "allOf": [
-    { "if": { "properties": { "type": { "enum": ["MEMBERSHIP_CHANGED", "GROUP_CHANGED", "PERMISSION_CHANGED", "PUBLISH_POLICY_CHANGED", "DISCUSSION_CHANGED", "REVIEW_CHANGED", "INBOX_CHANGED", "REFERENCE_CHANGED", "VOCABULARY_CHANGED", "FILE_CHANGED", "PUBLIC_LINK_CHANGED"] } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/entityChanged" } } } },
+    { "if": { "properties": { "type": { "enum": ["WORKSPACE_CHANGED", "MEMBERSHIP_CHANGED", "INVITATION_CHANGED", "GROUP_CHANGED", "PERMISSION_CHANGED", "PUBLISH_POLICY_CHANGED", "DISCUSSION_CHANGED", "MESSAGE_CHANGED", "REVIEW_CHANGED", "INBOX_CHANGED", "REFERENCE_CHANGED", "VOCABULARY_CHANGED", "FILE_CHANGED", "PUBLIC_LINK_CHANGED"] } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/entityChanged" } } } },
     { "if": { "properties": { "type": { "const": "DOCUMENT_CHANGED" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/documentChanged" } } } },
     { "if": { "properties": { "type": { "const": "DOCUMENT_MOVED" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/documentMoved" } } } },
     { "if": { "properties": { "type": { "const": "DRAFT_CHANGED" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/draftChanged" } } } },

@@ -959,6 +959,26 @@ impl From<GovernanceError> for Problem {
                 None,
                 None,
             ),
+            GovernanceError::JobNotFound => {
+                (StatusCode::NOT_FOUND, "JOB_NOT_FOUND", false, None, None)
+            }
+            GovernanceError::JobStateInvalid => {
+                (StatusCode::CONFLICT, "JOB_STATE_INVALID", false, None, None)
+            }
+            GovernanceError::StreamCursorInvalid => (
+                StatusCode::BAD_REQUEST,
+                "STREAM_CURSOR_INVALID",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::StreamResetRequired => (
+                StatusCode::CONFLICT,
+                "STREAM_RESET_REQUIRED",
+                false,
+                None,
+                None,
+            ),
             GovernanceError::StorageUnavailable => (
                 StatusCode::SERVICE_UNAVAILABLE,
                 "DEPENDENCY_UNAVAILABLE",

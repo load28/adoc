@@ -64,6 +64,10 @@
     {
       "file": "0016_audit_retention_lifecycle.sql",
       "sha256": "df8276df947ad3aee5c73569b19370e6b09b165b29bebd1c981aa2cdceb7c4da"
+    },
+    {
+      "file": "0017_job_runtime_sse.sql",
+      "sha256": "2d9920eb48def580ba7303098643d78eb4fca0af3c04f4d8b6055910d7007bc3"
     }
   ]
 }
