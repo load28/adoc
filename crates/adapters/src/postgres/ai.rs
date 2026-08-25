@@ -232,7 +232,7 @@ impl AiJobRepository for PostgresAiContextRepository {
                 .execute(&mut *tx)
                 .await
                 .map_err(|_| ContextError::StorageAt("admission_isolation"))?;
-            if let Some(row) = sqlx::query("SELECT j.id,j.kind,j.status::text,j.revision,j.error_code,r.result_json,p.id AS proposal_id,g.id AS runtime_job_id,g.priority FROM ai_jobs j LEFT JOIN ai_results r ON r.job_id=j.id LEFT JOIN proposals p ON p.job_id=j.id JOIN jobs g ON g.id=j.runtime_job_id WHERE j.workspace_id=$1 AND j.user_id=$2 AND j.request_key=$3")
+            if let Some(row) = sqlx::query("SELECT j.id,j.kind,j.target_json,j.status::text,j.revision,j.error_code,r.result_json,p.id AS proposal_id,g.id AS runtime_job_id,g.priority FROM ai_jobs j LEFT JOIN ai_results r ON r.job_id=j.id LEFT JOIN proposals p ON p.job_id=j.id JOIN jobs g ON g.id=j.runtime_job_id WHERE j.workspace_id=$1 AND j.user_id=$2 AND j.request_key=$3")
                 .bind(task.workspace_id).bind(task.actor_id).bind(request_key).fetch_optional(&mut *tx).await.map_err(|_| ContextError::StorageAt("admission_replay_read"))?
             {
                 let view = ai_job_view(&row)?;
@@ -311,6 +311,7 @@ impl AiJobRepository for PostgresAiContextRepository {
                 view: AiJobView {
                     id: ai_job_id,
                     kind: task.kind,
+                    target: task.target.clone(),
                     status: AiJobStatus::Queued,
                     sequence: 1,
                     revision: 0,
@@ -338,7 +339,7 @@ impl AiJobRepository for PostgresAiContextRepository {
                 .map(Uuid::parse_str)
                 .transpose()
                 .map_err(|_| ContextError::Validation)?;
-            let rows = sqlx::query("SELECT j.id,j.kind,j.status::text,j.revision,j.error_code,r.result_json,p.id AS proposal_id FROM ai_jobs j LEFT JOIN ai_results r ON r.job_id=j.id LEFT JOIN proposals p ON p.job_id=j.id WHERE j.workspace_id=$1 AND j.user_id=$2 AND ($3::uuid IS NULL OR j.id<$3) ORDER BY j.id DESC LIMIT 51")
+            let rows = sqlx::query("SELECT j.id,j.kind,j.target_json,j.status::text,j.revision,j.error_code,r.result_json,p.id AS proposal_id FROM ai_jobs j LEFT JOIN ai_results r ON r.job_id=j.id LEFT JOIN proposals p ON p.job_id=j.id WHERE j.workspace_id=$1 AND j.user_id=$2 AND ($3::uuid IS NULL OR j.id<$3) ORDER BY j.id DESC LIMIT 51")
                 .bind(workspace_id).bind(actor_id).bind(cursor).fetch_all(&self.pool).await.map_err(|_| ContextError::Storage)?;
             let mut items = rows
                 .iter()
@@ -361,7 +362,7 @@ impl AiJobRepository for PostgresAiContextRepository {
     ) -> BoxFuture<'a, Result<AiJobView, ContextError>> {
         Box::pin(async move {
             require_membership(&self.pool, actor_id, workspace_id).await?;
-            let row = sqlx::query("SELECT j.id,j.kind,j.status::text,j.revision,j.error_code,r.result_json,p.id AS proposal_id FROM ai_jobs j LEFT JOIN ai_results r ON r.job_id=j.id LEFT JOIN proposals p ON p.job_id=j.id WHERE j.workspace_id=$1 AND j.user_id=$2 AND j.id=$3")
+            let row = sqlx::query("SELECT j.id,j.kind,j.target_json,j.status::text,j.revision,j.error_code,r.result_json,p.id AS proposal_id FROM ai_jobs j LEFT JOIN ai_results r ON r.job_id=j.id LEFT JOIN proposals p ON p.job_id=j.id WHERE j.workspace_id=$1 AND j.user_id=$2 AND j.id=$3")
                 .bind(workspace_id).bind(actor_id).bind(job_id).fetch_optional(&self.pool).await.map_err(|_| ContextError::Storage)?.ok_or(ContextError::NotFound)?;
             ai_job_view(&row)
         })
@@ -1514,9 +1515,12 @@ async fn require_membership(
 }
 
 fn ai_job_view(row: &sqlx::postgres::PgRow) -> Result<AiJobView, ContextError> {
+    let task: AiTask = serde_json::from_value(row.get("target_json"))
+        .map_err(|_| ContextError::StorageAt("ai_job_target_decode"))?;
     Ok(AiJobView {
         id: row.get("id"),
         kind: parse_enum_context(row.get("kind"))?,
+        target: task.target,
         status: parse_enum_context(row.get("status"))?,
         sequence: row.get("revision"),
         revision: row.get("revision"),

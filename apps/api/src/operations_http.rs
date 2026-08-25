@@ -5,13 +5,16 @@ use adoc_adapters::{
     object_storage::LocalObjectStorage,
     postgres::{PostgresAuditRepository, PostgresRetentionRepository, PostgresStore},
 };
-use adoc_application::operations::{AuditService, RetentionService};
+use adoc_application::operations::{
+    AuditAction, AuditFilter, AuditService, AuditTargetKind, RetentionService,
+};
 use adoc_configuration::{AppConfig, ObjectStorageDriver};
 use axum::{
     Json, Router,
     extract::{Path, Query, State},
     routing::get,
 };
+use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -62,8 +65,14 @@ impl OperationsRuntime {
 }
 
 #[derive(Deserialize)]
-struct CursorQuery {
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct AuditQuery {
     cursor: Option<String>,
+    action: Option<AuditAction>,
+    actor_user_id: Option<Uuid>,
+    target_kind: Option<AuditTargetKind>,
+    from: Option<DateTime<Utc>>,
+    to: Option<DateTime<Utc>>,
 }
 
 pub(crate) fn operations_routes() -> Router<HealthState> {
@@ -77,12 +86,23 @@ async fn list_audit_events(
     State(state): State<HealthState>,
     auth: Authenticated,
     Path(workspace): Path<Uuid>,
-    Query(query): Query<CursorQuery>,
+    Query(query): Query<AuditQuery>,
 ) -> Result<Json<serde_json::Value>, Problem> {
     let page = state
         .operations
         .service
-        .list(auth.principal.user.id, workspace, query.cursor)
+        .list(
+            auth.principal.user.id,
+            workspace,
+            query.cursor,
+            AuditFilter {
+                action: query.action,
+                actor_user_id: query.actor_user_id,
+                target_kind: query.target_kind,
+                from: query.from,
+                to: query.to,
+            },
+        )
         .await
         .map_err(Problem::from)?;
     Ok(Json(

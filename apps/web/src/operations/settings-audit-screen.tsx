@@ -5,7 +5,10 @@ import {
   type Group,
   type Invitation,
   type Membership,
+  type PermissionGrant,
+  type PublishPolicy,
   type SettingsSection,
+  type SettingsSearch,
 } from "@adoc/ui-domain";
 import Button from "@atlaskit/button/default/button";
 import Lozenge from "@atlaskit/lozenge";
@@ -23,7 +26,13 @@ export function SettingsAuditScreen({
   workspaceId,
   section,
   documentId,
-}: Readonly<{ workspaceId: string; section: SettingsSection; documentId?: string }>) {
+  search,
+}: Readonly<{
+  workspaceId: string;
+  section: SettingsSection;
+  documentId?: string;
+  search: SettingsSearch;
+}>) {
   return (
     <main className="settings-screen">
       <Stack space="space.250">
@@ -35,7 +44,7 @@ export function SettingsAuditScreen({
         )}
         {section === "writing" && <WritingSettings workspaceId={workspaceId} />}
         {section === "ai" && <AISettings workspaceId={workspaceId} />}
-        {section === "audit" && <AuditSettings workspaceId={workspaceId} />}
+        {section === "audit" && <AuditSettings workspaceId={workspaceId} initial={search} />}
       </Stack>
     </main>
   );
@@ -236,6 +245,7 @@ function GroupsSettings({ workspaceId }: Readonly<{ workspaceId: string }>) {
 function GroupRow({ workspaceId, group }: Readonly<{ workspaceId: string; group: Group }>) {
   const client = useQueryClient();
   const [name, setName] = useState(group.name);
+  const [userId, setUserId] = useState("");
   const update = useMutation({
     mutationFn: () => api.updateGroup(workspaceId, group, name.trim(), command()),
     onSuccess: async () => client.invalidateQueries({ queryKey: ["groups", workspaceId] }),
@@ -243,6 +253,14 @@ function GroupRow({ workspaceId, group }: Readonly<{ workspaceId: string; group:
   const remove = useMutation({
     mutationFn: () => api.deleteGroup(workspaceId, group, command()),
     onSuccess: async () => client.invalidateQueries({ queryKey: ["groups", workspaceId] }),
+  });
+  const member = useMutation({
+    mutationFn: (action: "add" | "remove") =>
+      api.changeGroupMember(workspaceId, group, userId.trim(), action, command()),
+    onSuccess: async () => {
+      setUserId("");
+      await client.invalidateQueries({ queryKey: ["groups", workspaceId] });
+    },
   });
   return (
     <li>
@@ -262,6 +280,30 @@ function GroupRow({ workspaceId, group }: Readonly<{ workspaceId: string; group:
           삭제
         </Button>
       </Inline>
+      <label htmlFor={`group-member-${group.id}`}>구성원 사용자 ID</label>
+      <Textfield
+        id={`group-member-${group.id}`}
+        value={userId}
+        onChange={(event) => setUserId(event.currentTarget.value)}
+      />
+      <Inline space="space.050">
+        <Button
+          isDisabled={!userId.trim()}
+          onClick={() => member.mutate("add")}
+          isLoading={member.isPending}
+        >
+          구성원 추가
+        </Button>
+        <Button
+          isDisabled={!userId.trim()}
+          onClick={() => member.mutate("remove")}
+          isLoading={member.isPending}
+        >
+          구성원 제거
+        </Button>
+      </Inline>
+      {group.memberIds.length > 0 && <Text size="small">현재: {group.memberIds.join(" · ")}</Text>}
+      <MutationMessage mutation={member} />
     </li>
   );
 }
@@ -275,9 +317,15 @@ function PermissionSettings({
     queryFn: ({ signal }) => api.documentPermissions(workspaceId, documentId ?? "", signal),
     enabled: Boolean(documentId),
   });
+  const policy = useQuery({
+    queryKey: ["publish-policy", workspaceId, documentId],
+    queryFn: ({ signal }) => api.publishPolicy(workspaceId, documentId ?? "", signal),
+    enabled: Boolean(documentId),
+  });
   if (!documentId) return <Text>URL의 document query로 관리할 문서를 선택해 주세요.</Text>;
-  if (query.isPending) return <RoutePending />;
+  if (query.isPending || policy.isPending) return <RoutePending />;
   if (query.error) return <Problem error={query.error} retry={() => void query.refetch()} />;
+  if (policy.error) return <Problem error={policy.error} retry={() => void policy.refetch()} />;
   return (
     <Stack space="space.150">
       <Text>
@@ -286,12 +334,13 @@ function PermissionSettings({
       </Text>
       <ul className="settings-list">
         {query.data.explicitGrants.map((grant) => (
-          <li key={grant.id}>
-            <Text>
-              {grant.subjectKind} · {grant.subjectId}
-            </Text>
-            <Lozenge>{grant.access}</Lozenge>
-          </li>
+          <PermissionGrantRow
+            key={grant.id}
+            workspaceId={workspaceId}
+            documentId={documentId}
+            collectionRevision={query.data.revision}
+            grant={grant}
+          />
         ))}
       </ul>
       <PermissionForm
@@ -299,6 +348,8 @@ function PermissionSettings({
         documentId={documentId}
         revision={query.data.revision}
       />
+      <PermissionExplanationForm workspaceId={workspaceId} documentId={documentId} />
+      <PublishPolicyForm workspaceId={workspaceId} documentId={documentId} initial={policy.data} />
     </Stack>
   );
 }
@@ -310,7 +361,9 @@ function PermissionForm({
 }: Readonly<{ workspaceId: string; documentId: string; revision: number }>) {
   const client = useQueryClient();
   const [subjectId, setSubjectId] = useState("");
-  const [access, setAccess] = useState<"VIEWER" | "CONTRIBUTOR" | "EDITOR">("VIEWER");
+  const [subjectKind, setSubjectKind] = useState<"USER" | "GROUP">("USER");
+  const [access, setAccess] = useState<"NO_ACCESS" | "VIEWER" | "CONTRIBUTOR" | "EDITOR">("VIEWER");
+  const [manage, setManage] = useState(false);
   const save = useMutation({
     mutationFn: () =>
       api.setDocumentPermission(
@@ -318,7 +371,7 @@ function PermissionForm({
         documentId,
         crypto.randomUUID(),
         revision,
-        { subjectKind: "USER", subjectId, access, manage: false },
+        { subjectKind, subjectId, access, manage },
         command(),
       ),
     onSuccess: async () =>
@@ -332,14 +385,25 @@ function PermissionForm({
         if (subjectId) save.mutate();
       }}
     >
-      <label htmlFor="permission-user">사용자 ID</label>
+      <Inline space="space.050">
+        {(["USER", "GROUP"] as const).map((kind) => (
+          <Button
+            key={kind}
+            appearance={subjectKind === kind ? "primary" : "subtle"}
+            onClick={() => setSubjectKind(kind)}
+          >
+            {kind}
+          </Button>
+        ))}
+      </Inline>
+      <label htmlFor="permission-user">Subject ID</label>
       <Textfield
         id="permission-user"
         value={subjectId}
         onChange={(event) => setSubjectId(event.currentTarget.value)}
       />
       <Inline space="space.050" shouldWrap>
-        {(["VIEWER", "CONTRIBUTOR", "EDITOR"] as const).map((item) => (
+        {(["NO_ACCESS", "VIEWER", "CONTRIBUTOR", "EDITOR"] as const).map((item) => (
           <Button
             key={item}
             appearance={access === item ? "primary" : "subtle"}
@@ -349,11 +413,207 @@ function PermissionForm({
           </Button>
         ))}
       </Inline>
+      <Button appearance={manage ? "primary" : "subtle"} onClick={() => setManage(!manage)}>
+        권한 관리 {manage ? "허용" : "미허용"}
+      </Button>
       <Button type="submit" appearance="primary" isLoading={save.isPending}>
         권한 추가
       </Button>
       <MutationMessage mutation={save} />
     </form>
+  );
+}
+
+function PermissionGrantRow({
+  workspaceId,
+  documentId,
+  collectionRevision,
+  grant,
+}: Readonly<{
+  workspaceId: string;
+  documentId: string;
+  collectionRevision: number;
+  grant: PermissionGrant;
+}>) {
+  const client = useQueryClient();
+  const remove = useMutation({
+    mutationFn: () =>
+      api.deleteDocumentPermission(
+        workspaceId,
+        documentId,
+        grant.id,
+        collectionRevision,
+        command(),
+      ),
+    onSuccess: async () =>
+      client.invalidateQueries({ queryKey: ["permissions", workspaceId, documentId] }),
+  });
+  return (
+    <li>
+      <Stack space="space.050">
+        <Text>
+          {grant.subjectKind} · {grant.subjectId}
+        </Text>
+        <Inline space="space.050">
+          <Lozenge>{grant.access}</Lozenge>
+          {grant.manage && <Lozenge appearance="inprogress">MANAGE</Lozenge>}
+        </Inline>
+      </Stack>
+      <Button appearance="danger" onClick={() => remove.mutate()} isLoading={remove.isPending}>
+        명시 권한 삭제
+      </Button>
+      <MutationMessage mutation={remove} />
+    </li>
+  );
+}
+
+function PermissionExplanationForm({
+  workspaceId,
+  documentId,
+}: Readonly<{ workspaceId: string; documentId: string }>) {
+  const [subjectKind, setSubjectKind] = useState<"USER" | "GROUP">("USER");
+  const [subjectId, setSubjectId] = useState("");
+  const [submitted, setSubmitted] = useState("");
+  const explanation = useQuery({
+    queryKey: ["permission-explanation", workspaceId, documentId, subjectKind, submitted],
+    queryFn: ({ signal }) =>
+      api.explainDocumentPermission(workspaceId, documentId, subjectKind, submitted, signal),
+    enabled: Boolean(submitted),
+  });
+  return (
+    <Stack space="space.100">
+      <h2>유효 권한 설명</h2>
+      <Inline space="space.050">
+        {(["USER", "GROUP"] as const).map((kind) => (
+          <Button
+            key={kind}
+            appearance={subjectKind === kind ? "primary" : "subtle"}
+            onClick={() => {
+              setSubjectKind(kind);
+              setSubmitted("");
+            }}
+          >
+            {kind}
+          </Button>
+        ))}
+      </Inline>
+      <Textfield
+        aria-label="설명할 Subject ID"
+        value={subjectId}
+        onChange={(event) => setSubjectId(event.currentTarget.value)}
+      />
+      <Button isDisabled={!subjectId.trim()} onClick={() => setSubmitted(subjectId.trim())}>
+        계산 근거 확인
+      </Button>
+      {explanation.isPending && submitted && <RoutePending />}
+      {explanation.error && (
+        <Problem error={explanation.error} retry={() => void explanation.refetch()} />
+      )}
+      {explanation.data && (
+        <Stack space="space.050">
+          <Text>
+            {explanation.data.effective.access} · fingerprint {explanation.data.fingerprint}
+          </Text>
+          <ul className="settings-list">
+            {explanation.data.steps.map((step) => (
+              <li key={`${step.documentId}:${step.decision}`}>
+                <Text>
+                  {step.documentId} · {step.decision}
+                </Text>
+              </li>
+            ))}
+          </ul>
+        </Stack>
+      )}
+    </Stack>
+  );
+}
+
+function PublishPolicyForm({
+  workspaceId,
+  documentId,
+  initial,
+}: Readonly<{ workspaceId: string; documentId: string; initial: PublishPolicy }>) {
+  const client = useQueryClient();
+  const [mode, setMode] = useState<PublishPolicy["mode"]>(initial.mode);
+  const [approvals, setApprovals] = useState(String(initial.requiredApprovals));
+  const [reviewerKind, setReviewerKind] = useState<"ANY_EDITOR" | "USERS" | "GROUPS">(
+    initial.reviewerRule.kind,
+  );
+  const [reviewerIds, setReviewerIds] = useState(
+    initial.reviewerRule.kind === "USERS"
+      ? initial.reviewerRule.userIds.join(", ")
+      : initial.reviewerRule.kind === "GROUPS"
+        ? initial.reviewerRule.groupIds.join(", ")
+        : "",
+  );
+  const save = useMutation({
+    mutationFn: () =>
+      api.setPublishPolicy(
+        workspaceId,
+        documentId,
+        initial,
+        {
+          mode,
+          requiredApprovals: mode === "DIRECT" ? 0 : Number(approvals),
+          reviewerRule: reviewerRule(reviewerKind, reviewerIds),
+        },
+        command(),
+      ),
+    onSuccess: async () =>
+      client.invalidateQueries({ queryKey: ["publish-policy", workspaceId, documentId] }),
+  });
+  return (
+    <Stack space="space.100">
+      <h2>발행 정책</h2>
+      <Inline space="space.050">
+        {(["DIRECT", "REVIEW_REQUIRED"] as const).map((value) => (
+          <Button
+            key={value}
+            appearance={mode === value ? "primary" : "subtle"}
+            onClick={() => setMode(value)}
+          >
+            {value}
+          </Button>
+        ))}
+      </Inline>
+      {mode === "REVIEW_REQUIRED" && (
+        <>
+          <label htmlFor="publish-approvals">필요 승인 수</label>
+          <Textfield
+            id="publish-approvals"
+            type="number"
+            min={1}
+            max={20}
+            value={approvals}
+            onChange={(event) => setApprovals(event.currentTarget.value)}
+          />
+          <Inline space="space.050">
+            {(["ANY_EDITOR", "USERS", "GROUPS"] as const).map((kind) => (
+              <Button
+                key={kind}
+                appearance={reviewerKind === kind ? "primary" : "subtle"}
+                onClick={() => setReviewerKind(kind)}
+              >
+                {kind}
+              </Button>
+            ))}
+          </Inline>
+          {reviewerKind !== "ANY_EDITOR" && (
+            <Textfield
+              aria-label="Reviewer ID 목록"
+              placeholder="쉼표로 구분"
+              value={reviewerIds}
+              onChange={(event) => setReviewerIds(event.currentTarget.value)}
+            />
+          )}
+        </>
+      )}
+      <Button appearance="primary" onClick={() => save.mutate()} isLoading={save.isPending}>
+        발행 정책 저장
+      </Button>
+      <MutationMessage mutation={save} />
+    </Stack>
   );
 }
 
@@ -498,16 +758,107 @@ function AIConfigurationForm({
   );
 }
 
-function AuditSettings({ workspaceId }: Readonly<{ workspaceId: string }>) {
+function AuditSettings({
+  workspaceId,
+  initial,
+}: Readonly<{ workspaceId: string; initial: SettingsSearch }>) {
+  const [action, setAction] = useState(initial.action ?? "");
+  const [actorUserId, setActorUserId] = useState(initial.actor ?? "");
+  const [targetKind, setTargetKind] = useState(initial.targetKind ?? "");
+  const [from, setFrom] = useState(initial.from ?? "");
+  const [to, setTo] = useState(initial.to ?? "");
+  const [filter, setFilter] = useState({
+    action: initial.action ?? "",
+    actorUserId: initial.actor ?? "",
+    targetKind: initial.targetKind ?? "",
+    from: initial.from ?? "",
+    to: initial.to ?? "",
+  });
+  const [selected, setSelected] = useState<string>();
   const query = useQuery({
-    queryKey: ["audit", workspaceId],
-    queryFn: ({ signal }) => api.auditEvents(workspaceId, undefined, signal),
+    queryKey: ["audit", workspaceId, filter],
+    queryFn: ({ signal }) =>
+      api.auditEvents(workspaceId, undefined, signal, {
+        action: filter.action || undefined,
+        actorUserId: filter.actorUserId || undefined,
+        targetKind: filter.targetKind || undefined,
+        from: filter.from || undefined,
+        to: filter.to || undefined,
+      }),
   });
   if (query.isPending) return <RoutePending />;
   if (query.error) return <Problem error={query.error} retry={() => void query.refetch()} />;
   return (
     <Stack space="space.150">
       <Text>감사 이벤트는 수정할 수 없으며 구조화된 사실만 표시합니다.</Text>
+      <form
+        className="settings-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const next = { action, actorUserId, targetKind, from, to };
+          setFilter(next);
+          replaceAuditSearch(next);
+        }}
+      >
+        <label htmlFor="audit-action">Action</label>
+        <Textfield
+          id="audit-action"
+          value={action}
+          placeholder="DOCUMENT_MOVED"
+          onChange={(event) => setAction(event.currentTarget.value.trim().toUpperCase())}
+        />
+        <label htmlFor="audit-actor">Actor User ID</label>
+        <Textfield
+          id="audit-actor"
+          value={actorUserId}
+          onChange={(event) => setActorUserId(event.currentTarget.value)}
+        />
+        <label htmlFor="audit-target-kind">Target kind</label>
+        <Textfield
+          id="audit-target-kind"
+          value={targetKind}
+          placeholder="DOCUMENT"
+          onChange={(event) => setTargetKind(event.currentTarget.value.trim().toUpperCase())}
+        />
+        <label htmlFor="audit-from">시작 시각 (RFC 3339)</label>
+        <Textfield
+          id="audit-from"
+          value={from}
+          placeholder="2026-08-01T00:00:00Z"
+          onChange={(event) => setFrom(event.currentTarget.value)}
+        />
+        <label htmlFor="audit-to">종료 시각 (RFC 3339)</label>
+        <Textfield
+          id="audit-to"
+          value={to}
+          placeholder="2026-08-25T23:59:59Z"
+          onChange={(event) => setTo(event.currentTarget.value)}
+        />
+        <Inline space="space.050">
+          <Button type="submit" appearance="primary">
+            필터 적용
+          </Button>
+          <Button
+            onClick={() => {
+              setAction("");
+              setActorUserId("");
+              setTargetKind("");
+              setFrom("");
+              setTo("");
+              setFilter({ action: "", actorUserId: "", targetKind: "", from: "", to: "" });
+              replaceAuditSearch({
+                action: "",
+                actorUserId: "",
+                targetKind: "",
+                from: "",
+                to: "",
+              });
+            }}
+          >
+            초기화
+          </Button>
+        </Inline>
+      </form>
       <ul className="settings-list">
         {query.data.items.map((event) => (
           <li key={event.id}>
@@ -519,10 +870,42 @@ function AuditSettings({ workspaceId }: Readonly<{ workspaceId: string }>) {
               <Text size="small">
                 sequence {event.sequence} · {event.occurredAt} · {event.correlationId}
               </Text>
+              <Button appearance="subtle" onClick={() => setSelected(event.id)}>
+                상세 보기
+              </Button>
+              {selected === event.id && (
+                <Stack space="space.050">
+                  {event.redactedAt && <Text>redacted {event.redactedAt}</Text>}
+                  <AuditFields title="변경 전" fields={event.before} />
+                  <AuditFields title="변경 후" fields={event.after} />
+                  <AuditFields title="Metadata" fields={event.metadata} />
+                </Stack>
+              )}
             </Stack>
           </li>
         ))}
       </ul>
+    </Stack>
+  );
+}
+
+function AuditFields({
+  title,
+  fields,
+}: Readonly<{
+  title: string;
+  fields?: Record<string, string | number | boolean | null> | null;
+}>) {
+  const entries = Object.entries(fields ?? {});
+  if (entries.length === 0) return <Text size="small">{title}: 없음</Text>;
+  return (
+    <Stack space="space.025">
+      <Text weight="semibold">{title}</Text>
+      {entries.map(([key, value]) => (
+        <Text size="small" key={key}>
+          {key}: {String(value)}
+        </Text>
+      ))}
     </Stack>
   );
 }
@@ -560,6 +943,45 @@ function command() {
     ?.slice("adoc_csrf=".length);
   if (!value) throw new Error("CSRF token is unavailable");
   return { csrfToken: decodeURIComponent(value), idempotencyKey: crypto.randomUUID() };
+}
+
+export function reviewerRule(
+  kind: "ANY_EDITOR" | "USERS" | "GROUPS",
+  value: string,
+): PublishPolicy["reviewerRule"] {
+  const ids = [
+    ...new Set(
+      value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  ];
+  if (kind === "USERS") return { kind, userIds: ids };
+  if (kind === "GROUPS") return { kind, groupIds: ids };
+  return { kind };
+}
+
+function replaceAuditSearch(filter: {
+  action: string;
+  actorUserId: string;
+  targetKind: string;
+  from: string;
+  to: string;
+}) {
+  const url = new URL(window.location.href);
+  const values = {
+    action: filter.action,
+    actor: filter.actorUserId,
+    targetKind: filter.targetKind,
+    from: filter.from,
+    to: filter.to,
+  };
+  for (const [key, value] of Object.entries(values)) {
+    if (value) url.searchParams.set(key, value);
+    else url.searchParams.delete(key);
+  }
+  window.history.replaceState(null, "", `${url.pathname}${url.search}`);
 }
 function sectionLabel(section: SettingsSection) {
   return (

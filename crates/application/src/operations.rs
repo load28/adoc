@@ -111,6 +111,7 @@ pub trait AuditRepository: Send + Sync {
         actor: Uuid,
         workspace: Uuid,
         cursor: Option<String>,
+        filter: AuditFilter,
     ) -> BoxFuture<'a, Result<AuditPage, GovernanceError>>;
 }
 
@@ -128,8 +129,12 @@ impl AuditService {
         actor: Uuid,
         workspace: Uuid,
         cursor: Option<String>,
+        filter: AuditFilter,
     ) -> Result<AuditPage, GovernanceError> {
-        self.repository.list(actor, workspace, cursor).await
+        if !filter.is_valid() {
+            return Err(GovernanceError::Validation);
+        }
+        self.repository.list(actor, workspace, cursor, filter).await
     }
 }
 

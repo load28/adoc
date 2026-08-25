@@ -15,12 +15,13 @@ export const Route = createFileRoute("/w/$workspaceSlug/settings/$section")({
 
 function SettingsScreen() {
   const workspace = getRouteApi("/w/$workspaceSlug").useLoaderData();
-  const { document: documentId } = Route.useSearch();
+  const search = Route.useSearch();
   return (
     <SettingsAuditScreen
       workspaceId={workspace.id}
       section={Route.useLoaderData()}
-      documentId={documentId}
+      documentId={search.document}
+      search={search}
     />
   );
 }

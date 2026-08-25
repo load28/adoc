@@ -85,6 +85,8 @@ async fn ai_context_admission_is_permission_safe_and_payload_bounded() {
         .await
         .unwrap();
     assert_eq!(first.view.id, replay.view.id);
+    assert_eq!(first.view.target, task.target);
+    assert_eq!(replay.view.target, task.target);
     let payload: Value = sqlx::query_scalar("SELECT payload_json FROM jobs WHERE id=$1")
         .bind(first.signal.id)
         .fetch_one(store.pool())

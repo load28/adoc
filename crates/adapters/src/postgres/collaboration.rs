@@ -83,7 +83,7 @@ impl CollaborationRepository for PostgresCollaborationRepository {
                 .await
                 .map_err(|_| GovernanceError::DiscussionNotFound)?;
             let discussion = load_discussion_row(&mut tx, workspace, &row).await?;
-            let rows=sqlx::query("SELECT id,author_id,body_json,mention_user_ids,revision,created_at,edited_at,deleted_at FROM messages WHERE workspace_id=$1 AND discussion_id=$2 AND ($3::uuid IS NULL OR (created_at,id)>(SELECT created_at,id FROM messages WHERE workspace_id=$1 AND id=$3)) ORDER BY created_at,id LIMIT 51").bind(workspace).bind(id).bind(cursor).fetch_all(&mut *tx).await.map_err(map_store)?;
+            let rows=sqlx::query("SELECT id,author_id,body_json,mention_user_ids,revision,created_at,edited_at,deleted_at,(SELECT coalesce(array_agg(fr.asset_id ORDER BY fr.asset_id),'{}'::uuid[]) FROM file_references fr WHERE fr.workspace_id=$1 AND fr.owner_kind='MESSAGE' AND fr.owner_id=messages.id) AS attachment_ids FROM messages WHERE workspace_id=$1 AND discussion_id=$2 AND ($3::uuid IS NULL OR (created_at,id)>(SELECT created_at,id FROM messages WHERE workspace_id=$1 AND id=$3)) ORDER BY created_at,id LIMIT 51").bind(workspace).bind(id).bind(cursor).fetch_all(&mut *tx).await.map_err(map_store)?;
             let messages = rows
                 .iter()
                 .take(50)
@@ -426,7 +426,7 @@ impl CollaborationRepository for PostgresCollaborationRepository {
                     .await?
                 }
             }
-            let row=sqlx::query("SELECT id,author_id,body_json,mention_user_ids,revision,created_at,edited_at,deleted_at FROM messages WHERE id=$1").bind(input.message_id).fetch_one(&mut *tx).await.map_err(map_store)?;
+            let row=sqlx::query("SELECT id,author_id,body_json,mention_user_ids,revision,created_at,edited_at,deleted_at,(SELECT coalesce(array_agg(fr.asset_id ORDER BY fr.asset_id),'{}'::uuid[]) FROM file_references fr WHERE fr.workspace_id=$2 AND fr.owner_kind='MESSAGE' AND fr.owner_id=messages.id) AS attachment_ids FROM messages WHERE id=$1").bind(input.message_id).bind(input.workspace_id).fetch_one(&mut *tx).await.map_err(map_store)?;
             let result = message(&row)?;
             append_event(&mut tx,OutboxEvent{workspace_id:input.workspace_id,aggregate_kind:"Message",aggregate_id:input.message_id,sequence:result.revision+1,event_type:"MessageChanged.v1",payload:json!({"entityId":result.id,"revision":result.revision,"action":match input.action {MessageAction::Create=>"CREATED",MessageAction::Update=>"UPDATED",MessageAction::Redact=>"DELETED"}}),audience:EventAudience::document(document,StreamAccess::Contributor),occurred_at:input.command.now}).await?;
             complete_workspace(&mut tx, input.workspace_id, &input.command, 200, &result).await?;
@@ -1085,6 +1085,7 @@ fn message(row: &PgRow) -> Result<Message, GovernanceError> {
         author_id: row.get("author_id"),
         body: row.get("body_json"),
         mention_user_ids: row.get("mention_user_ids"),
+        attachment_ids: row.get("attachment_ids"),
         revision: row.get("revision"),
         created_at: row.get("created_at"),
         edited_at: row.get("edited_at"),

@@ -17,9 +17,9 @@ use adoc_adapters::{
 use adoc_application::{
     governance::GovernanceError,
     operations::{
-        AuditAction, AuditEventInput, AuditFields, AuditRepository, AuditTarget, AuditTargetKind,
-        AuditValue, ByteRange, ByteStream, ObjectMetadata, ObjectStorage, RetentionService,
-        StorageError,
+        AuditAction, AuditEventInput, AuditFields, AuditFilter, AuditRepository, AuditTarget,
+        AuditTargetKind, AuditValue, ByteRange, ByteStream, ObjectMetadata, ObjectStorage,
+        RetentionService, StorageError,
     },
 };
 use bytes::Bytes;
@@ -90,15 +90,52 @@ async fn audit_retention_postgres_contract() {
     let audit = PostgresAuditRepository::new(&store);
     assert_eq!(
         audit
-            .list(owner, workspace, None)
+            .list(owner, workspace, None, AuditFilter::default())
             .await
             .unwrap()
             .items
             .len(),
         12
     );
+    assert_eq!(
+        audit
+            .list(
+                owner,
+                workspace,
+                None,
+                AuditFilter {
+                    actor_user_id: Some(owner),
+                    action: Some(AuditAction::WorkspaceUpdated),
+                    target_kind: Some(AuditTargetKind::Workspace),
+                    ..AuditFilter::default()
+                },
+            )
+            .await
+            .unwrap()
+            .items
+            .len(),
+        12
+    );
+    assert!(
+        audit
+            .list(
+                owner,
+                workspace,
+                None,
+                AuditFilter {
+                    target_kind: Some(AuditTargetKind::Document),
+                    ..AuditFilter::default()
+                },
+            )
+            .await
+            .unwrap()
+            .items
+            .is_empty()
+    );
     assert!(matches!(
-        audit.list(outsider, workspace, None).await,
+        audit
+            .list(outsider, workspace, None, AuditFilter::default())
+            .await,
         Err(GovernanceError::WorkspaceNotFound)
     ));
 

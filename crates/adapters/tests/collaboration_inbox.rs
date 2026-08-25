@@ -92,6 +92,7 @@ async fn discussion_message_inbox_postgres_contract() {
         .await
         .unwrap();
     let message = &detail.messages[0];
+    assert!(message.attachment_ids.is_empty());
     let updated = service
         .update_message(
             actor,
@@ -109,6 +110,7 @@ async fn discussion_message_inbox_postgres_contract() {
         .await
         .unwrap();
     assert_eq!(updated.revision, 1);
+    assert!(updated.attachment_ids.is_empty());
     assert_eq!(
         sqlx::query_scalar::<_, i64>("SELECT count(*) FROM message_revisions WHERE message_id=$1")
             .bind(message.id)

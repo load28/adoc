@@ -1562,6 +1562,7 @@ export interface components {
             authorId: components["schemas"]["Id"];
             body: components["schemas"]["content"];
             mentionUserIds: components["schemas"]["Id"][];
+            attachmentIds: components["schemas"]["Id"][];
             revision: number;
             /** Format: date-time */
             createdAt: string;
@@ -1750,6 +1751,7 @@ export interface components {
             id: components["schemas"]["Id"];
             /** @enum {string} */
             kind: "COMPOSE" | "REWRITE" | "REVIEW" | "DISCUSSION_APPLY" | "CONFLICT_MERGE" | "KNOWLEDGE_QUERY";
+            target: components["schemas"]["target"];
             /** @enum {string} */
             status: "QUEUED" | "RUNNING" | "CANCEL_REQUESTED" | "SUCCEEDED" | "FAILED" | "CANCELLED" | "TIMED_OUT";
             sequence: number;
@@ -2156,6 +2158,24 @@ export interface components {
             target: components["schemas"]["referenceTarget"];
         };
         operation: components["schemas"]["insertBlock"] | components["schemas"]["deleteBlock"] | components["schemas"]["moveBlock"] | components["schemas"]["replaceText"] | components["schemas"]["setBlockAttrs"] | components["schemas"]["setMarks"] | components["schemas"]["replaceRegion"] | components["schemas"]["addReference"] | components["schemas"]["removeReference"];
+        target: {
+            /** @constant */
+            kind: "DOCUMENT";
+            documentId: components["schemas"]["id"];
+        } | {
+            /** @constant */
+            kind: "REGION";
+            documentId: components["schemas"]["id"];
+            region: components["schemas"]["region"];
+        } | {
+            /** @constant */
+            kind: "DISCUSSION";
+            discussionId: components["schemas"]["id"];
+        } | {
+            /** @constant */
+            kind: "WORKSPACE_QUERY";
+            question: string;
+        };
         finding: {
             findingId: components["schemas"]["id"];
             ruleId: string;
@@ -2189,24 +2209,6 @@ export interface components {
             uncertainties: string[];
             conflicts: components["schemas"]["conflict"][];
             usedSourceIds: components["schemas"]["id"][];
-        };
-        target: {
-            /** @constant */
-            kind: "DOCUMENT";
-            documentId: components["schemas"]["id"];
-        } | {
-            /** @constant */
-            kind: "REGION";
-            documentId: components["schemas"]["id"];
-            region: components["schemas"]["region"];
-        } | {
-            /** @constant */
-            kind: "DISCUSSION";
-            discussionId: components["schemas"]["id"];
-        } | {
-            /** @constant */
-            kind: "WORKSPACE_QUERY";
-            question: string;
         };
         proposal: {
             proposalId: components["schemas"]["id"];
@@ -5090,6 +5092,11 @@ export interface operations {
         parameters: {
             query?: {
                 cursor?: components["parameters"]["Cursor"];
+                action?: "WORKSPACE_CREATED" | "WORKSPACE_UPDATED" | "WORKSPACE_DELETION_SCHEDULED" | "WORKSPACE_RESTORED" | "WORKSPACE_PURGED" | "MEMBER_INVITED" | "MEMBER_ADDED" | "MEMBER_ROLE_CHANGED" | "MEMBER_REMOVED" | "GROUP_CREATED" | "GROUP_UPDATED" | "GROUP_DELETED" | "GROUP_MEMBER_ADDED" | "GROUP_MEMBER_REMOVED" | "PERMISSION_CHANGED" | "PUBLISH_POLICY_CHANGED" | "DOCUMENT_CREATED" | "DOCUMENT_RENAMED" | "DOCUMENT_MOVED" | "DOCUMENT_TRASHED" | "DOCUMENT_RESTORED" | "DOCUMENT_PURGED" | "DRAFT_CREATED" | "VERSION_PUBLISHED" | "PUBLIC_LINK_CREATED" | "PUBLIC_LINK_REVOKED" | "DISCUSSION_CREATED" | "DISCUSSION_CLOSED" | "DISCUSSION_REOPENED" | "REVIEW_REQUESTED" | "REVIEW_APPROVED" | "REVIEW_CHANGES_REQUESTED" | "VOCABULARY_CREATED" | "VOCABULARY_UPDATED" | "VOCABULARY_DEPRECATED" | "FILE_DELETED" | "AI_PROPOSAL_APPLIED" | "WRITING_CONFIGURATION_CHANGED" | "SECURITY_ACTION_RECORDED";
+                actorUserId?: components["schemas"]["Id"];
+                targetKind?: "WORKSPACE" | "MEMBERSHIP" | "INVITATION" | "GROUP" | "PERMISSION" | "PUBLISH_POLICY" | "DOCUMENT" | "DRAFT" | "VERSION" | "PUBLIC_LINK" | "DISCUSSION" | "REVIEW" | "VOCABULARY" | "FILE" | "AI_PROPOSAL" | "SECURITY";
+                from?: string;
+                to?: string;
             };
             header?: never;
             path: {

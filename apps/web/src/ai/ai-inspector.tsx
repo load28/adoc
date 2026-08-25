@@ -2,6 +2,7 @@ import {
   ApiClient,
   ApiProblemError,
   type AIContextPreview,
+  type AIContextRequest,
   type AIJob,
   type Proposal,
   selectProposalOperation,
@@ -19,7 +20,14 @@ import { RoutePending, RouteProblem } from "../shell/common-states";
 import "./ai-inspector.css";
 
 const api = new ApiClient();
-const taskKinds = ["COMPOSE", "REWRITE", "REVIEW"] as const;
+export const aiTaskKinds = [
+  "COMPOSE",
+  "REWRITE",
+  "REVIEW",
+  "DISCUSSION_APPLY",
+  "CONFLICT_MERGE",
+  "KNOWLEDGE_QUERY",
+] as const;
 
 export function AIInspector({
   workspaceId,
@@ -74,20 +82,21 @@ function ContextRunner({
   revision,
 }: Readonly<{ workspaceId: string; documentId: string; revision: number }>) {
   const queryClient = useQueryClient();
-  const [kind, setKind] = useState<(typeof taskKinds)[number]>("REVIEW");
+  const [kind, setKind] = useState<(typeof aiTaskKinds)[number]>("REVIEW");
   const [instruction, setInstruction] = useState("");
+  const [discussionId, setDiscussionId] = useState("");
   const [excluded, setExcluded] = useState<string[]>([]);
-  const input = useMemo(
+  const input = useMemo<AIContextRequest>(
     () => ({
       kind,
-      target: { kind: "DOCUMENT" as const, documentId },
+      target: taskTarget(kind, documentId, discussionId, instruction),
       expectedRevision: revision,
       externalWebEnabled: false,
       ...(instruction.trim() ? { instruction: instruction.trim() } : {}),
       includeSourceIds: [],
       excludeSourceIds: excluded,
     }),
-    [documentId, excluded, instruction, kind, revision],
+    [discussionId, documentId, excluded, instruction, kind, revision],
   );
   const preview = useMutation({
     mutationFn: () => api.previewAIContext(workspaceId, input),
@@ -111,7 +120,7 @@ function ContextRunner({
       <Stack space="space.150">
         <h3 id="ai-context-title">Context Inspector</h3>
         <Inline space="space.050" shouldWrap>
-          {taskKinds.map((value) => (
+          {aiTaskKinds.map((value) => (
             <Button
               key={value}
               appearance={kind === value ? "primary" : "subtle"}
@@ -133,8 +142,25 @@ function ContextRunner({
             preview.reset();
           }}
         />
+        {kind === "DISCUSSION_APPLY" && (
+          <>
+            <label htmlFor="ai-discussion-id">Discussion ID</label>
+            <TextArea
+              id="ai-discussion-id"
+              value={discussionId}
+              onChange={(event) => {
+                setDiscussionId(event.currentTarget.value);
+                preview.reset();
+              }}
+            />
+          </>
+        )}
         <Inline space="space.100" shouldWrap>
-          <Button onClick={() => preview.mutate()} isLoading={preview.isPending}>
+          <Button
+            onClick={() => preview.mutate()}
+            isLoading={preview.isPending}
+            isDisabled={!taskInputReady(kind, discussionId, instruction)}
+          >
             Context 확인
           </Button>
           <Button
@@ -498,6 +524,31 @@ function taskLabel(kind: string) {
       } as Record<string, string>
     )[kind] ?? kind
   );
+}
+
+export function taskTarget(
+  kind: (typeof aiTaskKinds)[number],
+  documentId: string,
+  discussionId: string,
+  instruction: string,
+): AIContextRequest["target"] {
+  if (kind === "DISCUSSION_APPLY") {
+    return { kind: "DISCUSSION", discussionId: discussionId.trim() };
+  }
+  if (kind === "KNOWLEDGE_QUERY") {
+    return { kind: "WORKSPACE_QUERY", question: instruction.trim() };
+  }
+  return { kind: "DOCUMENT", documentId };
+}
+
+export function taskInputReady(
+  kind: (typeof aiTaskKinds)[number],
+  discussionId: string,
+  instruction: string,
+): boolean {
+  if (kind === "DISCUSSION_APPLY") return discussionId.trim().length > 0;
+  if (kind === "KNOWLEDGE_QUERY") return instruction.trim().length > 0;
+  return true;
 }
 
 function isActiveJob(status: AIJob["status"]) {

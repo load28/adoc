@@ -8,5 +8,5 @@ export const Route = createFileRoute("/w/$workspaceSlug/inbox")({
 
 function InboxRoute() {
   const workspace = getRouteApi("/w/$workspaceSlug").useLoaderData();
-  return <InboxScreen workspaceId={workspace.id} />;
+  return <InboxScreen workspaceId={workspace.id} workspaceSlug={Route.useParams().workspaceSlug} />;
 }

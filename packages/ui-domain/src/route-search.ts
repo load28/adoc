@@ -5,7 +5,17 @@ const settingsSections = ["members", "groups", "permissions", "writing", "ai", "
 type DocumentMode = (typeof documentModes)[number];
 type DocumentPanel = (typeof documentPanels)[number];
 export type SettingsSection = (typeof settingsSections)[number];
-export type SettingsSearch = { document?: string; subject?: string; cursor?: string };
+export type SettingsSearch = {
+  document?: string;
+  subject?: string;
+  subjectKind?: "USER" | "GROUP";
+  cursor?: string;
+  action?: string;
+  actor?: string;
+  targetKind?: string;
+  from?: string;
+  to?: string;
+};
 
 export function canonicalReturnTo(value: unknown): string {
   if (typeof value !== "string" || value.length === 0 || value.length > 2048) return "/workspaces";
@@ -66,9 +76,17 @@ export function parseSettingsSection(value: unknown): SettingsSection | undefine
 }
 
 export function parseSettingsSearch(input: Record<string, unknown>): SettingsSearch {
+  const subjectKind =
+    input.subjectKind === "USER" || input.subjectKind === "GROUP" ? input.subjectKind : undefined;
   return {
     ...(optionalBounded(input.document) ? { document: optionalBounded(input.document) } : {}),
     ...(optionalBounded(input.subject) ? { subject: optionalBounded(input.subject) } : {}),
+    ...(subjectKind ? { subjectKind } : {}),
     ...(optionalBounded(input.cursor) ? { cursor: optionalBounded(input.cursor) } : {}),
+    ...(optionalBounded(input.action) ? { action: optionalBounded(input.action) } : {}),
+    ...(optionalBounded(input.actor) ? { actor: optionalBounded(input.actor) } : {}),
+    ...(optionalBounded(input.targetKind) ? { targetKind: optionalBounded(input.targetKind) } : {}),
+    ...(optionalBounded(input.from) ? { from: optionalBounded(input.from) } : {}),
+    ...(optionalBounded(input.to) ? { to: optionalBounded(input.to) } : {}),
   };
 }

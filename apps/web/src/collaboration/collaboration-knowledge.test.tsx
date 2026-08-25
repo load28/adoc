@@ -12,7 +12,10 @@ describe("collaboration and knowledge screens", () => {
     const html = renderToStaticMarkup(
       <ProductAppProvider locale="ko" theme="LIGHT">
         <QueryClientProvider client={new QueryClient()}>
-          <SearchScreen workspaceId="10000000-0000-7000-8000-000000000001" />
+          <SearchScreen
+            workspaceId="10000000-0000-7000-8000-000000000001"
+            workspaceSlug="workspace"
+          />
         </QueryClientProvider>
       </ProductAppProvider>,
     );

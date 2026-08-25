@@ -4562,6 +4562,7 @@
         "authorId",
         "body",
         "mentionUserIds",
+        "attachmentIds",
         "revision",
         "createdAt"
       ],
@@ -4576,6 +4577,13 @@
           "$ref": "#/$defs/DocumentContent__content"
         },
         "mentionUserIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/OpenApi__Id"
+          }
+        },
+        "attachmentIds": {
           "type": "array",
           "uniqueItems": true,
           "items": {
@@ -5422,6 +5430,7 @@
       "required": [
         "id",
         "kind",
+        "target",
         "status",
         "sequence",
         "revision"
@@ -5440,6 +5449,9 @@
             "CONFLICT_MERGE",
             "KNOWLEDGE_QUERY"
           ]
+        },
+        "target": {
+          "$ref": "#/$defs/AiContracts__target"
         },
         "status": {
           "type": "string",
@@ -14119,6 +14131,82 @@
             "cursor": {
               "type": "string",
               "maxLength": 2048
+            },
+            "action": {
+              "type": "string",
+              "enum": [
+                "WORKSPACE_CREATED",
+                "WORKSPACE_UPDATED",
+                "WORKSPACE_DELETION_SCHEDULED",
+                "WORKSPACE_RESTORED",
+                "WORKSPACE_PURGED",
+                "MEMBER_INVITED",
+                "MEMBER_ADDED",
+                "MEMBER_ROLE_CHANGED",
+                "MEMBER_REMOVED",
+                "GROUP_CREATED",
+                "GROUP_UPDATED",
+                "GROUP_DELETED",
+                "GROUP_MEMBER_ADDED",
+                "GROUP_MEMBER_REMOVED",
+                "PERMISSION_CHANGED",
+                "PUBLISH_POLICY_CHANGED",
+                "DOCUMENT_CREATED",
+                "DOCUMENT_RENAMED",
+                "DOCUMENT_MOVED",
+                "DOCUMENT_TRASHED",
+                "DOCUMENT_RESTORED",
+                "DOCUMENT_PURGED",
+                "DRAFT_CREATED",
+                "VERSION_PUBLISHED",
+                "PUBLIC_LINK_CREATED",
+                "PUBLIC_LINK_REVOKED",
+                "DISCUSSION_CREATED",
+                "DISCUSSION_CLOSED",
+                "DISCUSSION_REOPENED",
+                "REVIEW_REQUESTED",
+                "REVIEW_APPROVED",
+                "REVIEW_CHANGES_REQUESTED",
+                "VOCABULARY_CREATED",
+                "VOCABULARY_UPDATED",
+                "VOCABULARY_DEPRECATED",
+                "FILE_DELETED",
+                "AI_PROPOSAL_APPLIED",
+                "WRITING_CONFIGURATION_CHANGED",
+                "SECURITY_ACTION_RECORDED"
+              ]
+            },
+            "actorUserId": {
+              "$ref": "#/$defs/OpenApi__Id"
+            },
+            "targetKind": {
+              "type": "string",
+              "enum": [
+                "WORKSPACE",
+                "MEMBERSHIP",
+                "INVITATION",
+                "GROUP",
+                "PERMISSION",
+                "PUBLISH_POLICY",
+                "DOCUMENT",
+                "DRAFT",
+                "VERSION",
+                "PUBLIC_LINK",
+                "DISCUSSION",
+                "REVIEW",
+                "VOCABULARY",
+                "FILE",
+                "AI_PROPOSAL",
+                "SECURITY"
+              ]
+            },
+            "from": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "to": {
+              "type": "string",
+              "format": "date-time"
             }
           }
         }

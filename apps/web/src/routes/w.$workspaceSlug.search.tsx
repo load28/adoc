@@ -11,5 +11,11 @@ export const Route = createFileRoute("/w/$workspaceSlug/search")({
 
 function SearchRoute() {
   const workspace = getRouteApi("/w/$workspaceSlug").useLoaderData();
-  return <SearchScreen workspaceId={workspace.id} initialQuery={Route.useSearch().q} />;
+  return (
+    <SearchScreen
+      workspaceId={workspace.id}
+      workspaceSlug={Route.useParams().workspaceSlug}
+      initialQuery={Route.useSearch().q}
+    />
+  );
 }

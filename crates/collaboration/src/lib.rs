@@ -48,6 +48,7 @@ pub struct Message {
     pub author_id: Uuid,
     pub body: Value,
     pub mention_user_ids: Vec<Uuid>,
+    pub attachment_ids: Vec<Uuid>,
     pub revision: i64,
     pub created_at: DateTime<Utc>,
     pub edited_at: Option<DateTime<Utc>>,

@@ -151,6 +151,22 @@ pub struct AuditPage {
     pub next_cursor: Option<String>,
 }
 
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct AuditFilter {
+    pub action: Option<AuditAction>,
+    pub actor_user_id: Option<Uuid>,
+    pub target_kind: Option<AuditTargetKind>,
+    pub from: Option<DateTime<Utc>>,
+    pub to: Option<DateTime<Utc>>,
+}
+
+impl AuditFilter {
+    #[must_use]
+    pub fn is_valid(&self) -> bool {
+        self.from.zip(self.to).is_none_or(|(from, to)| from <= to)
+    }
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PurgeTargetKind {
@@ -460,5 +476,19 @@ mod tests {
         assert_eq!(ByteRange::parse("bytes=-3", 10).unwrap().start, 7);
         assert!(ByteRange::parse("bytes=4-2", 10).is_none());
         assert_eq!(sanitize_filename("../a\n.pdf").unwrap(), "..�a.pdf");
+    }
+
+    #[test]
+    fn audit_filter_rejects_an_inverted_time_window() {
+        let from = "2026-08-25T00:00:00Z".parse().unwrap();
+        let to = "2026-08-24T00:00:00Z".parse().unwrap();
+        assert!(
+            !AuditFilter {
+                from: Some(from),
+                to: Some(to),
+                ..AuditFilter::default()
+            }
+            .is_valid()
+        );
     }
 }

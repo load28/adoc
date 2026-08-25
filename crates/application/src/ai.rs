@@ -494,6 +494,7 @@ pub enum AiJobStatus {
 pub struct AiJobView {
     pub id: Uuid,
     pub kind: AiTaskKind,
+    pub target: AiTarget,
     pub status: AiJobStatus,
     pub sequence: i64,
     pub revision: i64,

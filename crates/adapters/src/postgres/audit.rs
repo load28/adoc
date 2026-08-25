@@ -1,6 +1,6 @@
 use adoc_application::{
     governance::GovernanceError,
-    operations::{AuditEvent, AuditEventInput, AuditPage, AuditRepository},
+    operations::{AuditEvent, AuditEventInput, AuditFilter, AuditPage, AuditRepository},
 };
 use adoc_ports::BoxFuture;
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
@@ -105,6 +105,7 @@ impl AuditRepository for PostgresAuditRepository {
         actor: Uuid,
         workspace: Uuid,
         cursor: Option<String>,
+        filter: AuditFilter,
     ) -> BoxFuture<'a, Result<AuditPage, GovernanceError>> {
         Box::pin(async move {
             let allowed: bool = sqlx::query_scalar(
@@ -125,15 +126,27 @@ impl AuditRepository for PostgresAuditRepository {
                 .map(parse_cursor)
                 .transpose()?
                 .map_or((None, None), |(sequence, id)| (Some(sequence), Some(id)));
+            let action = filter.action.as_ref().map(enum_name).transpose()?;
+            let target_kind = filter.target_kind.as_ref().map(enum_name).transpose()?;
             let rows = sqlx::query(
                 "SELECT id,sequence,actor_json,action,target_json,before_json,after_json,metadata_json,correlation_id,occurred_at,redacted_at \
                  FROM audit_events WHERE workspace_id=$1 AND \
-                 ($2::bigint IS NULL OR (sequence,id)<($2,$3)) \
+                 ($2::bigint IS NULL OR (sequence,id)<($2,$3)) AND \
+                 ($4::text IS NULL OR action=$4) AND \
+                 ($5::uuid IS NULL OR actor_json->>'userId'=$5::text) AND \
+                 ($6::text IS NULL OR target_json->>'kind'=$6) AND \
+                 ($7::timestamptz IS NULL OR occurred_at >= $7) AND \
+                 ($8::timestamptz IS NULL OR occurred_at <= $8) \
                  ORDER BY sequence DESC,id DESC LIMIT 51",
             )
             .bind(workspace)
             .bind(cursor_sequence)
             .bind(cursor_id)
+            .bind(action)
+            .bind(filter.actor_user_id)
+            .bind(target_kind)
+            .bind(filter.from)
+            .bind(filter.to)
             .fetch_all(&self.pool)
             .await
             .map_err(map_store)?;

@@ -33,6 +33,7 @@ export type InboxPage = components["schemas"]["InboxPage"];
 export type InboxItem = components["schemas"]["InboxItem"];
 export type SearchPage = components["schemas"]["SearchPage"];
 export type ReferencePage = components["schemas"]["ReferencePage"];
+export type ReferenceView = components["schemas"]["Reference"];
 export type VocabularyPage = components["schemas"]["VocabularyPage"];
 export type VocabularyConcept = components["schemas"]["VocabularyConcept"];
 export type VocabularyTerm = components["schemas"]["VocabularyTerm"];
@@ -49,11 +50,19 @@ export type Group = components["schemas"]["Group"];
 export type PermissionView = components["schemas"]["PermissionView"];
 export type PublishPolicy = components["schemas"]["PublishPolicy"];
 export type PermissionGrant = components["schemas"]["PermissionGrant"];
+export type PermissionExplanation = components["schemas"]["PermissionExplanation"];
 export type WritingConfiguration = components["schemas"]["WritingConfiguration"];
 export type AIConfiguration = components["schemas"]["AIConfiguration"];
 export type AIUsage = components["schemas"]["AIUsage"];
 export type AIProviderHealth = components["schemas"]["AIProviderHealth"];
 export type AuditPage = components["schemas"]["AuditPage"];
+export type AuditFilter = {
+  action?: string;
+  actorUserId?: string;
+  targetKind?: string;
+  from?: string;
+  to?: string;
+};
 export type DocumentPage = components["schemas"]["DocumentPage"];
 export type PublicDocument = components["schemas"]["PublicDocument"];
 export type JobReference = components["schemas"]["JobReference"];
@@ -418,6 +427,75 @@ export class ApiClient {
     });
   }
 
+  updateDiscussion(
+    workspaceId: string,
+    discussion: Pick<DiscussionView, "id" | "revision">,
+    title: string,
+    command: CommandHeaders,
+  ): Promise<DiscussionView> {
+    return this.#json(resourcePath(workspaceId, "discussions", discussion.id), {
+      method: "PUT",
+      headers: commandHeaders(command, discussion.revision),
+      body: JSON.stringify({ title }),
+    });
+  }
+
+  addDiscussionTopic(
+    workspaceId: string,
+    discussion: Pick<DiscussionView, "id" | "revision">,
+    topic: components["schemas"]["TopicInput"],
+    command: CommandHeaders,
+  ): Promise<DiscussionView> {
+    return this.#json(`${resourcePath(workspaceId, "discussions", discussion.id)}/topics`, {
+      method: "POST",
+      headers: commandHeaders(command, discussion.revision),
+      body: JSON.stringify(topic),
+    });
+  }
+
+  removeDiscussionTopic(
+    workspaceId: string,
+    discussion: Pick<DiscussionView, "id" | "revision">,
+    topicId: string,
+    command: CommandHeaders,
+  ): Promise<void> {
+    return this.#empty(
+      `${resourcePath(workspaceId, "discussions", discussion.id)}/topics/${encodeURIComponent(topicId)}`,
+      { method: "DELETE", headers: commandHeaders(command, discussion.revision) },
+    );
+  }
+
+  updateMessage(
+    workspaceId: string,
+    discussionId: string,
+    messageId: string,
+    revision: number,
+    message: RichMessage,
+    command: CommandHeaders,
+  ): Promise<components["schemas"]["Message"]> {
+    return this.#json(
+      `${resourcePath(workspaceId, "discussions", discussionId)}/messages/${encodeURIComponent(messageId)}`,
+      {
+        method: "PUT",
+        headers: commandHeaders(command, revision),
+        body: JSON.stringify(message),
+      },
+    );
+  }
+
+  deleteMessage(
+    workspaceId: string,
+    discussionId: string,
+    messageId: string,
+    revision: number,
+    command: CommandHeaders,
+  ): Promise<void> {
+    return this.#empty(
+      `${resourcePath(workspaceId, "discussions", discussionId)}/messages/${encodeURIComponent(messageId)}`,
+      { method: "DELETE", headers: commandHeaders(command, revision) },
+    );
+  }
+
   requestReview(
     workspaceId: string,
     documentId: string,
@@ -445,6 +523,19 @@ export class ApiClient {
       method: "POST",
       headers: commandHeaders(command, revision),
       body: JSON.stringify(decision),
+    });
+  }
+
+  cancelReview(
+    workspaceId: string,
+    review: Pick<ReviewView, "id" | "revision">,
+    reason: string,
+    command: CommandHeaders,
+  ): Promise<ReviewView> {
+    return this.#json(`${resourcePath(workspaceId, "reviews", review.id)}/cancel`, {
+      method: "POST",
+      headers: commandHeaders(command, review.revision),
+      body: JSON.stringify({ reason }),
     });
   }
 
@@ -531,6 +622,43 @@ export class ApiClient {
     );
   }
 
+  createReference(
+    workspaceId: string,
+    documentId: string,
+    draftRevision: number,
+    input: {
+      sourceRegion: components["schemas"]["Reference"]["sourceRegion"];
+      target: components["schemas"]["Reference"]["target"];
+    },
+    leaseToken: string,
+    clientInstanceId: string,
+    command: CommandHeaders,
+  ): Promise<ReferenceView> {
+    return this.#json(`${resourcePath(workspaceId, "documents", documentId)}/references`, {
+      method: "POST",
+      headers: leaseHeaders(command, draftRevision, leaseToken, clientInstanceId),
+      body: JSON.stringify(input),
+    });
+  }
+
+  deleteReference(
+    workspaceId: string,
+    documentId: string,
+    referenceId: string,
+    draftRevision: number,
+    leaseToken: string,
+    clientInstanceId: string,
+    command: CommandHeaders,
+  ): Promise<void> {
+    return this.#empty(
+      `${resourcePath(workspaceId, "documents", documentId)}/references/${encodeURIComponent(referenceId)}`,
+      {
+        method: "DELETE",
+        headers: leaseHeaders(command, draftRevision, leaseToken, clientInstanceId),
+      },
+    );
+  }
+
   inbox(
     workspaceId: string,
     status: "UNREAD" | "ACTIONABLE" | "RESOLVED" | "ALL",
@@ -553,6 +681,18 @@ export class ApiClient {
       `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/inbox/${encodeURIComponent(itemId)}/${action}`,
       { method: "POST", headers: commandHeaders(command) },
     );
+  }
+
+  markAllInboxRead(
+    workspaceId: string,
+    before: string,
+    command: CommandHeaders,
+  ): Promise<components["schemas"]["AffectedCount"]> {
+    return this.#json(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/inbox/read-all`, {
+      method: "POST",
+      headers: commandHeaders(command),
+      body: JSON.stringify({ before }),
+    });
   }
 
   search(
@@ -788,6 +928,22 @@ export class ApiClient {
     });
   }
 
+  changeGroupMember(
+    workspaceId: string,
+    group: Pick<Group, "id" | "revision">,
+    userId: string,
+    action: "add" | "remove",
+    command: CommandHeaders,
+  ): Promise<Group> {
+    return this.#json(
+      `${resourcePath(workspaceId, "groups", group.id)}/members/${encodeURIComponent(userId)}`,
+      {
+        method: action === "add" ? "PUT" : "DELETE",
+        headers: commandHeaders(command, group.revision),
+      },
+    );
+  }
+
   documentPermissions(
     workspaceId: string,
     documentId: string,
@@ -824,6 +980,49 @@ export class ApiClient {
         body: JSON.stringify(input),
       },
     );
+  }
+
+  deleteDocumentPermission(
+    workspaceId: string,
+    documentId: string,
+    grantId: string,
+    revision: number,
+    command: CommandHeaders,
+  ): Promise<void> {
+    return this.#empty(
+      `${resourcePath(workspaceId, "documents", documentId)}/permissions/${encodeURIComponent(grantId)}`,
+      { method: "DELETE", headers: commandHeaders(command, revision) },
+    );
+  }
+
+  explainDocumentPermission(
+    workspaceId: string,
+    documentId: string,
+    subjectKind: "USER" | "GROUP",
+    subjectId: string,
+    signal?: AbortSignal,
+  ): Promise<PermissionExplanation> {
+    return this.#json(
+      withQuery(`${resourcePath(workspaceId, "documents", documentId)}/permission-explanation`, {
+        subjectKind,
+        subjectId,
+      }),
+      { signal },
+    );
+  }
+
+  setPublishPolicy(
+    workspaceId: string,
+    documentId: string,
+    current: Pick<PublishPolicy, "revision">,
+    input: Pick<PublishPolicy, "mode" | "requiredApprovals" | "reviewerRule">,
+    command: CommandHeaders,
+  ): Promise<PublishPolicy> {
+    return this.#json(`${resourcePath(workspaceId, "documents", documentId)}/publish-policy`, {
+      method: "PUT",
+      headers: commandHeaders(command, current.revision),
+      body: JSON.stringify(input),
+    });
   }
 
   writingConfiguration(workspaceId: string, signal?: AbortSignal): Promise<WritingConfiguration> {
@@ -880,9 +1079,21 @@ export class ApiClient {
     });
   }
 
-  auditEvents(workspaceId: string, cursor?: string, signal?: AbortSignal): Promise<AuditPage> {
+  auditEvents(
+    workspaceId: string,
+    cursor?: string,
+    signal?: AbortSignal,
+    filter: AuditFilter = {},
+  ): Promise<AuditPage> {
     return this.#json(
-      withQuery(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/audit-events`, { cursor }),
+      withQuery(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/audit-events`, {
+        cursor,
+        action: filter.action,
+        actorUserId: filter.actorUserId,
+        targetKind: filter.targetKind,
+        from: filter.from,
+        to: filter.to,
+      }),
       { signal },
     );
   }

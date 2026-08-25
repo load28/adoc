@@ -2084,6 +2084,7 @@ export interface OpenApi__Message {
   authorId: OpenApi__Id;
   body: DocumentContent_Content;
   mentionUserIds: OpenApi__Id[];
+  attachmentIds: OpenApi__Id[];
   revision: number;
   createdAt: string;
   editedAt?: string | null;
@@ -2267,6 +2268,7 @@ export interface OpenApi__AIContextPreview {
 export interface OpenApi__AIJob {
   id: OpenApi__Id;
   kind: "COMPOSE" | "REWRITE" | "REVIEW" | "DISCUSSION_APPLY" | "CONFLICT_MERGE" | "KNOWLEDGE_QUERY";
+  target: AiContracts_Target;
   status: "QUEUED" | "RUNNING" | "CANCEL_REQUESTED" | "SUCCEEDED" | "FAILED" | "CANCELLED" | "TIMED_OUT";
   sequence: number;
   revision: number;
@@ -3449,6 +3451,66 @@ export interface Operation__ListAuditEventsRequest {
   };
   query?: {
     cursor?: string;
+    action?:
+      | "WORKSPACE_CREATED"
+      | "WORKSPACE_UPDATED"
+      | "WORKSPACE_DELETION_SCHEDULED"
+      | "WORKSPACE_RESTORED"
+      | "WORKSPACE_PURGED"
+      | "MEMBER_INVITED"
+      | "MEMBER_ADDED"
+      | "MEMBER_ROLE_CHANGED"
+      | "MEMBER_REMOVED"
+      | "GROUP_CREATED"
+      | "GROUP_UPDATED"
+      | "GROUP_DELETED"
+      | "GROUP_MEMBER_ADDED"
+      | "GROUP_MEMBER_REMOVED"
+      | "PERMISSION_CHANGED"
+      | "PUBLISH_POLICY_CHANGED"
+      | "DOCUMENT_CREATED"
+      | "DOCUMENT_RENAMED"
+      | "DOCUMENT_MOVED"
+      | "DOCUMENT_TRASHED"
+      | "DOCUMENT_RESTORED"
+      | "DOCUMENT_PURGED"
+      | "DRAFT_CREATED"
+      | "VERSION_PUBLISHED"
+      | "PUBLIC_LINK_CREATED"
+      | "PUBLIC_LINK_REVOKED"
+      | "DISCUSSION_CREATED"
+      | "DISCUSSION_CLOSED"
+      | "DISCUSSION_REOPENED"
+      | "REVIEW_REQUESTED"
+      | "REVIEW_APPROVED"
+      | "REVIEW_CHANGES_REQUESTED"
+      | "VOCABULARY_CREATED"
+      | "VOCABULARY_UPDATED"
+      | "VOCABULARY_DEPRECATED"
+      | "FILE_DELETED"
+      | "AI_PROPOSAL_APPLIED"
+      | "WRITING_CONFIGURATION_CHANGED"
+      | "SECURITY_ACTION_RECORDED";
+    actorUserId?: OpenApi__Id;
+    targetKind?:
+      | "WORKSPACE"
+      | "MEMBERSHIP"
+      | "INVITATION"
+      | "GROUP"
+      | "PERMISSION"
+      | "PUBLISH_POLICY"
+      | "DOCUMENT"
+      | "DRAFT"
+      | "VERSION"
+      | "PUBLIC_LINK"
+      | "DISCUSSION"
+      | "REVIEW"
+      | "VOCABULARY"
+      | "FILE"
+      | "AI_PROPOSAL"
+      | "SECURITY";
+    from?: string;
+    to?: string;
   };
 }
 export interface Operation__GetWritingConfigurationRequest {

@@ -12800,7 +12800,8 @@ impl<'de> ::serde::Deserialize<'de> for OpenApiAiContextSourcePreviewSnapshotHas
 ///    "kind",
 ///    "revision",
 ///    "sequence",
-///    "status"
+///    "status",
+///    "target"
 ///  ],
 ///  "properties": {
 ///    "errorCode": {
@@ -12853,6 +12854,9 @@ impl<'de> ::serde::Deserialize<'de> for OpenApiAiContextSourcePreviewSnapshotHas
 ///        "CANCELLED",
 ///        "TIMED_OUT"
 ///      ]
+///    },
+///    "target": {
+///      "$ref": "#/$defs/AiContracts__target"
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -12881,6 +12885,7 @@ pub struct OpenApiAiJob {
     pub revision: i64,
     pub sequence: i64,
     pub status: OpenApiAiJobStatus,
+    pub target: AiContractsTarget,
 }
 ///`OpenApiAiJobKind`
 ///
@@ -16621,6 +16626,7 @@ impl ::std::convert::TryFrom<::std::string::String> for OpenApiMembershipStatus 
 ///{
 ///  "type": "object",
 ///  "required": [
+///    "attachmentIds",
 ///    "authorId",
 ///    "body",
 ///    "createdAt",
@@ -16629,6 +16635,13 @@ impl ::std::convert::TryFrom<::std::string::String> for OpenApiMembershipStatus 
 ///    "revision"
 ///  ],
 ///  "properties": {
+///    "attachmentIds": {
+///      "type": "array",
+///      "items": {
+///        "$ref": "#/$defs/OpenApi__Id"
+///      },
+///      "uniqueItems": true
+///    },
 ///    "authorId": {
 ///      "$ref": "#/$defs/OpenApi__Id"
 ///    },
@@ -16675,6 +16688,8 @@ impl ::std::convert::TryFrom<::std::string::String> for OpenApiMembershipStatus 
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct OpenApiMessage {
+    #[serde(rename = "attachmentIds")]
+    pub attachment_ids: Vec<OpenApiId>,
     #[serde(rename = "authorId")]
     pub author_id: OpenApiId,
     pub body: DocumentContentContent,
@@ -39133,9 +39148,85 @@ impl ::std::convert::From<OpenApiProblem> for OperationListAiJobsResponse {
 ///    "query": {
 ///      "type": "object",
 ///      "properties": {
+///        "action": {
+///          "type": "string",
+///          "enum": [
+///            "WORKSPACE_CREATED",
+///            "WORKSPACE_UPDATED",
+///            "WORKSPACE_DELETION_SCHEDULED",
+///            "WORKSPACE_RESTORED",
+///            "WORKSPACE_PURGED",
+///            "MEMBER_INVITED",
+///            "MEMBER_ADDED",
+///            "MEMBER_ROLE_CHANGED",
+///            "MEMBER_REMOVED",
+///            "GROUP_CREATED",
+///            "GROUP_UPDATED",
+///            "GROUP_DELETED",
+///            "GROUP_MEMBER_ADDED",
+///            "GROUP_MEMBER_REMOVED",
+///            "PERMISSION_CHANGED",
+///            "PUBLISH_POLICY_CHANGED",
+///            "DOCUMENT_CREATED",
+///            "DOCUMENT_RENAMED",
+///            "DOCUMENT_MOVED",
+///            "DOCUMENT_TRASHED",
+///            "DOCUMENT_RESTORED",
+///            "DOCUMENT_PURGED",
+///            "DRAFT_CREATED",
+///            "VERSION_PUBLISHED",
+///            "PUBLIC_LINK_CREATED",
+///            "PUBLIC_LINK_REVOKED",
+///            "DISCUSSION_CREATED",
+///            "DISCUSSION_CLOSED",
+///            "DISCUSSION_REOPENED",
+///            "REVIEW_REQUESTED",
+///            "REVIEW_APPROVED",
+///            "REVIEW_CHANGES_REQUESTED",
+///            "VOCABULARY_CREATED",
+///            "VOCABULARY_UPDATED",
+///            "VOCABULARY_DEPRECATED",
+///            "FILE_DELETED",
+///            "AI_PROPOSAL_APPLIED",
+///            "WRITING_CONFIGURATION_CHANGED",
+///            "SECURITY_ACTION_RECORDED"
+///          ]
+///        },
+///        "actorUserId": {
+///          "$ref": "#/$defs/OpenApi__Id"
+///        },
 ///        "cursor": {
 ///          "type": "string",
 ///          "maxLength": 2048
+///        },
+///        "from": {
+///          "type": "string",
+///          "format": "date-time"
+///        },
+///        "targetKind": {
+///          "type": "string",
+///          "enum": [
+///            "WORKSPACE",
+///            "MEMBERSHIP",
+///            "INVITATION",
+///            "GROUP",
+///            "PERMISSION",
+///            "PUBLISH_POLICY",
+///            "DOCUMENT",
+///            "DRAFT",
+///            "VERSION",
+///            "PUBLIC_LINK",
+///            "DISCUSSION",
+///            "REVIEW",
+///            "VOCABULARY",
+///            "FILE",
+///            "AI_PROPOSAL",
+///            "SECURITY"
+///          ]
+///        },
+///        "to": {
+///          "type": "string",
+///          "format": "date-time"
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -39185,9 +39276,85 @@ pub struct OperationListAuditEventsRequestPath {
 ///{
 ///  "type": "object",
 ///  "properties": {
+///    "action": {
+///      "type": "string",
+///      "enum": [
+///        "WORKSPACE_CREATED",
+///        "WORKSPACE_UPDATED",
+///        "WORKSPACE_DELETION_SCHEDULED",
+///        "WORKSPACE_RESTORED",
+///        "WORKSPACE_PURGED",
+///        "MEMBER_INVITED",
+///        "MEMBER_ADDED",
+///        "MEMBER_ROLE_CHANGED",
+///        "MEMBER_REMOVED",
+///        "GROUP_CREATED",
+///        "GROUP_UPDATED",
+///        "GROUP_DELETED",
+///        "GROUP_MEMBER_ADDED",
+///        "GROUP_MEMBER_REMOVED",
+///        "PERMISSION_CHANGED",
+///        "PUBLISH_POLICY_CHANGED",
+///        "DOCUMENT_CREATED",
+///        "DOCUMENT_RENAMED",
+///        "DOCUMENT_MOVED",
+///        "DOCUMENT_TRASHED",
+///        "DOCUMENT_RESTORED",
+///        "DOCUMENT_PURGED",
+///        "DRAFT_CREATED",
+///        "VERSION_PUBLISHED",
+///        "PUBLIC_LINK_CREATED",
+///        "PUBLIC_LINK_REVOKED",
+///        "DISCUSSION_CREATED",
+///        "DISCUSSION_CLOSED",
+///        "DISCUSSION_REOPENED",
+///        "REVIEW_REQUESTED",
+///        "REVIEW_APPROVED",
+///        "REVIEW_CHANGES_REQUESTED",
+///        "VOCABULARY_CREATED",
+///        "VOCABULARY_UPDATED",
+///        "VOCABULARY_DEPRECATED",
+///        "FILE_DELETED",
+///        "AI_PROPOSAL_APPLIED",
+///        "WRITING_CONFIGURATION_CHANGED",
+///        "SECURITY_ACTION_RECORDED"
+///      ]
+///    },
+///    "actorUserId": {
+///      "$ref": "#/$defs/OpenApi__Id"
+///    },
 ///    "cursor": {
 ///      "type": "string",
 ///      "maxLength": 2048
+///    },
+///    "from": {
+///      "type": "string",
+///      "format": "date-time"
+///    },
+///    "targetKind": {
+///      "type": "string",
+///      "enum": [
+///        "WORKSPACE",
+///        "MEMBERSHIP",
+///        "INVITATION",
+///        "GROUP",
+///        "PERMISSION",
+///        "PUBLISH_POLICY",
+///        "DOCUMENT",
+///        "DRAFT",
+///        "VERSION",
+///        "PUBLIC_LINK",
+///        "DISCUSSION",
+///        "REVIEW",
+///        "VOCABULARY",
+///        "FILE",
+///        "AI_PROPOSAL",
+///        "SECURITY"
+///      ]
+///    },
+///    "to": {
+///      "type": "string",
+///      "format": "date-time"
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -39198,13 +39365,295 @@ pub struct OperationListAuditEventsRequestPath {
 #[serde(deny_unknown_fields)]
 pub struct OperationListAuditEventsRequestQuery {
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub action: ::std::option::Option<OperationListAuditEventsRequestQueryAction>,
+    #[serde(
+        rename = "actorUserId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub actor_user_id: ::std::option::Option<OpenApiId>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub cursor: ::std::option::Option<OperationListAuditEventsRequestQueryCursor>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub from: ::std::option::Option<::chrono::DateTime<::chrono::offset::Utc>>,
+    #[serde(
+        rename = "targetKind",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub target_kind: ::std::option::Option<OperationListAuditEventsRequestQueryTargetKind>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub to: ::std::option::Option<::chrono::DateTime<::chrono::offset::Utc>>,
 }
 impl ::std::default::Default for OperationListAuditEventsRequestQuery {
     fn default() -> Self {
         Self {
+            action: Default::default(),
+            actor_user_id: Default::default(),
             cursor: Default::default(),
+            from: Default::default(),
+            target_kind: Default::default(),
+            to: Default::default(),
         }
+    }
+}
+///`OperationListAuditEventsRequestQueryAction`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "enum": [
+///    "WORKSPACE_CREATED",
+///    "WORKSPACE_UPDATED",
+///    "WORKSPACE_DELETION_SCHEDULED",
+///    "WORKSPACE_RESTORED",
+///    "WORKSPACE_PURGED",
+///    "MEMBER_INVITED",
+///    "MEMBER_ADDED",
+///    "MEMBER_ROLE_CHANGED",
+///    "MEMBER_REMOVED",
+///    "GROUP_CREATED",
+///    "GROUP_UPDATED",
+///    "GROUP_DELETED",
+///    "GROUP_MEMBER_ADDED",
+///    "GROUP_MEMBER_REMOVED",
+///    "PERMISSION_CHANGED",
+///    "PUBLISH_POLICY_CHANGED",
+///    "DOCUMENT_CREATED",
+///    "DOCUMENT_RENAMED",
+///    "DOCUMENT_MOVED",
+///    "DOCUMENT_TRASHED",
+///    "DOCUMENT_RESTORED",
+///    "DOCUMENT_PURGED",
+///    "DRAFT_CREATED",
+///    "VERSION_PUBLISHED",
+///    "PUBLIC_LINK_CREATED",
+///    "PUBLIC_LINK_REVOKED",
+///    "DISCUSSION_CREATED",
+///    "DISCUSSION_CLOSED",
+///    "DISCUSSION_REOPENED",
+///    "REVIEW_REQUESTED",
+///    "REVIEW_APPROVED",
+///    "REVIEW_CHANGES_REQUESTED",
+///    "VOCABULARY_CREATED",
+///    "VOCABULARY_UPDATED",
+///    "VOCABULARY_DEPRECATED",
+///    "FILE_DELETED",
+///    "AI_PROPOSAL_APPLIED",
+///    "WRITING_CONFIGURATION_CHANGED",
+///    "SECURITY_ACTION_RECORDED"
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum OperationListAuditEventsRequestQueryAction {
+    #[serde(rename = "WORKSPACE_CREATED")]
+    WorkspaceCreated,
+    #[serde(rename = "WORKSPACE_UPDATED")]
+    WorkspaceUpdated,
+    #[serde(rename = "WORKSPACE_DELETION_SCHEDULED")]
+    WorkspaceDeletionScheduled,
+    #[serde(rename = "WORKSPACE_RESTORED")]
+    WorkspaceRestored,
+    #[serde(rename = "WORKSPACE_PURGED")]
+    WorkspacePurged,
+    #[serde(rename = "MEMBER_INVITED")]
+    MemberInvited,
+    #[serde(rename = "MEMBER_ADDED")]
+    MemberAdded,
+    #[serde(rename = "MEMBER_ROLE_CHANGED")]
+    MemberRoleChanged,
+    #[serde(rename = "MEMBER_REMOVED")]
+    MemberRemoved,
+    #[serde(rename = "GROUP_CREATED")]
+    GroupCreated,
+    #[serde(rename = "GROUP_UPDATED")]
+    GroupUpdated,
+    #[serde(rename = "GROUP_DELETED")]
+    GroupDeleted,
+    #[serde(rename = "GROUP_MEMBER_ADDED")]
+    GroupMemberAdded,
+    #[serde(rename = "GROUP_MEMBER_REMOVED")]
+    GroupMemberRemoved,
+    #[serde(rename = "PERMISSION_CHANGED")]
+    PermissionChanged,
+    #[serde(rename = "PUBLISH_POLICY_CHANGED")]
+    PublishPolicyChanged,
+    #[serde(rename = "DOCUMENT_CREATED")]
+    DocumentCreated,
+    #[serde(rename = "DOCUMENT_RENAMED")]
+    DocumentRenamed,
+    #[serde(rename = "DOCUMENT_MOVED")]
+    DocumentMoved,
+    #[serde(rename = "DOCUMENT_TRASHED")]
+    DocumentTrashed,
+    #[serde(rename = "DOCUMENT_RESTORED")]
+    DocumentRestored,
+    #[serde(rename = "DOCUMENT_PURGED")]
+    DocumentPurged,
+    #[serde(rename = "DRAFT_CREATED")]
+    DraftCreated,
+    #[serde(rename = "VERSION_PUBLISHED")]
+    VersionPublished,
+    #[serde(rename = "PUBLIC_LINK_CREATED")]
+    PublicLinkCreated,
+    #[serde(rename = "PUBLIC_LINK_REVOKED")]
+    PublicLinkRevoked,
+    #[serde(rename = "DISCUSSION_CREATED")]
+    DiscussionCreated,
+    #[serde(rename = "DISCUSSION_CLOSED")]
+    DiscussionClosed,
+    #[serde(rename = "DISCUSSION_REOPENED")]
+    DiscussionReopened,
+    #[serde(rename = "REVIEW_REQUESTED")]
+    ReviewRequested,
+    #[serde(rename = "REVIEW_APPROVED")]
+    ReviewApproved,
+    #[serde(rename = "REVIEW_CHANGES_REQUESTED")]
+    ReviewChangesRequested,
+    #[serde(rename = "VOCABULARY_CREATED")]
+    VocabularyCreated,
+    #[serde(rename = "VOCABULARY_UPDATED")]
+    VocabularyUpdated,
+    #[serde(rename = "VOCABULARY_DEPRECATED")]
+    VocabularyDeprecated,
+    #[serde(rename = "FILE_DELETED")]
+    FileDeleted,
+    #[serde(rename = "AI_PROPOSAL_APPLIED")]
+    AiProposalApplied,
+    #[serde(rename = "WRITING_CONFIGURATION_CHANGED")]
+    WritingConfigurationChanged,
+    #[serde(rename = "SECURITY_ACTION_RECORDED")]
+    SecurityActionRecorded,
+}
+impl ::std::fmt::Display for OperationListAuditEventsRequestQueryAction {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::WorkspaceCreated => f.write_str("WORKSPACE_CREATED"),
+            Self::WorkspaceUpdated => f.write_str("WORKSPACE_UPDATED"),
+            Self::WorkspaceDeletionScheduled => f.write_str("WORKSPACE_DELETION_SCHEDULED"),
+            Self::WorkspaceRestored => f.write_str("WORKSPACE_RESTORED"),
+            Self::WorkspacePurged => f.write_str("WORKSPACE_PURGED"),
+            Self::MemberInvited => f.write_str("MEMBER_INVITED"),
+            Self::MemberAdded => f.write_str("MEMBER_ADDED"),
+            Self::MemberRoleChanged => f.write_str("MEMBER_ROLE_CHANGED"),
+            Self::MemberRemoved => f.write_str("MEMBER_REMOVED"),
+            Self::GroupCreated => f.write_str("GROUP_CREATED"),
+            Self::GroupUpdated => f.write_str("GROUP_UPDATED"),
+            Self::GroupDeleted => f.write_str("GROUP_DELETED"),
+            Self::GroupMemberAdded => f.write_str("GROUP_MEMBER_ADDED"),
+            Self::GroupMemberRemoved => f.write_str("GROUP_MEMBER_REMOVED"),
+            Self::PermissionChanged => f.write_str("PERMISSION_CHANGED"),
+            Self::PublishPolicyChanged => f.write_str("PUBLISH_POLICY_CHANGED"),
+            Self::DocumentCreated => f.write_str("DOCUMENT_CREATED"),
+            Self::DocumentRenamed => f.write_str("DOCUMENT_RENAMED"),
+            Self::DocumentMoved => f.write_str("DOCUMENT_MOVED"),
+            Self::DocumentTrashed => f.write_str("DOCUMENT_TRASHED"),
+            Self::DocumentRestored => f.write_str("DOCUMENT_RESTORED"),
+            Self::DocumentPurged => f.write_str("DOCUMENT_PURGED"),
+            Self::DraftCreated => f.write_str("DRAFT_CREATED"),
+            Self::VersionPublished => f.write_str("VERSION_PUBLISHED"),
+            Self::PublicLinkCreated => f.write_str("PUBLIC_LINK_CREATED"),
+            Self::PublicLinkRevoked => f.write_str("PUBLIC_LINK_REVOKED"),
+            Self::DiscussionCreated => f.write_str("DISCUSSION_CREATED"),
+            Self::DiscussionClosed => f.write_str("DISCUSSION_CLOSED"),
+            Self::DiscussionReopened => f.write_str("DISCUSSION_REOPENED"),
+            Self::ReviewRequested => f.write_str("REVIEW_REQUESTED"),
+            Self::ReviewApproved => f.write_str("REVIEW_APPROVED"),
+            Self::ReviewChangesRequested => f.write_str("REVIEW_CHANGES_REQUESTED"),
+            Self::VocabularyCreated => f.write_str("VOCABULARY_CREATED"),
+            Self::VocabularyUpdated => f.write_str("VOCABULARY_UPDATED"),
+            Self::VocabularyDeprecated => f.write_str("VOCABULARY_DEPRECATED"),
+            Self::FileDeleted => f.write_str("FILE_DELETED"),
+            Self::AiProposalApplied => f.write_str("AI_PROPOSAL_APPLIED"),
+            Self::WritingConfigurationChanged => f.write_str("WRITING_CONFIGURATION_CHANGED"),
+            Self::SecurityActionRecorded => f.write_str("SECURITY_ACTION_RECORDED"),
+        }
+    }
+}
+impl ::std::str::FromStr for OperationListAuditEventsRequestQueryAction {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "WORKSPACE_CREATED" => Ok(Self::WorkspaceCreated),
+            "WORKSPACE_UPDATED" => Ok(Self::WorkspaceUpdated),
+            "WORKSPACE_DELETION_SCHEDULED" => Ok(Self::WorkspaceDeletionScheduled),
+            "WORKSPACE_RESTORED" => Ok(Self::WorkspaceRestored),
+            "WORKSPACE_PURGED" => Ok(Self::WorkspacePurged),
+            "MEMBER_INVITED" => Ok(Self::MemberInvited),
+            "MEMBER_ADDED" => Ok(Self::MemberAdded),
+            "MEMBER_ROLE_CHANGED" => Ok(Self::MemberRoleChanged),
+            "MEMBER_REMOVED" => Ok(Self::MemberRemoved),
+            "GROUP_CREATED" => Ok(Self::GroupCreated),
+            "GROUP_UPDATED" => Ok(Self::GroupUpdated),
+            "GROUP_DELETED" => Ok(Self::GroupDeleted),
+            "GROUP_MEMBER_ADDED" => Ok(Self::GroupMemberAdded),
+            "GROUP_MEMBER_REMOVED" => Ok(Self::GroupMemberRemoved),
+            "PERMISSION_CHANGED" => Ok(Self::PermissionChanged),
+            "PUBLISH_POLICY_CHANGED" => Ok(Self::PublishPolicyChanged),
+            "DOCUMENT_CREATED" => Ok(Self::DocumentCreated),
+            "DOCUMENT_RENAMED" => Ok(Self::DocumentRenamed),
+            "DOCUMENT_MOVED" => Ok(Self::DocumentMoved),
+            "DOCUMENT_TRASHED" => Ok(Self::DocumentTrashed),
+            "DOCUMENT_RESTORED" => Ok(Self::DocumentRestored),
+            "DOCUMENT_PURGED" => Ok(Self::DocumentPurged),
+            "DRAFT_CREATED" => Ok(Self::DraftCreated),
+            "VERSION_PUBLISHED" => Ok(Self::VersionPublished),
+            "PUBLIC_LINK_CREATED" => Ok(Self::PublicLinkCreated),
+            "PUBLIC_LINK_REVOKED" => Ok(Self::PublicLinkRevoked),
+            "DISCUSSION_CREATED" => Ok(Self::DiscussionCreated),
+            "DISCUSSION_CLOSED" => Ok(Self::DiscussionClosed),
+            "DISCUSSION_REOPENED" => Ok(Self::DiscussionReopened),
+            "REVIEW_REQUESTED" => Ok(Self::ReviewRequested),
+            "REVIEW_APPROVED" => Ok(Self::ReviewApproved),
+            "REVIEW_CHANGES_REQUESTED" => Ok(Self::ReviewChangesRequested),
+            "VOCABULARY_CREATED" => Ok(Self::VocabularyCreated),
+            "VOCABULARY_UPDATED" => Ok(Self::VocabularyUpdated),
+            "VOCABULARY_DEPRECATED" => Ok(Self::VocabularyDeprecated),
+            "FILE_DELETED" => Ok(Self::FileDeleted),
+            "AI_PROPOSAL_APPLIED" => Ok(Self::AiProposalApplied),
+            "WRITING_CONFIGURATION_CHANGED" => Ok(Self::WritingConfigurationChanged),
+            "SECURITY_ACTION_RECORDED" => Ok(Self::SecurityActionRecorded),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationListAuditEventsRequestQueryAction {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationListAuditEventsRequestQueryAction
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for OperationListAuditEventsRequestQueryAction {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
     }
 }
 ///`OperationListAuditEventsRequestQueryCursor`
@@ -39275,6 +39724,152 @@ impl<'de> ::serde::Deserialize<'de> for OperationListAuditEventsRequestQueryCurs
             .map_err(|e: self::error::ConversionError| {
                 <D::Error as ::serde::de::Error>::custom(e.to_string())
             })
+    }
+}
+///`OperationListAuditEventsRequestQueryTargetKind`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "enum": [
+///    "WORKSPACE",
+///    "MEMBERSHIP",
+///    "INVITATION",
+///    "GROUP",
+///    "PERMISSION",
+///    "PUBLISH_POLICY",
+///    "DOCUMENT",
+///    "DRAFT",
+///    "VERSION",
+///    "PUBLIC_LINK",
+///    "DISCUSSION",
+///    "REVIEW",
+///    "VOCABULARY",
+///    "FILE",
+///    "AI_PROPOSAL",
+///    "SECURITY"
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum OperationListAuditEventsRequestQueryTargetKind {
+    #[serde(rename = "WORKSPACE")]
+    Workspace,
+    #[serde(rename = "MEMBERSHIP")]
+    Membership,
+    #[serde(rename = "INVITATION")]
+    Invitation,
+    #[serde(rename = "GROUP")]
+    Group,
+    #[serde(rename = "PERMISSION")]
+    Permission,
+    #[serde(rename = "PUBLISH_POLICY")]
+    PublishPolicy,
+    #[serde(rename = "DOCUMENT")]
+    Document,
+    #[serde(rename = "DRAFT")]
+    Draft,
+    #[serde(rename = "VERSION")]
+    Version,
+    #[serde(rename = "PUBLIC_LINK")]
+    PublicLink,
+    #[serde(rename = "DISCUSSION")]
+    Discussion,
+    #[serde(rename = "REVIEW")]
+    Review,
+    #[serde(rename = "VOCABULARY")]
+    Vocabulary,
+    #[serde(rename = "FILE")]
+    File,
+    #[serde(rename = "AI_PROPOSAL")]
+    AiProposal,
+    #[serde(rename = "SECURITY")]
+    Security,
+}
+impl ::std::fmt::Display for OperationListAuditEventsRequestQueryTargetKind {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Workspace => f.write_str("WORKSPACE"),
+            Self::Membership => f.write_str("MEMBERSHIP"),
+            Self::Invitation => f.write_str("INVITATION"),
+            Self::Group => f.write_str("GROUP"),
+            Self::Permission => f.write_str("PERMISSION"),
+            Self::PublishPolicy => f.write_str("PUBLISH_POLICY"),
+            Self::Document => f.write_str("DOCUMENT"),
+            Self::Draft => f.write_str("DRAFT"),
+            Self::Version => f.write_str("VERSION"),
+            Self::PublicLink => f.write_str("PUBLIC_LINK"),
+            Self::Discussion => f.write_str("DISCUSSION"),
+            Self::Review => f.write_str("REVIEW"),
+            Self::Vocabulary => f.write_str("VOCABULARY"),
+            Self::File => f.write_str("FILE"),
+            Self::AiProposal => f.write_str("AI_PROPOSAL"),
+            Self::Security => f.write_str("SECURITY"),
+        }
+    }
+}
+impl ::std::str::FromStr for OperationListAuditEventsRequestQueryTargetKind {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "WORKSPACE" => Ok(Self::Workspace),
+            "MEMBERSHIP" => Ok(Self::Membership),
+            "INVITATION" => Ok(Self::Invitation),
+            "GROUP" => Ok(Self::Group),
+            "PERMISSION" => Ok(Self::Permission),
+            "PUBLISH_POLICY" => Ok(Self::PublishPolicy),
+            "DOCUMENT" => Ok(Self::Document),
+            "DRAFT" => Ok(Self::Draft),
+            "VERSION" => Ok(Self::Version),
+            "PUBLIC_LINK" => Ok(Self::PublicLink),
+            "DISCUSSION" => Ok(Self::Discussion),
+            "REVIEW" => Ok(Self::Review),
+            "VOCABULARY" => Ok(Self::Vocabulary),
+            "FILE" => Ok(Self::File),
+            "AI_PROPOSAL" => Ok(Self::AiProposal),
+            "SECURITY" => Ok(Self::Security),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationListAuditEventsRequestQueryTargetKind {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationListAuditEventsRequestQueryTargetKind
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationListAuditEventsRequestQueryTargetKind
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
     }
 }
 ///`OperationListAuditEventsResponse`
