@@ -786,6 +786,16 @@ pub enum GovernanceError {
     DraftExists,
     #[error("document operation precondition failed")]
     OperationPreconditionFailed,
+    #[error("proposal was not found")]
+    ProposalNotFound,
+    #[error("proposal is stale")]
+    ProposalStale,
+    #[error("proposal state is invalid")]
+    ProposalStateInvalid,
+    #[error("proposal dependency selection is invalid")]
+    ProposalDependencyInvalid,
+    #[error("writing configuration is invalid")]
+    WritingConfigurationInvalid,
     #[error("edit lease is held")]
     EditLeaseHeld { expires_at: DateTime<Utc> },
     #[error("edit lease is invalid")]

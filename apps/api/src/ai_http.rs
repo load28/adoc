@@ -2,14 +2,17 @@ use std::{collections::BTreeSet, sync::Arc};
 
 use adoc_adapters::{
     ai_runtime::OpenAiRuntime,
+    identity::SystemClock,
     job_queue::RedisJobSignalQueue,
-    postgres::{PostgresAiContextRepository, PostgresStore},
+    postgres::{PostgresAiContextRepository, PostgresStore, PostgresWritingIntelligenceRepository},
 };
 use adoc_application::{
     ai::{
-        AiContextService, AiJobService, AiTarget, AiTask, AiTaskKind, ContextError,
-        ContextSelection, EmbeddingRuntime, NeverCancelled,
+        AiContextService, AiJobService, AiTarget, AiTask, AiTaskKind, ApplyProposalInput,
+        ApplyProposalRequest, ContextError, ContextSelection, EmbeddingRuntime, NeverCancelled,
+        WritingConfigurationInput, WritingIntelligenceService,
     },
+    governance::ReasonInput,
     jobs::JobSignalQueue,
     search::{KnowledgeRetrievalService, SearchRetrievalError},
 };
@@ -32,6 +35,7 @@ use crate::{
 pub(crate) struct AiHttpRuntime {
     context: Arc<AiContextService>,
     jobs: Arc<AiJobService>,
+    intelligence: Arc<WritingIntelligenceService>,
     queue: Arc<dyn JobSignalQueue>,
 }
 
@@ -76,6 +80,10 @@ impl AiHttpRuntime {
             context.clone(),
             Arc::new(PostgresAiContextRepository::new(store)),
         ));
+        let intelligence = Arc::new(WritingIntelligenceService::new(
+            Arc::new(PostgresWritingIntelligenceRepository::new(store)),
+            Arc::new(SystemClock),
+        ));
         let queue = Arc::new(
             RedisJobSignalQueue::connect(
                 config.dependencies.redis_url.value.expose(),
@@ -87,6 +95,7 @@ impl AiHttpRuntime {
         Ok(Self {
             context,
             jobs,
+            intelligence,
             queue,
         })
     }
@@ -105,6 +114,22 @@ pub(crate) fn ai_routes() -> Router<HealthState> {
         .route(
             "/workspaces/{workspace_id}/ai/jobs/{job_id}",
             get(get_job).delete(cancel_job),
+        )
+        .route(
+            "/workspaces/{workspace_id}/proposals/{proposal_id}",
+            get(get_proposal),
+        )
+        .route(
+            "/workspaces/{workspace_id}/proposals/{proposal_id}/apply",
+            post(apply_proposal),
+        )
+        .route(
+            "/workspaces/{workspace_id}/proposals/{proposal_id}/reject",
+            post(reject_proposal),
+        )
+        .route(
+            "/workspaces/{workspace_id}/writing-configuration",
+            get(get_writing_configuration).put(update_writing_configuration),
         )
 }
 
@@ -273,6 +298,117 @@ async fn cancel_job(
         .await
         .map_err(Problem::from)?;
     Ok(StatusCode::ACCEPTED)
+}
+
+async fn get_proposal(
+    State(state): State<HealthState>,
+    auth: Authenticated,
+    Path((workspace, proposal)): Path<(Uuid, Uuid)>,
+) -> Result<Json<serde_json::Value>, Problem> {
+    let value = state
+        .ai
+        .intelligence
+        .get_proposal(auth.principal.user.id, workspace, proposal)
+        .await
+        .map_err(Problem::from)?;
+    Ok(Json(
+        serde_json::to_value(value).map_err(|_| Problem::internal())?,
+    ))
+}
+
+async fn apply_proposal(
+    State(state): State<HealthState>,
+    headers: HeaderMap,
+    auth: Authenticated,
+    Path((workspace, proposal)): Path<(Uuid, Uuid)>,
+    Json(input): Json<ApplyProposalInput>,
+) -> Result<Json<serde_json::Value>, Problem> {
+    validate_command(&state.identity, &headers, &auth)?;
+    let value = state
+        .ai
+        .intelligence
+        .apply_proposal(ApplyProposalRequest {
+            actor_id: auth.principal.user.id,
+            workspace_id: workspace,
+            proposal_id: proposal,
+            client_instance_id: crate::document_http::client(&headers)?,
+            expected_revision: expected_revision(&headers)?,
+            token: crate::document_http::lease_token(&headers)?,
+            input,
+            idempotency_key: idempotency_key(&headers)?,
+        })
+        .await
+        .map_err(Problem::from)?;
+    Ok(Json(
+        serde_json::to_value(value).map_err(|_| Problem::internal())?,
+    ))
+}
+
+async fn reject_proposal(
+    State(state): State<HealthState>,
+    headers: HeaderMap,
+    auth: Authenticated,
+    Path((workspace, proposal)): Path<(Uuid, Uuid)>,
+    Json(input): Json<ReasonInput>,
+) -> Result<Json<serde_json::Value>, Problem> {
+    validate_command(&state.identity, &headers, &auth)?;
+    let value = state
+        .ai
+        .intelligence
+        .reject_proposal(
+            auth.principal.user.id,
+            workspace,
+            proposal,
+            expected_revision(&headers)?,
+            input.reason,
+            idempotency_key(&headers)?,
+        )
+        .await
+        .map_err(Problem::from)?;
+    Ok(Json(
+        serde_json::to_value(value).map_err(|_| Problem::internal())?,
+    ))
+}
+
+async fn get_writing_configuration(
+    State(state): State<HealthState>,
+    auth: Authenticated,
+    Path(workspace): Path<Uuid>,
+) -> Result<Json<serde_json::Value>, Problem> {
+    let value = state
+        .ai
+        .intelligence
+        .get_writing_configuration(auth.principal.user.id, workspace)
+        .await
+        .map_err(Problem::from)?;
+    Ok(Json(
+        serde_json::to_value(value).map_err(|_| Problem::internal())?,
+    ))
+}
+
+async fn update_writing_configuration(
+    State(state): State<HealthState>,
+    headers: HeaderMap,
+    auth: Authenticated,
+    Path(workspace): Path<Uuid>,
+    Json(input): Json<WritingConfigurationInput>,
+) -> Result<Json<serde_json::Value>, Problem> {
+    validate_command(&state.identity, &headers, &auth)?;
+    let value = state
+        .ai
+        .intelligence
+        .update_writing_configuration(
+            auth.principal.user.id,
+            workspace,
+            expected_revision(&headers)?,
+            input,
+            idempotency_key(&headers)?,
+        )
+        .await
+        .map_err(Problem::from)?;
+    Ok(Json(
+        serde_json::to_value(value).map_err(|_| Problem::internal())?,
+    ))
 }
 
 impl From<ContextError> for Problem {

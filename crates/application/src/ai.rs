@@ -1,21 +1,282 @@
 use std::{collections::BTreeSet, sync::Arc};
 
+pub use crate::ai_result::{
+    AiClaim, AiConflict, AiFinding, AiResult, AiResultStatus, AiResultValidationError,
+    FindingSeverity, ResultApplication, ResultValidationSummary, prohibited_term_in_content,
+    validate_dependency_selection, validate_result,
+};
 use adoc_knowledge::SearchSource;
 use adoc_ports::BoxFuture;
 pub use adoc_writing_intelligence::{
     AiTarget, AiTask, AiTaskKind, ContextArtifact, ContextSource, ContextSourceKind, IncludeReason,
-    MAX_OUTPUT_BYTES, RuntimeEvent, RuntimePhase, RuntimeRequest, RuntimeResult, RuntimeUsage,
-    SourceAuthority, TASK_DEFINITION_VERSION, runtime_output_schema, task_definition,
+    MAX_OUTPUT_BYTES, RESULT_VALIDATOR_VERSION, RuntimeEvent, RuntimePhase, RuntimeRequest,
+    RuntimeResult, RuntimeUsage, SourceAuthority, TASK_DEFINITION_VERSION,
+    WRITING_RULE_BASELINE_VERSION, runtime_output_schema, task_definition,
 };
 use chrono::{DateTime, Duration, Utc};
 use serde::Serialize;
 use uuid::Uuid;
 
 use crate::{
+    document::{DocumentOperation, MutationResult, command, token_hash},
+    governance::{Command, GovernanceError},
+    identity::{Clock, TokenHash},
     jobs::{JobExecution, JobExecutionError},
     operations::{Job, JobSignal},
     search::{KnowledgeRetrievalService, SearchRetrievalError},
 };
+
+#[derive(Clone, Copy, Debug, serde::Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ProposalStatus {
+    Open,
+    Applied,
+    Rejected,
+    Stale,
+    Cancelled,
+}
+
+#[derive(Clone, Debug, serde::Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProposalView {
+    pub proposal_id: Uuid,
+    pub job_id: Uuid,
+    pub document_id: Uuid,
+    pub base_revision: i64,
+    pub operations: Vec<DocumentOperation>,
+    pub status: ProposalStatus,
+    pub revision: i64,
+    pub applied_revision: Option<i64>,
+    pub applied_operation_ids: Vec<Uuid>,
+    pub created_at: DateTime<Utc>,
+    pub resolved_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Clone, Debug, serde::Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ApplyProposalInput {
+    #[serde(default)]
+    pub operation_ids: Option<Vec<Uuid>>,
+}
+
+#[derive(Clone, Debug, serde::Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct WritingRuleOverride {
+    pub rule_id: String,
+    pub enabled: bool,
+    pub severity: FindingSeverity,
+    pub values: Vec<String>,
+}
+
+#[derive(Clone, Debug, serde::Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct WritingConfigurationInput {
+    pub baseline_version: String,
+    pub overrides: Vec<WritingRuleOverride>,
+}
+
+#[derive(Clone, Debug, serde::Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WritingConfigurationView {
+    pub baseline_version: String,
+    pub overrides: Vec<WritingRuleOverride>,
+    pub revision: i64,
+}
+
+#[derive(Clone, Debug)]
+pub struct ProposalApply {
+    pub actor_id: Uuid,
+    pub workspace_id: Uuid,
+    pub proposal_id: Uuid,
+    pub client_instance_id: Uuid,
+    pub expected_draft_revision: i64,
+    pub token_hash: TokenHash,
+    pub operation_ids: Option<Vec<Uuid>>,
+    pub command: Command,
+}
+
+#[derive(Clone, Debug)]
+pub struct ProposalReject {
+    pub actor_id: Uuid,
+    pub workspace_id: Uuid,
+    pub proposal_id: Uuid,
+    pub expected_proposal_revision: i64,
+    pub reason: String,
+    pub command: Command,
+}
+
+#[derive(Clone, Debug)]
+pub struct WritingConfigurationUpdate {
+    pub actor_id: Uuid,
+    pub workspace_id: Uuid,
+    pub expected_revision: i64,
+    pub input: WritingConfigurationInput,
+    pub command: Command,
+}
+
+pub trait WritingIntelligenceRepository: Send + Sync {
+    fn get_proposal<'a>(
+        &'a self,
+        actor_id: Uuid,
+        workspace_id: Uuid,
+        proposal_id: Uuid,
+    ) -> BoxFuture<'a, Result<ProposalView, GovernanceError>>;
+
+    fn apply_proposal<'a>(
+        &'a self,
+        input: ProposalApply,
+    ) -> BoxFuture<'a, Result<MutationResult, GovernanceError>>;
+
+    fn reject_proposal<'a>(
+        &'a self,
+        input: ProposalReject,
+    ) -> BoxFuture<'a, Result<ProposalView, GovernanceError>>;
+
+    fn get_writing_configuration<'a>(
+        &'a self,
+        actor_id: Uuid,
+        workspace_id: Uuid,
+    ) -> BoxFuture<'a, Result<WritingConfigurationView, GovernanceError>>;
+
+    fn update_writing_configuration<'a>(
+        &'a self,
+        input: WritingConfigurationUpdate,
+    ) -> BoxFuture<'a, Result<WritingConfigurationView, GovernanceError>>;
+}
+
+pub struct WritingIntelligenceService {
+    repository: Arc<dyn WritingIntelligenceRepository>,
+    clock: Arc<dyn Clock>,
+}
+
+pub struct ApplyProposalRequest<'a> {
+    pub actor_id: Uuid,
+    pub workspace_id: Uuid,
+    pub proposal_id: Uuid,
+    pub client_instance_id: Uuid,
+    pub expected_revision: i64,
+    pub token: &'a str,
+    pub input: ApplyProposalInput,
+    pub idempotency_key: &'a str,
+}
+
+impl WritingIntelligenceService {
+    pub fn new(repository: Arc<dyn WritingIntelligenceRepository>, clock: Arc<dyn Clock>) -> Self {
+        Self { repository, clock }
+    }
+
+    pub async fn get_proposal(
+        &self,
+        actor: Uuid,
+        workspace: Uuid,
+        proposal: Uuid,
+    ) -> Result<ProposalView, GovernanceError> {
+        self.repository
+            .get_proposal(actor, workspace, proposal)
+            .await
+    }
+
+    pub async fn apply_proposal(
+        &self,
+        request: ApplyProposalRequest<'_>,
+    ) -> Result<MutationResult, GovernanceError> {
+        let now = self.clock.now();
+        self.repository
+            .apply_proposal(ProposalApply {
+                actor_id: request.actor_id,
+                workspace_id: request.workspace_id,
+                proposal_id: request.proposal_id,
+                client_instance_id: request.client_instance_id,
+                expected_draft_revision: request.expected_revision,
+                token_hash: token_hash(request.token)?,
+                operation_ids: request.input.operation_ids.clone(),
+                command: command(
+                    request.actor_id,
+                    "applyProposal",
+                    request.idempotency_key,
+                    &(
+                        request.proposal_id,
+                        request.client_instance_id,
+                        request.expected_revision,
+                        request.input,
+                    ),
+                    now,
+                )?,
+            })
+            .await
+    }
+
+    pub async fn reject_proposal(
+        &self,
+        actor: Uuid,
+        workspace: Uuid,
+        proposal: Uuid,
+        revision: i64,
+        reason: String,
+        key: &str,
+    ) -> Result<ProposalView, GovernanceError> {
+        let reason = reason.trim().to_owned();
+        if reason.is_empty() || reason.chars().count() > 500 {
+            return Err(GovernanceError::Validation);
+        }
+        let now = self.clock.now();
+        self.repository
+            .reject_proposal(ProposalReject {
+                actor_id: actor,
+                workspace_id: workspace,
+                proposal_id: proposal,
+                expected_proposal_revision: revision,
+                reason: reason.clone(),
+                command: command(
+                    actor,
+                    "rejectProposal",
+                    key,
+                    &(proposal, revision, reason),
+                    now,
+                )?,
+            })
+            .await
+    }
+
+    pub async fn get_writing_configuration(
+        &self,
+        actor: Uuid,
+        workspace: Uuid,
+    ) -> Result<WritingConfigurationView, GovernanceError> {
+        self.repository
+            .get_writing_configuration(actor, workspace)
+            .await
+    }
+
+    pub async fn update_writing_configuration(
+        &self,
+        actor: Uuid,
+        workspace: Uuid,
+        revision: i64,
+        input: WritingConfigurationInput,
+        key: &str,
+    ) -> Result<WritingConfigurationView, GovernanceError> {
+        if input.baseline_version != WRITING_RULE_BASELINE_VERSION || !input.overrides.is_empty() {
+            return Err(GovernanceError::WritingConfigurationInvalid);
+        }
+        let now = self.clock.now();
+        self.repository
+            .update_writing_configuration(WritingConfigurationUpdate {
+                actor_id: actor,
+                workspace_id: workspace,
+                expected_revision: revision,
+                input: input.clone(),
+                command: command(
+                    actor,
+                    "updateWritingConfiguration",
+                    key,
+                    &(workspace, revision, input),
+                    now,
+                )?,
+            })
+            .await
+    }
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RuntimeErrorKind {
@@ -237,6 +498,7 @@ pub struct AiJobView {
     pub sequence: i64,
     pub revision: i64,
     pub result: Option<serde_json::Value>,
+    pub proposal_id: Option<Uuid>,
     pub error_code: Option<String>,
 }
 

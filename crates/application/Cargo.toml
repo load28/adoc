@@ -33,6 +33,7 @@ subtle = "2.6.1"
 thiserror = "2.0.20"
 uuid = { version = "1.25.0", features = ["serde"] }
 url = "2.5.8"
+unicode-normalization = "0.1.25"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt"] }

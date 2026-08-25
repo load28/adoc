@@ -663,6 +663,37 @@ impl From<GovernanceError> for Problem {
                 None,
                 None,
             ),
+            GovernanceError::ProposalNotFound => (
+                StatusCode::NOT_FOUND,
+                "PROPOSAL_NOT_FOUND",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::ProposalStale => {
+                (StatusCode::CONFLICT, "PROPOSAL_STALE", false, None, None)
+            }
+            GovernanceError::ProposalStateInvalid => (
+                StatusCode::CONFLICT,
+                "PROPOSAL_STATE_INVALID",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::ProposalDependencyInvalid => (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "PROPOSAL_DEPENDENCY_INVALID",
+                false,
+                None,
+                None,
+            ),
+            GovernanceError::WritingConfigurationInvalid => (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "WRITING_CONFIGURATION_INVALID",
+                false,
+                None,
+                None,
+            ),
             GovernanceError::EditLeaseHeld { .. } => {
                 (StatusCode::LOCKED, "EDIT_LEASE_HELD", false, None, None)
             }

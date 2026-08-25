@@ -80,6 +80,10 @@
     {
       "file": "0020_ai_job_admission.sql",
       "sha256": "a26ad6b77acca403daa5f7654c2e3df18bf7f2a7c177e58d83149a56623e3ed2"
+    },
+    {
+      "file": "0021_ai_result_proposal_rules.sql",
+      "sha256": "c94181ea7f33162b62a814793197f27bd4e36c8d1f6b7c53bbd8f2a8b34ae0c0"
     }
   ]
 }

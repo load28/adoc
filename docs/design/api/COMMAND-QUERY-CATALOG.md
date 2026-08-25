@@ -128,7 +128,7 @@ type은 [OpenAPI](openapi.yaml), 오류 의미는 [Error Catalog](ERROR-CATALOG.
 | getAIJob | `GET /workspaces/{workspaceId}/ai/jobs/{jobId}` | Q | owner | — | `AI_JOB_NOT_FOUND` |
 | cancelAIJob | `DELETE /workspaces/{workspaceId}/ai/jobs/{jobId}` | C | owner | job R | `AI_JOB_STATE_INVALID` |
 | getProposal | `GET /workspaces/{workspaceId}/proposals/{proposalId}` | Q | target Contributor | — | `PROPOSAL_NOT_FOUND` |
-| applyProposal | `POST /workspaces/{workspaceId}/proposals/{proposalId}/apply` | C | target Contributor | draft R+L | `PROPOSAL_STALE` |
+| applyProposal | `POST /workspaces/{workspaceId}/proposals/{proposalId}/apply` | C | target Contributor | draft R+L+client | `PROPOSAL_STALE`, `PROPOSAL_DEPENDENCY_INVALID` |
 | rejectProposal | `POST /workspaces/{workspaceId}/proposals/{proposalId}/reject` | C | target Contributor | proposal R | `PROPOSAL_STATE_INVALID` |
 
 ## File·Audit·Stream

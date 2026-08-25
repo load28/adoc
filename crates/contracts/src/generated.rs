@@ -3727,12 +3727,31 @@ impl ::std::fmt::Display for AiContractsId {
 ///    "jobId",
 ///    "operations",
 ///    "proposalId",
+///    "revision",
 ///    "status"
 ///  ],
 ///  "properties": {
+///    "appliedOperationIds": {
+///      "type": "array",
+///      "items": {
+///        "$ref": "#/$defs/AiContracts__id"
+///      },
+///      "maxItems": 500
+///    },
+///    "appliedRevision": {
+///      "type": [
+///        "integer",
+///        "null"
+///      ],
+///      "minimum": 0.0
+///    },
 ///    "baseRevision": {
 ///      "type": "integer",
 ///      "minimum": 0.0
+///    },
+///    "createdAt": {
+///      "type": "string",
+///      "format": "date-time"
 ///    },
 ///    "documentId": {
 ///      "$ref": "#/$defs/AiContracts__id"
@@ -3744,10 +3763,23 @@ impl ::std::fmt::Display for AiContractsId {
 ///      "type": "array",
 ///      "items": {
 ///        "$ref": "#/$defs/DocumentOperation"
-///      }
+///      },
+///      "maxItems": 500,
+///      "minItems": 1
 ///    },
 ///    "proposalId": {
 ///      "$ref": "#/$defs/AiContracts__id"
+///    },
+///    "resolvedAt": {
+///      "type": [
+///        "string",
+///        "null"
+///      ],
+///      "format": "date-time"
+///    },
+///    "revision": {
+///      "type": "integer",
+///      "minimum": 0.0
 ///    },
 ///    "status": {
 ///      "enum": [
@@ -3766,8 +3798,26 @@ impl ::std::fmt::Display for AiContractsId {
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct AiContractsProposal {
+    #[serde(
+        rename = "appliedOperationIds",
+        default,
+        skip_serializing_if = "::std::vec::Vec::is_empty"
+    )]
+    pub applied_operation_ids: ::std::vec::Vec<AiContractsId>,
+    #[serde(
+        rename = "appliedRevision",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub applied_revision: ::std::option::Option<u64>,
     #[serde(rename = "baseRevision")]
     pub base_revision: u64,
+    #[serde(
+        rename = "createdAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub created_at: ::std::option::Option<::chrono::DateTime<::chrono::offset::Utc>>,
     #[serde(rename = "documentId")]
     pub document_id: AiContractsId,
     #[serde(rename = "jobId")]
@@ -3775,6 +3825,13 @@ pub struct AiContractsProposal {
     pub operations: ::std::vec::Vec<DocumentOperation>,
     #[serde(rename = "proposalId")]
     pub proposal_id: AiContractsId,
+    #[serde(
+        rename = "resolvedAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub resolved_at: ::std::option::Option<::chrono::DateTime<::chrono::offset::Utc>>,
+    pub revision: u64,
     pub status: AiContractsProposalStatus,
 }
 ///`AiContractsProposalStatus`
@@ -3886,25 +3943,29 @@ impl ::std::convert::TryFrom<::std::string::String> for AiContractsProposalStatu
 ///      "type": "array",
 ///      "items": {
 ///        "$ref": "#/$defs/AiContracts__claim"
-///      }
+///      },
+///      "maxItems": 500
 ///    },
 ///    "conflicts": {
 ///      "type": "array",
 ///      "items": {
 ///        "$ref": "#/$defs/AiContracts__conflict"
-///      }
+///      },
+///      "maxItems": 500
 ///    },
 ///    "findings": {
 ///      "type": "array",
 ///      "items": {
 ///        "$ref": "#/$defs/AiContracts__finding"
-///      }
+///      },
+///      "maxItems": 500
 ///    },
 ///    "operations": {
 ///      "type": "array",
 ///      "items": {
 ///        "$ref": "#/$defs/DocumentOperation"
-///      }
+///      },
+///      "maxItems": 500
 ///    },
 ///    "schemaVersion": {
 ///      "const": 1
@@ -3930,14 +3991,17 @@ impl ::std::convert::TryFrom<::std::string::String> for AiContractsProposalStatu
 ///    "uncertainties": {
 ///      "type": "array",
 ///      "items": {
-///        "type": "string"
-///      }
+///        "type": "string",
+///        "maxLength": 5000
+///      },
+///      "maxItems": 500
 ///    },
 ///    "usedSourceIds": {
 ///      "type": "array",
 ///      "items": {
 ///        "$ref": "#/$defs/AiContracts__id"
 ///      },
+///      "maxItems": 200,
 ///      "uniqueItems": true
 ///    }
 ///  },
@@ -3957,7 +4021,7 @@ pub struct AiContractsResult {
     pub status: AiContractsResultStatus,
     #[serde(rename = "taskKind")]
     pub task_kind: AiContractsResultTaskKind,
-    pub uncertainties: ::std::vec::Vec<::std::string::String>,
+    pub uncertainties: ::std::vec::Vec<AiContractsResultUncertaintiesItem>,
     #[serde(rename = "usedSourceIds")]
     pub used_source_ids: Vec<AiContractsId>,
 }
@@ -4131,6 +4195,74 @@ impl ::std::convert::TryFrom<::std::string::String> for AiContractsResultTaskKin
         value: ::std::string::String,
     ) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
+    }
+}
+///`AiContractsResultUncertaintiesItem`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 5000
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct AiContractsResultUncertaintiesItem(::std::string::String);
+impl ::std::ops::Deref for AiContractsResultUncertaintiesItem {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<AiContractsResultUncertaintiesItem> for ::std::string::String {
+    fn from(value: AiContractsResultUncertaintiesItem) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for AiContractsResultUncertaintiesItem {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 5000usize {
+            return Err("longer than 5000 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for AiContractsResultUncertaintiesItem {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for AiContractsResultUncertaintiesItem {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for AiContractsResultUncertaintiesItem {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for AiContractsResultUncertaintiesItem {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
     }
 }
 ///`AiContractsSource`
@@ -12588,6 +12720,9 @@ impl<'de> ::serde::Deserialize<'de> for OpenApiAiContextSourcePreviewSnapshotHas
 ///        "KNOWLEDGE_QUERY"
 ///      ]
 ///    },
+///    "proposalId": {
+///      "$ref": "#/$defs/OpenApi__NullableId"
+///    },
 ///    "result": {
 ///      "oneOf": [
 ///        {
@@ -12632,6 +12767,12 @@ pub struct OpenApiAiJob {
     pub error_code: ::std::option::Option<::std::string::String>,
     pub id: OpenApiId,
     pub kind: OpenApiAiJobKind,
+    #[serde(
+        rename = "proposalId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub proposal_id: ::std::option::Option<OpenApiNullableId>,
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub result: ::std::option::Option<AiContractsResult>,
     pub revision: i64,
@@ -17044,20 +17185,7 @@ pub struct OpenApiProblemFieldErrorsItem {
 ///
 /// ```json
 ///{
-///  "allOf": [
-///    {
-///      "$ref": "#/$defs/AiContracts__proposal"
-///    },
-///    {
-///      "type": "object",
-///      "properties": {
-///        "revision": {
-///          "type": "integer",
-///          "minimum": 0.0
-///        }
-///      }
-///    }
-///  ]
+///  "$ref": "#/$defs/AiContracts__proposal"
 ///}
 /// ```
 /// </details>
@@ -20441,13 +20569,15 @@ impl ::std::convert::TryFrom<::std::string::String> for OpenApiWorkspaceStatus {
 ///  ],
 ///  "properties": {
 ///    "baselineVersion": {
-///      "type": "string"
+///      "type": "string",
+///      "const": "writing-rules-v1"
 ///    },
 ///    "overrides": {
 ///      "type": "array",
 ///      "items": {
 ///        "$ref": "#/$defs/OpenApi__WritingRuleOverride"
-///      }
+///      },
+///      "maxItems": 0
 ///    },
 ///    "revision": {
 ///      "type": "integer",
@@ -20485,7 +20615,7 @@ pub struct OpenApiWritingConfiguration {
 ///    },
 ///    "ruleId": {
 ///      "type": "string",
-///      "pattern": "^[A-Z][A-Z0-9_]{2,99}$"
+///      "pattern": "^[a-z][a-z0-9.]{2,99}$"
 ///    },
 ///    "severity": {
 ///      "type": "string",
@@ -20524,7 +20654,7 @@ pub struct OpenApiWritingRuleOverride {
 /// ```json
 ///{
 ///  "type": "string",
-///  "pattern": "^[A-Z][A-Z0-9_]{2,99}$"
+///  "pattern": "^[a-z][a-z0-9.]{2,99}$"
 ///}
 /// ```
 /// </details>
@@ -20546,9 +20676,9 @@ impl ::std::str::FromStr for OpenApiWritingRuleOverrideRuleId {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         static PATTERN: ::std::sync::LazyLock<::regress::Regex> =
-            ::std::sync::LazyLock::new(|| ::regress::Regex::new("^[A-Z][A-Z0-9_]{2,99}$").unwrap());
+            ::std::sync::LazyLock::new(|| ::regress::Regex::new("^[a-z][a-z0-9.]{2,99}$").unwrap());
         if PATTERN.find(value).is_none() {
-            return Err("doesn't match pattern \"^[A-Z][A-Z0-9_]{2,99}$\"".into());
+            return Err("doesn't match pattern \"^[a-z][a-z0-9.]{2,99}$\"".into());
         }
         Ok(Self(value.to_string()))
     }
@@ -23073,15 +23203,21 @@ impl ::std::convert::From<OpenApiProblem> for OperationApplyDraftOperationsRespo
 ///          "type": "array",
 ///          "items": {
 ///            "$ref": "#/$defs/OpenApi__Id"
-///          }
+///          },
+///          "maxItems": 500,
+///          "minItems": 1,
+///          "uniqueItems": true
 ///        }
-///      }
+///      },
+///      "additionalProperties": false
 ///    },
 ///    "header": {
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
 ///        "If-Match",
+///        "X-CSRF-Token",
+///        "X-Client-Instance",
 ///        "X-Edit-Lease"
 ///      ],
 ///      "properties": {
@@ -23093,6 +23229,14 @@ impl ::std::convert::From<OpenApiProblem> for OperationApplyDraftOperationsRespo
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
+///        },
+///        "X-Client-Instance": {
+///          "$ref": "#/$defs/OpenApi__Id"
 ///        },
 ///        "X-Edit-Lease": {
 ///          "type": "string"
@@ -23140,20 +23284,25 @@ pub struct OperationApplyProposalRequest {
 ///      "type": "array",
 ///      "items": {
 ///        "$ref": "#/$defs/OpenApi__Id"
-///      }
+///      },
+///      "maxItems": 500,
+///      "minItems": 1,
+///      "uniqueItems": true
 ///    }
-///  }
+///  },
+///  "additionalProperties": false
 ///}
 /// ```
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct OperationApplyProposalRequestBody {
     #[serde(
         rename = "operationIds",
         default,
-        skip_serializing_if = "::std::vec::Vec::is_empty"
+        skip_serializing_if = "::std::option::Option::is_none"
     )]
-    pub operation_ids: ::std::vec::Vec<OpenApiId>,
+    pub operation_ids: ::std::option::Option<Vec<OpenApiId>>,
 }
 impl ::std::default::Default for OperationApplyProposalRequestBody {
     fn default() -> Self {
@@ -23172,6 +23321,8 @@ impl ::std::default::Default for OperationApplyProposalRequestBody {
 ///  "required": [
 ///    "Idempotency-Key",
 ///    "If-Match",
+///    "X-CSRF-Token",
+///    "X-Client-Instance",
 ///    "X-Edit-Lease"
 ///  ],
 ///  "properties": {
@@ -23183,6 +23334,14 @@ impl ::std::default::Default for OperationApplyProposalRequestBody {
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
+///    },
+///    "X-Client-Instance": {
+///      "$ref": "#/$defs/OpenApi__Id"
 ///    },
 ///    "X-Edit-Lease": {
 ///      "type": "string"
@@ -23199,6 +23358,10 @@ pub struct OperationApplyProposalRequestHeader {
     pub idempotency_key: OperationApplyProposalRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationApplyProposalRequestHeaderIfMatch,
+    #[serde(rename = "X-Client-Instance")]
+    pub x_client_instance: OpenApiId,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationApplyProposalRequestHeaderXCsrfToken,
     #[serde(rename = "X-Edit-Lease")]
     pub x_edit_lease: ::std::string::String,
 }
@@ -23341,6 +23504,82 @@ impl ::std::convert::TryFrom<::std::string::String> for OperationApplyProposalRe
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationApplyProposalRequestHeaderIfMatch {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationApplyProposalRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationApplyProposalRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationApplyProposalRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationApplyProposalRequestHeaderXCsrfToken> for ::std::string::String {
+    fn from(value: OperationApplyProposalRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationApplyProposalRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationApplyProposalRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationApplyProposalRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationApplyProposalRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationApplyProposalRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -43867,7 +44106,8 @@ impl ::std::convert::From<OpenApiProblem> for OperationPurgeDocumentResponse {
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
-///        "If-Match"
+///        "If-Match",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
@@ -43878,6 +44118,11 @@ impl ::std::convert::From<OpenApiProblem> for OperationPurgeDocumentResponse {
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -44017,7 +44262,8 @@ impl<'de> ::serde::Deserialize<'de> for OperationRejectProposalRequestBodyReason
 ///  "type": "object",
 ///  "required": [
 ///    "Idempotency-Key",
-///    "If-Match"
+///    "If-Match",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
@@ -44028,6 +44274,11 @@ impl<'de> ::serde::Deserialize<'de> for OperationRejectProposalRequestBodyReason
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -44041,6 +44292,8 @@ pub struct OperationRejectProposalRequestHeader {
     pub idempotency_key: OperationRejectProposalRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationRejectProposalRequestHeaderIfMatch,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationRejectProposalRequestHeaderXCsrfToken,
 }
 ///`OperationRejectProposalRequestHeaderIdempotencyKey`
 ///
@@ -44183,6 +44436,84 @@ impl ::std::convert::TryFrom<::std::string::String>
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationRejectProposalRequestHeaderIfMatch {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationRejectProposalRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationRejectProposalRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationRejectProposalRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationRejectProposalRequestHeaderXCsrfToken>
+    for ::std::string::String
+{
+    fn from(value: OperationRejectProposalRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationRejectProposalRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationRejectProposalRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationRejectProposalRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationRejectProposalRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationRejectProposalRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -57471,14 +57802,14 @@ impl ::std::convert::From<OpenApiProblem> for OperationUpdateWorkspaceResponse {
 ///      "properties": {
 ///        "baselineVersion": {
 ///          "type": "string",
-///          "minLength": 1
+///          "const": "writing-rules-v1"
 ///        },
 ///        "overrides": {
 ///          "type": "array",
 ///          "items": {
 ///            "$ref": "#/$defs/OpenApi__WritingRuleOverride"
 ///          },
-///          "maxItems": 500
+///          "maxItems": 0
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -57487,7 +57818,8 @@ impl ::std::convert::From<OpenApiProblem> for OperationUpdateWorkspaceResponse {
 ///      "type": "object",
 ///      "required": [
 ///        "Idempotency-Key",
-///        "If-Match"
+///        "If-Match",
+///        "X-CSRF-Token"
 ///      ],
 ///      "properties": {
 ///        "Idempotency-Key": {
@@ -57498,6 +57830,11 @@ impl ::std::convert::From<OpenApiProblem> for OperationUpdateWorkspaceResponse {
 ///        "If-Match": {
 ///          "type": "string",
 ///          "pattern": "^\"[0-9]+\"$"
+///        },
+///        "X-CSRF-Token": {
+///          "type": "string",
+///          "maxLength": 1024,
+///          "minLength": 43
 ///        }
 ///      },
 ///      "additionalProperties": false
@@ -57540,14 +57877,14 @@ pub struct OperationUpdateWritingConfigurationRequest {
 ///  "properties": {
 ///    "baselineVersion": {
 ///      "type": "string",
-///      "minLength": 1
+///      "const": "writing-rules-v1"
 ///    },
 ///    "overrides": {
 ///      "type": "array",
 ///      "items": {
 ///        "$ref": "#/$defs/OpenApi__WritingRuleOverride"
 ///      },
-///      "maxItems": 500
+///      "maxItems": 0
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -57558,86 +57895,8 @@ pub struct OperationUpdateWritingConfigurationRequest {
 #[serde(deny_unknown_fields)]
 pub struct OperationUpdateWritingConfigurationRequestBody {
     #[serde(rename = "baselineVersion")]
-    pub baseline_version: OperationUpdateWritingConfigurationRequestBodyBaselineVersion,
+    pub baseline_version: ::std::string::String,
     pub overrides: ::std::vec::Vec<OpenApiWritingRuleOverride>,
-}
-///`OperationUpdateWritingConfigurationRequestBodyBaselineVersion`
-///
-/// <details><summary>JSON schema</summary>
-///
-/// ```json
-///{
-///  "type": "string",
-///  "minLength": 1
-///}
-/// ```
-/// </details>
-#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-#[serde(transparent)]
-pub struct OperationUpdateWritingConfigurationRequestBodyBaselineVersion(::std::string::String);
-impl ::std::ops::Deref for OperationUpdateWritingConfigurationRequestBodyBaselineVersion {
-    type Target = ::std::string::String;
-    fn deref(&self) -> &::std::string::String {
-        &self.0
-    }
-}
-impl ::std::convert::From<OperationUpdateWritingConfigurationRequestBodyBaselineVersion>
-    for ::std::string::String
-{
-    fn from(value: OperationUpdateWritingConfigurationRequestBodyBaselineVersion) -> Self {
-        value.0
-    }
-}
-impl ::std::str::FromStr for OperationUpdateWritingConfigurationRequestBodyBaselineVersion {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        if value.chars().count() < 1usize {
-            return Err("shorter than 1 characters".into());
-        }
-        Ok(Self(value.to_string()))
-    }
-}
-impl ::std::convert::TryFrom<&str>
-    for OperationUpdateWritingConfigurationRequestBodyBaselineVersion
-{
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String>
-    for OperationUpdateWritingConfigurationRequestBodyBaselineVersion
-{
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String>
-    for OperationUpdateWritingConfigurationRequestBodyBaselineVersion
-{
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl<'de> ::serde::Deserialize<'de>
-    for OperationUpdateWritingConfigurationRequestBodyBaselineVersion
-{
-    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        ::std::string::String::deserialize(deserializer)?
-            .parse()
-            .map_err(|e: self::error::ConversionError| {
-                <D::Error as ::serde::de::Error>::custom(e.to_string())
-            })
-    }
 }
 ///`OperationUpdateWritingConfigurationRequestHeader`
 ///
@@ -57648,7 +57907,8 @@ impl<'de> ::serde::Deserialize<'de>
 ///  "type": "object",
 ///  "required": [
 ///    "Idempotency-Key",
-///    "If-Match"
+///    "If-Match",
+///    "X-CSRF-Token"
 ///  ],
 ///  "properties": {
 ///    "Idempotency-Key": {
@@ -57659,6 +57919,11 @@ impl<'de> ::serde::Deserialize<'de>
 ///    "If-Match": {
 ///      "type": "string",
 ///      "pattern": "^\"[0-9]+\"$"
+///    },
+///    "X-CSRF-Token": {
+///      "type": "string",
+///      "maxLength": 1024,
+///      "minLength": 43
 ///    }
 ///  },
 ///  "additionalProperties": false
@@ -57672,6 +57937,8 @@ pub struct OperationUpdateWritingConfigurationRequestHeader {
     pub idempotency_key: OperationUpdateWritingConfigurationRequestHeaderIdempotencyKey,
     #[serde(rename = "If-Match")]
     pub if_match: OperationUpdateWritingConfigurationRequestHeaderIfMatch,
+    #[serde(rename = "X-CSRF-Token")]
+    pub x_csrf_token: OperationUpdateWritingConfigurationRequestHeaderXCsrfToken,
 }
 ///`OperationUpdateWritingConfigurationRequestHeaderIdempotencyKey`
 ///
@@ -57820,6 +58087,84 @@ impl ::std::convert::TryFrom<::std::string::String>
     }
 }
 impl<'de> ::serde::Deserialize<'de> for OperationUpdateWritingConfigurationRequestHeaderIfMatch {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::std::string::String::deserialize(deserializer)?
+            .parse()
+            .map_err(|e: self::error::ConversionError| {
+                <D::Error as ::serde::de::Error>::custom(e.to_string())
+            })
+    }
+}
+///`OperationUpdateWritingConfigurationRequestHeaderXCsrfToken`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "maxLength": 1024,
+///  "minLength": 43
+///}
+/// ```
+/// </details>
+#[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[serde(transparent)]
+pub struct OperationUpdateWritingConfigurationRequestHeaderXCsrfToken(::std::string::String);
+impl ::std::ops::Deref for OperationUpdateWritingConfigurationRequestHeaderXCsrfToken {
+    type Target = ::std::string::String;
+    fn deref(&self) -> &::std::string::String {
+        &self.0
+    }
+}
+impl ::std::convert::From<OperationUpdateWritingConfigurationRequestHeaderXCsrfToken>
+    for ::std::string::String
+{
+    fn from(value: OperationUpdateWritingConfigurationRequestHeaderXCsrfToken) -> Self {
+        value.0
+    }
+}
+impl ::std::str::FromStr for OperationUpdateWritingConfigurationRequestHeaderXCsrfToken {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if value.chars().count() > 1024usize {
+            return Err("longer than 1024 characters".into());
+        }
+        if value.chars().count() < 43usize {
+            return Err("shorter than 43 characters".into());
+        }
+        Ok(Self(value.to_string()))
+    }
+}
+impl ::std::convert::TryFrom<&str> for OperationUpdateWritingConfigurationRequestHeaderXCsrfToken {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for OperationUpdateWritingConfigurationRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for OperationUpdateWritingConfigurationRequestHeaderXCsrfToken
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for OperationUpdateWritingConfigurationRequestHeaderXCsrfToken {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,

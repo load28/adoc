@@ -8,6 +8,7 @@ use adoc_application::{
         RuntimeResult, SourceAuthority, TASK_DEFINITION_VERSION, runtime_output_schema,
         task_definition,
     },
+    governance::GovernanceError,
     jobs::{JobExecution, JobExecutionError},
     operations::{Job, JobPriorityBucket, JobSignal},
     search::{
@@ -22,7 +23,10 @@ use sha2::{Digest, Sha256};
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
-use super::{PostgresSearchRetrievalRepository, PostgresStore, retrieval::compile_scope_tx};
+use super::{
+    PostgresSearchRetrievalRepository, PostgresStore, document::dry_run_draft_operations_tx,
+    retrieval::compile_scope_tx,
+};
 
 #[derive(Clone)]
 pub struct PostgresAiContextRepository {
@@ -62,7 +66,7 @@ impl PostgresAiContextRepository {
         .await
         .map_err(|_| ContextError::Storage)?
         .map_or_else(
-            || "baseline:0".to_owned(),
+            || format!("{}:0", adoc_application::ai::WRITING_RULE_BASELINE_VERSION),
             |row| {
                 format!(
                     "{}:{}",
@@ -228,7 +232,7 @@ impl AiJobRepository for PostgresAiContextRepository {
                 .execute(&mut *tx)
                 .await
                 .map_err(|_| ContextError::StorageAt("admission_isolation"))?;
-            if let Some(row) = sqlx::query("SELECT j.id,j.kind,j.status::text,j.revision,j.error_code,r.result_json,g.id AS runtime_job_id,g.priority FROM ai_jobs j LEFT JOIN ai_results r ON r.job_id=j.id JOIN jobs g ON g.id=j.runtime_job_id WHERE j.workspace_id=$1 AND j.user_id=$2 AND j.request_key=$3")
+            if let Some(row) = sqlx::query("SELECT j.id,j.kind,j.status::text,j.revision,j.error_code,r.result_json,p.id AS proposal_id,g.id AS runtime_job_id,g.priority FROM ai_jobs j LEFT JOIN ai_results r ON r.job_id=j.id LEFT JOIN proposals p ON p.job_id=j.id JOIN jobs g ON g.id=j.runtime_job_id WHERE j.workspace_id=$1 AND j.user_id=$2 AND j.request_key=$3")
                 .bind(task.workspace_id).bind(task.actor_id).bind(request_key).fetch_optional(&mut *tx).await.map_err(|_| ContextError::StorageAt("admission_replay_read"))?
             {
                 let view = ai_job_view(&row)?;
@@ -311,6 +315,7 @@ impl AiJobRepository for PostgresAiContextRepository {
                     sequence: 1,
                     revision: 0,
                     result: None,
+                    proposal_id: None,
                     error_code: None,
                 },
                 signal: JobSignal {
@@ -333,7 +338,7 @@ impl AiJobRepository for PostgresAiContextRepository {
                 .map(Uuid::parse_str)
                 .transpose()
                 .map_err(|_| ContextError::Validation)?;
-            let rows = sqlx::query("SELECT j.id,j.kind,j.status::text,j.revision,j.error_code,r.result_json FROM ai_jobs j LEFT JOIN ai_results r ON r.job_id=j.id WHERE j.workspace_id=$1 AND j.user_id=$2 AND ($3::uuid IS NULL OR j.id<$3) ORDER BY j.id DESC LIMIT 51")
+            let rows = sqlx::query("SELECT j.id,j.kind,j.status::text,j.revision,j.error_code,r.result_json,p.id AS proposal_id FROM ai_jobs j LEFT JOIN ai_results r ON r.job_id=j.id LEFT JOIN proposals p ON p.job_id=j.id WHERE j.workspace_id=$1 AND j.user_id=$2 AND ($3::uuid IS NULL OR j.id<$3) ORDER BY j.id DESC LIMIT 51")
                 .bind(workspace_id).bind(actor_id).bind(cursor).fetch_all(&self.pool).await.map_err(|_| ContextError::Storage)?;
             let mut items = rows
                 .iter()
@@ -356,7 +361,7 @@ impl AiJobRepository for PostgresAiContextRepository {
     ) -> BoxFuture<'a, Result<AiJobView, ContextError>> {
         Box::pin(async move {
             require_membership(&self.pool, actor_id, workspace_id).await?;
-            let row = sqlx::query("SELECT j.id,j.kind,j.status::text,j.revision,j.error_code,r.result_json FROM ai_jobs j LEFT JOIN ai_results r ON r.job_id=j.id WHERE j.workspace_id=$1 AND j.user_id=$2 AND j.id=$3")
+            let row = sqlx::query("SELECT j.id,j.kind,j.status::text,j.revision,j.error_code,r.result_json,p.id AS proposal_id FROM ai_jobs j LEFT JOIN ai_results r ON r.job_id=j.id LEFT JOIN proposals p ON p.job_id=j.id WHERE j.workspace_id=$1 AND j.user_id=$2 AND j.id=$3")
                 .bind(workspace_id).bind(actor_id).bind(job_id).fetch_optional(&self.pool).await.map_err(|_| ContextError::Storage)?.ok_or(ContextError::NotFound)?;
             ai_job_view(&row)
         })
@@ -621,8 +626,147 @@ impl AiJobRepository for PostgresAiContextRepository {
             if status != "RUNNING" {
                 return Err(JobExecutionError::Transient("JOB_LEASE_LOST"));
             }
-            sqlx::query("INSERT INTO ai_results(job_id,schema_version,result_json,validation_json,completed_at) VALUES($1,1,$2,'{\"status\":\"RUNTIME_SCHEMA_VALID\"}'::jsonb,$3) ON CONFLICT(job_id) DO NOTHING")
-                .bind(ai_job_id).bind(&result.output_json).bind(now).execute(&mut *tx).await.map_err(transient_job)?;
+            let result_context = sqlx::query("SELECT workspace_id,user_id,target_json,expected_revision,context_metadata_json FROM ai_jobs WHERE id=$1 AND status='RUNNING' FOR UPDATE")
+                .bind(ai_job_id).fetch_optional(&mut *tx).await.map_err(transient_job)?.ok_or(JobExecutionError::Transient("AI_JOB_STATE_CHANGED"))?;
+            let task: AiTask = serde_json::from_value(result_context.get("target_json"))
+                .map_err(|_| JobExecutionError::Permanent("AI_RESULT_INVALID"))?;
+            let included_rows = sqlx::query_scalar::<_, String>(
+                "SELECT source_id FROM ai_context_sources WHERE job_id=$1 AND included=true",
+            )
+            .bind(ai_job_id)
+            .fetch_all(&mut *tx)
+            .await
+            .map_err(transient_job)?;
+            let included_source_ids: BTreeSet<Uuid> = match included_rows
+                .into_iter()
+                .map(|value| Uuid::parse_str(&value))
+                .collect()
+            {
+                Ok(ids) => ids,
+                Err(_) => {
+                    finish_pre_runtime_failure_tx(
+                        &mut tx,
+                        ai_job_id,
+                        job.id,
+                        "AI_RESULT_INVALID",
+                        now,
+                    )
+                    .await?;
+                    tx.commit().await.map_err(transient_job)?;
+                    return Ok(JobExecution::Delivered(None));
+                }
+            };
+            let (validated, application) = match adoc_application::ai::validate_result(
+                result.output_json.clone(),
+                &task,
+                &included_source_ids,
+            ) {
+                Ok(value) => value,
+                Err(error) => {
+                    let code = match error {
+                        adoc_application::ai::AiResultValidationError::Revision => {
+                            "AI_RESULT_STALE"
+                        }
+                        _ => "AI_RESULT_INVALID",
+                    };
+                    finish_pre_runtime_failure_tx(&mut tx, ai_job_id, job.id, code, now).await?;
+                    tx.commit().await.map_err(transient_job)?;
+                    return Ok(JobExecution::Delivered(None));
+                }
+            };
+            let document_id = result_document_id(&mut tx, &task).await?;
+            if !validated.operations.is_empty() {
+                let Some(document_id) = document_id else {
+                    finish_pre_runtime_failure_tx(
+                        &mut tx,
+                        ai_job_id,
+                        job.id,
+                        "AI_RESULT_INVALID",
+                        now,
+                    )
+                    .await?;
+                    tx.commit().await.map_err(transient_job)?;
+                    return Ok(JobExecution::Delivered(None));
+                };
+                let resulting_content = match dry_run_draft_operations_tx(
+                    &mut tx,
+                    task.workspace_id,
+                    document_id,
+                    task.expected_revision,
+                    validated.operations.clone(),
+                )
+                .await
+                {
+                    Ok(content) => content,
+                    Err(GovernanceError::RevisionConflict { .. }) => {
+                        finish_pre_runtime_failure_tx(
+                            &mut tx,
+                            ai_job_id,
+                            job.id,
+                            "AI_RESULT_STALE",
+                            now,
+                        )
+                        .await?;
+                        tx.commit().await.map_err(transient_job)?;
+                        return Ok(JobExecution::Delivered(None));
+                    }
+                    Err(_) => {
+                        finish_pre_runtime_failure_tx(
+                            &mut tx,
+                            ai_job_id,
+                            job.id,
+                            "AI_RESULT_INVALID",
+                            now,
+                        )
+                        .await?;
+                        tx.commit().await.map_err(transient_job)?;
+                        return Ok(JobExecution::Delivered(None));
+                    }
+                };
+                let prohibited: Vec<String> = sqlx::query_scalar("SELECT vt.term FROM vocabulary_terms vt JOIN vocabulary_concepts vc ON vc.workspace_id=vt.workspace_id AND vc.id=vt.concept_id WHERE vt.workspace_id=$1 AND vt.kind='PROHIBITED' AND vc.status='ACTIVE' ORDER BY vt.normalized_term")
+                    .bind(task.workspace_id).fetch_all(&mut *tx).await.map_err(transient_job)?;
+                if adoc_application::ai::prohibited_term_in_content(&resulting_content, &prohibited)
+                    .is_some()
+                {
+                    finish_pre_runtime_failure_tx(
+                        &mut tx,
+                        ai_job_id,
+                        job.id,
+                        "AI_RESULT_RULE_BLOCKED",
+                        now,
+                    )
+                    .await?;
+                    tx.commit().await.map_err(transient_job)?;
+                    return Ok(JobExecution::Delivered(None));
+                }
+            }
+            let metadata: Value = result_context.get("context_metadata_json");
+            let writing_rule_version = metadata
+                .get("writingRuleVersion")
+                .and_then(Value::as_str)
+                .ok_or(JobExecutionError::Permanent("AI_RESULT_INVALID"))?;
+            let vocabulary_revision = metadata
+                .get("vocabularyRevision")
+                .and_then(Value::as_i64)
+                .ok_or(JobExecutionError::Permanent("AI_RESULT_INVALID"))?;
+            let application_name = match application {
+                adoc_application::ai::ResultApplication::None => "NONE",
+                adoc_application::ai::ResultApplication::BoundedRewrite => "BOUNDED_REWRITE",
+                adoc_application::ai::ResultApplication::Proposal => "PROPOSAL",
+            };
+            let validation = serde_json::json!({"validatorVersion":adoc_application::ai::RESULT_VALIDATOR_VERSION,"writingRuleVersion":writing_rule_version,"vocabularyRevision":vocabulary_revision,"status":"VALIDATED","application":application_name});
+            let canonical_result = serde_json::to_value(&validated)
+                .map_err(|_| JobExecutionError::Permanent("AI_RESULT_INVALID"))?;
+            sqlx::query("INSERT INTO ai_results(job_id,schema_version,result_json,validation_json,completed_at) VALUES($1,1,$2,$3,$4) ON CONFLICT(job_id) DO NOTHING")
+                .bind(ai_job_id).bind(canonical_result).bind(&validation).bind(now).execute(&mut *tx).await.map_err(transient_job)?;
+            if application == adoc_application::ai::ResultApplication::Proposal {
+                let document_id =
+                    document_id.ok_or(JobExecutionError::Permanent("AI_RESULT_INVALID"))?;
+                sqlx::query("INSERT INTO proposals(id,workspace_id,job_id,document_id,owner_user_id,base_revision,operations_json,writing_rule_version,vocabulary_revision,validation_json,status,revision,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'OPEN',0,$11) ON CONFLICT(job_id) DO NOTHING")
+                    .bind(Uuid::now_v7()).bind(task.workspace_id).bind(ai_job_id).bind(document_id).bind(task.actor_id).bind(task.expected_revision)
+                    .bind(serde_json::to_value(&validated.operations).map_err(|_| JobExecutionError::Permanent("AI_RESULT_INVALID"))?).bind(writing_rule_version).bind(vocabulary_revision).bind(validation).bind(now)
+                    .execute(&mut *tx).await.map_err(transient_job)?;
+            }
             let row = sqlx::query("UPDATE ai_jobs SET status='SUCCEEDED',usage_json=$2,error_code=NULL,revision=revision+1,completed_at=$3 WHERE id=$1 AND status='RUNNING' RETURNING workspace_id,user_id,provider,model,revision")
                 .bind(ai_job_id).bind(serde_json::to_value(&result.usage).map_err(|_| JobExecutionError::Permanent("AI_USAGE_INVALID"))?).bind(now).fetch_optional(&mut *tx).await.map_err(transient_job)?.ok_or(JobExecutionError::Transient("AI_JOB_STATE_CHANGED"))?;
             sqlx::query("INSERT INTO ai_usage_daily(workspace_id,usage_date,provider,model,input_tokens,output_tokens,estimated_microunits,job_count) VALUES($1,$2::date,$3,$4,$5,$6,$7,1) ON CONFLICT(workspace_id,usage_date,provider,model) DO UPDATE SET input_tokens=ai_usage_daily.input_tokens+EXCLUDED.input_tokens,output_tokens=ai_usage_daily.output_tokens+EXCLUDED.output_tokens,estimated_microunits=ai_usage_daily.estimated_microunits+EXCLUDED.estimated_microunits,job_count=ai_usage_daily.job_count+1")
@@ -705,6 +849,26 @@ struct TargetSnapshot {
     query: String,
     document_id: Option<Uuid>,
     source: ContextSource,
+}
+
+async fn result_document_id(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    task: &AiTask,
+) -> Result<Option<Uuid>, JobExecutionError> {
+    match &task.target {
+        AiTarget::Document { document_id } | AiTarget::Region { document_id, .. } => {
+            Ok(Some(*document_id))
+        }
+        AiTarget::Discussion { discussion_id } => sqlx::query_scalar(
+            "SELECT document_id FROM discussions WHERE workspace_id=$1 AND id=$2",
+        )
+        .bind(task.workspace_id)
+        .bind(discussion_id)
+        .fetch_optional(&mut **tx)
+        .await
+        .map_err(transient_job),
+        AiTarget::WorkspaceQuery { .. } => Ok(None),
+    }
 }
 
 #[derive(Serialize)]
@@ -1357,6 +1521,7 @@ fn ai_job_view(row: &sqlx::postgres::PgRow) -> Result<AiJobView, ContextError> {
         sequence: row.get("revision"),
         revision: row.get("revision"),
         result: row.try_get("result_json").ok(),
+        proposal_id: row.try_get::<Option<Uuid>, _>("proposal_id").ok().flatten(),
         error_code: row.get("error_code"),
     })
 }

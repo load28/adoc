@@ -85,6 +85,7 @@ pub enum AuditAction {
     VocabularyDeprecated,
     FileDeleted,
     AiProposalApplied,
+    WritingConfigurationChanged,
     SecurityActionRecorded,
 }
 

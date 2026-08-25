@@ -37,7 +37,7 @@ application이 검증하고 DB constraint가 가능한 부분을 재검증한다
 | DBI-021 | Inbox event 재처리는 동일 item을 만들지 않음 | DB | source key unique | `INBOX_DUPLICATE` |
 | DBI-022 | active Vocabulary term은 Workspace에서 유일 | DB | unique index | `VOCABULARY_TERM_CONFLICT` |
 | DBI-023 | AI Job terminal state에는 completion time이 존재 | DB | check | `AI_JOB_STATE_INVALID` |
-| DBI-024 | Proposal은 base revision이 일치할 때 한 번만 적용 | Application | proposal+draft conditional lock | `PROPOSAL_STALE` |
+| DBI-024 | Proposal은 dependency-closed 선택과 base revision이 일치할 때 한 번만 적용 | Application | proposal→document→draft→lease lock | `PROPOSAL_STALE`, `PROPOSAL_DEPENDENCY_INVALID` |
 | DBI-025 | READY File만 새 Reference를 생성할 수 있음 | Application | asset row lock | `FILE_NOT_READY` |
 | DBI-026 | 참조 중인 File은 purge하지 않음 | Application | asset+reference lock | `FILE_STILL_REFERENCED` |
 | DBI-027 | Audit sequence는 Workspace 안에서 유일·단조 증가 | DB+Application | sequence row lock+unique | `AUDIT_SEQUENCE_CONFLICT` |

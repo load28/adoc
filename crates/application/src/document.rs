@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
 pub use adoc_document::{
-    Document, DocumentOperation, DocumentStatus, Draft, OperationError, OperationErrorCode,
-    OperationScope, ReducerInput, ReferenceEffect, ReferenceSnapshot, ReferenceTarget,
-    RegionResolutionStatus, TreeRank, ValidatedContent, apply_operations, canonical_hash,
-    reanchor_region,
+    Document, DocumentOperation, DocumentStatus, Draft, OperationBase, OperationError,
+    OperationErrorCode, OperationPrecondition, OperationScope, ReducerInput, ReferenceEffect,
+    ReferenceSnapshot, ReferenceTarget, RegionResolutionStatus, TreeRank, ValidatedContent,
+    apply_operations, canonical_hash, reanchor_region,
 };
 use adoc_ports::BoxFuture;
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
@@ -664,14 +664,14 @@ impl DocumentService {
     }
 }
 
-fn token_hash(token: &str) -> Result<TokenHash, GovernanceError> {
+pub(crate) fn token_hash(token: &str) -> Result<TokenHash, GovernanceError> {
     if token.len() != 43 {
         return Err(GovernanceError::EditLeaseInvalid);
     }
     Ok(TokenHash(Sha256::digest(token.as_bytes()).into()))
 }
 
-fn command<T: Serialize>(
+pub(crate) fn command<T: Serialize>(
     actor_id: Uuid,
     operation_id: &'static str,
     key: &str,

@@ -124,7 +124,6 @@ export type AdocContractBundle =
   | OpenApi__AIContextPreview
   | OpenApi__AIJob
   | OpenApi__AIJobPage
-  | OpenApi__Proposal
   | OpenApi__FileUpload
   | OpenApi__FileAsset
   | OpenApi__AuditEvent
@@ -587,10 +586,6 @@ export type OpenApi__ReviewDecisionInput =
       decision: "REQUEST_CHANGES";
       discussionId: OpenApi__Id;
     };
-export type OpenApi__Proposal = AiContracts_Proposal & {
-  revision?: number;
-  [k: string]: unknown;
-};
 export type Operation__GetSessionResponse =
   | {
       status: "200";
@@ -1342,7 +1337,7 @@ export type Operation__ApplyProposalResponse =
 export type Operation__GetProposalResponse =
   | {
       status: "200";
-      body: OpenApi__Proposal;
+      body: AiContracts_Proposal;
     }
   | {
       status: "default";
@@ -1351,7 +1346,7 @@ export type Operation__GetProposalResponse =
 export type Operation__RejectProposalResponse =
   | {
       status: "200";
-      body: OpenApi__Proposal;
+      body: AiContracts_Proposal;
     }
   | {
       status: "default";
@@ -1579,11 +1574,29 @@ export interface AiContracts_Result {
   schemaVersion: 1;
   taskKind: "COMPOSE" | "REWRITE" | "REVIEW" | "DISCUSSION_APPLY" | "CONFLICT_MERGE" | "KNOWLEDGE_QUERY";
   status: "READY" | "INSUFFICIENT_CONTEXT" | "CONFLICTING_CONTEXT" | "NO_CHANGE";
+  /**
+   * @maxItems 500
+   */
   operations: DocumentOperation[];
+  /**
+   * @maxItems 500
+   */
   findings: AiContracts_Finding[];
+  /**
+   * @maxItems 500
+   */
   claims: AiContracts_Claim[];
+  /**
+   * @maxItems 500
+   */
   uncertainties: string[];
+  /**
+   * @maxItems 500
+   */
   conflicts: AiContracts_Conflict[];
+  /**
+   * @maxItems 200
+   */
   usedSourceIds: AiContracts_Id[];
 }
 export interface DocumentOperation_Base {
@@ -1732,8 +1745,20 @@ export interface AiContracts_Proposal {
   jobId: AiContracts_Id;
   documentId: AiContracts_Id;
   baseRevision: number;
-  operations: DocumentOperation[];
+  /**
+   * @minItems 1
+   * @maxItems 500
+   */
+  operations: [DocumentOperation, ...DocumentOperation[]];
   status: "OPEN" | "APPLIED" | "REJECTED" | "STALE" | "CANCELLED";
+  revision: number;
+  appliedRevision?: number | null;
+  /**
+   * @maxItems 500
+   */
+  appliedOperationIds?: AiContracts_Id[];
+  createdAt?: string;
+  resolvedAt?: string | null;
 }
 export interface DocumentContent {
   schemaVersion: 1;
@@ -2200,6 +2225,7 @@ export interface OpenApi__AIJob {
   sequence: number;
   revision: number;
   result?: AiContracts_Result | null;
+  proposalId?: OpenApi__NullableId;
   errorCode?: string | null;
 }
 export interface OpenApi__AIJobPage {
@@ -2266,8 +2292,11 @@ export interface OpenApi__WritingRuleOverride {
   values: string[];
 }
 export interface OpenApi__WritingConfiguration {
-  baselineVersion: string;
-  overrides: OpenApi__WritingRuleOverride[];
+  baselineVersion: "writing-rules-v1";
+  /**
+   * @maxItems 0
+   */
+  overrides: [];
   revision: number;
 }
 export interface OpenApi__AIConfiguration {
@@ -3255,10 +3284,15 @@ export interface Operation__ApplyProposalRequest {
     "If-Match": string;
     "Idempotency-Key": string;
     "X-Edit-Lease": string;
+    "X-Client-Instance": OpenApi__Id;
+    "X-CSRF-Token": string;
   };
   body: {
-    operationIds?: OpenApi__Id[];
-    [k: string]: unknown;
+    /**
+     * @minItems 1
+     * @maxItems 500
+     */
+    operationIds?: [OpenApi__Id, ...OpenApi__Id[]];
   };
 }
 export interface Operation__GetProposalRequest {
@@ -3275,6 +3309,7 @@ export interface Operation__RejectProposalRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
     reason: string;
@@ -3377,13 +3412,14 @@ export interface Operation__UpdateWritingConfigurationRequest {
   header: {
     "If-Match": string;
     "Idempotency-Key": string;
+    "X-CSRF-Token": string;
   };
   body: {
-    baselineVersion: string;
+    baselineVersion: "writing-rules-v1";
     /**
-     * @maxItems 500
+     * @maxItems 0
      */
-    overrides: OpenApi__WritingRuleOverride[];
+    overrides: [];
   };
 }
 export interface Operation__GetAIConfigurationRequest {

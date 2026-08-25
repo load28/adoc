@@ -13,6 +13,8 @@ pub const MAX_CONTEXT_SOURCES: usize = 200;
 pub const MAX_SOURCE_BYTES: usize = 65_536;
 pub const MAX_CONTEXT_BYTES: usize = 4 * 1024 * 1024;
 pub const MAX_OUTPUT_BYTES: usize = 2 * 1024 * 1024;
+pub const WRITING_RULE_BASELINE_VERSION: &str = "writing-rules-v1";
+pub const RESULT_VALIDATOR_VERSION: &str = "ai-result-validator-v1";
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -92,18 +94,94 @@ pub fn task_definition(kind: AiTaskKind) -> TaskDefinition {
 #[must_use]
 pub fn runtime_output_schema(kind: AiTaskKind) -> Value {
     let kind = serde_json::to_value(kind).unwrap_or(Value::Null);
-    serde_json::json!({
+    let (operation, definitions) = embedded_operation_schema();
+    let mut schema = serde_json::json!({
         "type": "object",
         "additionalProperties": false,
-        "required": ["taskKind", "summary", "operations", "findings", "claims"],
+        "required": ["schemaVersion", "taskKind", "status", "operations", "findings", "claims", "uncertainties", "conflicts", "usedSourceIds"],
         "properties": {
+            "schemaVersion": {"const": 1},
             "taskKind": {"const": kind},
-            "summary": {"type": "string", "maxLength": 20000},
-            "operations": {"type": "array", "maxItems": 0, "items": {"type":"object","additionalProperties":false,"properties":{}}},
-            "findings": {"type": "array", "maxItems": 0, "items": {"type":"object","additionalProperties":false,"properties":{}}},
-            "claims": {"type": "array", "maxItems": 0, "items": {"type":"object","additionalProperties":false,"properties":{}}}
+            "status": {"type":"string","enum":["READY","INSUFFICIENT_CONTEXT","CONFLICTING_CONTEXT","NO_CHANGE"]},
+            "operations": {"type": "array", "maxItems": 500, "items": operation},
+            "findings": {"type": "array", "maxItems": 500, "items": {"type":"object","additionalProperties":false,"required":["findingId","ruleId","severity","region","reason","suggestion","sourceIds"],"properties":{"findingId":{"type":"string","format":"uuid"},"ruleId":{"type":"string"},"severity":{"type":"string","enum":["BLOCKING","WARNING","ADVISORY"]},"region":{"$ref":"#/$defs/region"},"reason":{"type":"string"},"suggestion":{"type":["string","null"]},"sourceIds":{"type":"array","items":{"type":"string","format":"uuid"}}}}},
+            "claims": {"type": "array", "maxItems": 500, "items": {"type":"object","additionalProperties":false,"required":["text","sourceIds","certainty"],"properties":{"text":{"type":"string"},"sourceIds":{"type":"array","items":{"type":"string","format":"uuid"}},"certainty":{"type":"string","enum":["SUPPORTED","CONFLICTING","INSUFFICIENT"]}}}},
+            "uncertainties": {"type":"array","maxItems":500,"items":{"type":"string","maxLength":5000}},
+            "conflicts": {"type":"array","maxItems":500,"items":{"type":"object","additionalProperties":false,"required":["description","sourceIds"],"properties":{"description":{"type":"string"},"sourceIds":{"type":"array","minItems":2,"items":{"type":"string","format":"uuid"}}}}},
+            "usedSourceIds": {"type":"array","maxItems":200,"uniqueItems":true,"items":{"type":"string","format":"uuid"}}
+        },
+        "$defs": definitions
+    });
+    canonicalize_schema(&mut schema);
+    schema
+}
+
+fn embedded_operation_schema() -> (Value, serde_json::Map<String, Value>) {
+    let mut operation: Value = serde_json::from_str(include_str!(
+        "../../../docs/design/contracts/document-operation.schema.json"
+    ))
+    .expect("canonical operation schema must be valid JSON");
+    let mut content: Value = serde_json::from_str(include_str!(
+        "../../../docs/design/contracts/document-content.schema.json"
+    ))
+    .expect("canonical content schema must be valid JSON");
+    rewrite_refs(&mut operation, false);
+    rewrite_refs(&mut content, true);
+    let operation_root = serde_json::json!({"oneOf": operation.get("oneOf").cloned().unwrap_or(Value::Array(Vec::new()))});
+    let mut definitions = operation
+        .get_mut("$defs")
+        .and_then(Value::as_object_mut)
+        .map(std::mem::take)
+        .unwrap_or_default();
+    if let Some(content_definitions) = content.get_mut("$defs").and_then(Value::as_object_mut) {
+        for (name, value) in std::mem::take(content_definitions) {
+            definitions.insert(format!("content_{name}"), value);
         }
-    })
+    }
+    (operation_root, definitions)
+}
+
+fn rewrite_refs(value: &mut Value, content_schema: bool) {
+    match value {
+        Value::Object(object) => {
+            if let Some(reference) = object
+                .get_mut("$ref")
+                .and_then(|value| value.as_str())
+                .map(str::to_owned)
+            {
+                let rewritten = if let Some(name) =
+                    reference.strip_prefix("document-content.schema.json#/$defs/")
+                {
+                    format!("#/$defs/content_{name}")
+                } else if content_schema {
+                    reference
+                        .strip_prefix("#/$defs/")
+                        .map_or(reference.clone(), |name| format!("#/$defs/content_{name}"))
+                } else {
+                    reference
+                };
+                object.insert("$ref".to_owned(), Value::String(rewritten));
+            }
+            object
+                .values_mut()
+                .for_each(|child| rewrite_refs(child, content_schema));
+        }
+        Value::Array(values) => values
+            .iter_mut()
+            .for_each(|child| rewrite_refs(child, content_schema)),
+        _ => {}
+    }
+}
+
+fn canonicalize_schema(value: &mut Value) {
+    if let Value::Object(object) = value {
+        object.remove("$schema");
+        object.remove("$id");
+        object.remove("title");
+        object.values_mut().for_each(canonicalize_schema);
+    } else if let Value::Array(values) = value {
+        values.iter_mut().for_each(canonicalize_schema);
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]

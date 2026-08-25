@@ -1745,15 +1745,14 @@ export interface components {
             sequence: number;
             revision: number;
             result?: components["schemas"]["result"] | null;
+            proposalId?: components["schemas"]["NullableId"];
             errorCode?: string | null;
         };
         AIJobPage: {
             items: components["schemas"]["AIJob"][];
             nextCursor?: string | null;
         };
-        Proposal: components["schemas"]["proposal"] & {
-            revision?: number;
-        };
+        Proposal: components["schemas"]["proposal"];
         FileUpload: {
             assetId: components["schemas"]["Id"];
             /** Format: uri */
@@ -1822,7 +1821,8 @@ export interface components {
             values: string[];
         };
         WritingConfiguration: {
-            baselineVersion: string;
+            /** @constant */
+            baselineVersion: "writing-rules-v1";
             overrides: components["schemas"]["WritingRuleOverride"][];
             revision: number;
         };
@@ -2470,6 +2470,13 @@ export interface components {
             operations: components["schemas"]["document-operation.schema"][];
             /** @enum {unknown} */
             status: "OPEN" | "APPLIED" | "REJECTED" | "STALE" | "CANCELLED";
+            revision: number;
+            appliedRevision?: number | null;
+            appliedOperationIds?: components["schemas"]["id"][];
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            resolvedAt?: string | null;
         };
     };
     responses: {
@@ -2663,7 +2670,8 @@ export interface components {
         UpdateWritingConfiguration: {
             content: {
                 "application/json": {
-                    baselineVersion: string;
+                    /** @constant */
+                    baselineVersion: "writing-rules-v1";
                     overrides: components["schemas"]["WritingRuleOverride"][];
                 };
             };
@@ -5016,6 +5024,8 @@ export interface operations {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
                 "X-Edit-Lease": components["parameters"]["LeaseToken"];
+                "X-Client-Instance": components["parameters"]["ClientInstance"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -5061,7 +5071,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Proposal"];
+                    "application/json": components["schemas"]["proposal"];
                 };
             };
             default: components["responses"]["Problem"];
@@ -5073,6 +5083,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -5088,7 +5099,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Proposal"];
+                    "application/json": components["schemas"]["proposal"];
                 };
             };
             default: components["responses"]["Problem"];
@@ -5360,6 +5371,7 @@ export interface operations {
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
             };
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];

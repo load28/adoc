@@ -90,24 +90,29 @@
         "schemaVersion": { "const": 1 },
         "taskKind": { "enum": ["COMPOSE", "REWRITE", "REVIEW", "DISCUSSION_APPLY", "CONFLICT_MERGE", "KNOWLEDGE_QUERY"] },
         "status": { "enum": ["READY", "INSUFFICIENT_CONTEXT", "CONFLICTING_CONTEXT", "NO_CHANGE"] },
-        "operations": { "type": "array", "items": { "$ref": "document-operation.schema.json" } },
-        "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
-        "claims": { "type": "array", "items": { "$ref": "#/$defs/claim" } },
-        "uncertainties": { "type": "array", "items": { "type": "string" } },
-        "conflicts": { "type": "array", "items": { "$ref": "#/$defs/conflict" } },
-        "usedSourceIds": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" } }
+        "operations": { "type": "array", "maxItems": 500, "items": { "$ref": "document-operation.schema.json" } },
+        "findings": { "type": "array", "maxItems": 500, "items": { "$ref": "#/$defs/finding" } },
+        "claims": { "type": "array", "maxItems": 500, "items": { "$ref": "#/$defs/claim" } },
+        "uncertainties": { "type": "array", "maxItems": 500, "items": { "type": "string", "maxLength": 5000 } },
+        "conflicts": { "type": "array", "maxItems": 500, "items": { "$ref": "#/$defs/conflict" } },
+        "usedSourceIds": { "type": "array", "maxItems": 200, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } }
       }
     },
     "proposal": {
       "type": "object", "additionalProperties": false,
-      "required": ["proposalId", "jobId", "documentId", "baseRevision", "operations", "status"],
+      "required": ["proposalId", "jobId", "documentId", "baseRevision", "operations", "status", "revision"],
       "properties": {
         "proposalId": { "$ref": "#/$defs/id" },
         "jobId": { "$ref": "#/$defs/id" },
         "documentId": { "$ref": "#/$defs/id" },
         "baseRevision": { "type": "integer", "minimum": 0 },
-        "operations": { "type": "array", "items": { "$ref": "document-operation.schema.json" } },
-        "status": { "enum": ["OPEN", "APPLIED", "REJECTED", "STALE", "CANCELLED"] }
+        "operations": { "type": "array", "minItems": 1, "maxItems": 500, "items": { "$ref": "document-operation.schema.json" } },
+        "status": { "enum": ["OPEN", "APPLIED", "REJECTED", "STALE", "CANCELLED"] },
+        "revision": { "type": "integer", "minimum": 0 },
+        "appliedRevision": { "type": ["integer", "null"], "minimum": 0 },
+        "appliedOperationIds": { "type": "array", "maxItems": 500, "items": { "$ref": "#/$defs/id" } },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "resolvedAt": { "type": ["string", "null"], "format": "date-time" }
       }
     }
   },

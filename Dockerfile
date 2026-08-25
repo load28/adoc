@@ -6,6 +6,7 @@ COPY Cargo.toml Cargo.lock ./
 COPY apps ./apps
 COPY crates ./crates
 COPY tools ./tools
+COPY docs/design/contracts ./docs/design/contracts
 COPY infra/migrations ./infra/migrations
 RUN cargo build --locked --release -p adoc-api -p adoc-worker
 

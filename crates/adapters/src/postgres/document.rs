@@ -645,68 +645,131 @@ impl DocumentRepository for PostgresDocumentRepository {
                 tx.commit().await.map_err(map_store)?;
                 return Ok(replay);
             }
-            let _ = lock_document(&mut tx, input.workspace_id, input.document_id).await?;
-            let draft_row = sqlx::query("SELECT id,content_json,revision FROM drafts WHERE workspace_id=$1 AND document_id=$2 FOR UPDATE")
-                .bind(input.workspace_id).bind(input.document_id).fetch_optional(&mut *tx).await.map_err(map_store)?.ok_or(GovernanceError::DraftNotFound)?;
-            let lease = sqlx::query("SELECT holder_user_id,client_instance_id,token_hash,expires_at,released_at,revision FROM edit_leases WHERE workspace_id=$1 AND document_id=$2 FOR UPDATE")
-                .bind(input.workspace_id).bind(input.document_id).fetch_optional(&mut *tx).await.map_err(map_store)?.ok_or(GovernanceError::EditLeaseInvalid)?;
-            validate_lease_row_without_revision(
-                &lease,
-                &input.token_hash,
-                input.actor_id,
-                input.client_instance_id,
+            let result = apply_draft_operations_tx(
                 &mut tx,
+                DraftApplyTx {
+                    actor_id: input.actor_id,
+                    workspace_id: input.workspace_id,
+                    document_id: input.document_id,
+                    client_instance_id: input.client_instance_id,
+                    expected_draft_revision: input.expected_draft_revision,
+                    token_hash: &input.token_hash,
+                    operations: input.operations,
+                    now: input.command.now,
+                },
             )
             .await?;
-            let current_revision: i64 = draft_row.get("revision");
-            check_revision(current_revision, input.expected_draft_revision)?;
-            let references =
-                load_references(&mut tx, input.workspace_id, input.document_id).await?;
-            let reduced = apply_operations(ReducerInput {
-                content: draft_row.get("content_json"),
-                base_revision: current_revision,
-                operations: input.operations,
-                references,
-            })
-            .map_err(map_reducer)?;
-            apply_reference_effects(
-                &mut tx,
-                input.actor_id,
-                input.workspace_id,
-                input.document_id,
-                &reduced.reference_effects,
-                input.command.now,
-            )
-            .await?;
-            let result = MutationResult {
-                revision: current_revision + 1,
-                content_fingerprint: reduced.content_fingerprint,
-                applied_operation_ids: reduced.applied_operation_ids,
-                inverse_operations: reduced.inverse_operations,
-            };
-            sync_file_references(
-                &mut tx,
-                input.workspace_id,
-                "DRAFT",
-                draft_row.get("id"),
-                &reduced.content,
-            )
-            .await?;
-            sqlx::query("UPDATE drafts SET content_json=$3,schema_version=1,revision=$4,updated_by=$5,updated_at=$6 WHERE workspace_id=$1 AND document_id=$2")
-                .bind(input.workspace_id).bind(input.document_id).bind(reduced.content).bind(result.revision).bind(input.actor_id).bind(input.command.now).execute(&mut *tx).await.map_err(map_store)?;
-            invalidate_reviews(
-                &mut tx,
-                input.workspace_id,
-                &[input.document_id],
-                input.command.now,
-            )
-            .await?;
-            append_event(&mut tx, OutboxEvent { workspace_id:input.workspace_id, aggregate_kind:"Draft", aggregate_id:draft_row.get("id"), sequence:result.revision+1, event_type:"DraftChanged.v1", payload:json!({"documentId":input.document_id,"draftId":draft_row.get::<Uuid,_>("id"),"revision":result.revision,"operationIds":result.applied_operation_ids}), audience:EventAudience::document(input.document_id,StreamAccess::Contributor), occurred_at:input.command.now }).await?;
             complete_workspace(&mut tx, input.workspace_id, &input.command, 200, &result).await?;
             tx.commit().await.map_err(map_store)?;
             Ok(result)
         })
     }
+}
+
+pub(super) struct DraftApplyTx<'a> {
+    pub actor_id: Uuid,
+    pub workspace_id: Uuid,
+    pub document_id: Uuid,
+    pub client_instance_id: Uuid,
+    pub expected_draft_revision: i64,
+    pub token_hash: &'a adoc_application::identity::TokenHash,
+    pub operations: Vec<adoc_application::document::DocumentOperation>,
+    pub now: DateTime<Utc>,
+}
+
+pub(super) async fn apply_draft_operations_tx(
+    tx: &mut Transaction<'_, Postgres>,
+    input: DraftApplyTx<'_>,
+) -> Result<MutationResult, GovernanceError> {
+    require_access(
+        tx,
+        input.actor_id,
+        input.workspace_id,
+        input.document_id,
+        Access::Contributor,
+        false,
+    )
+    .await?;
+    require_effective_active(tx, input.workspace_id, input.document_id).await?;
+    let _ = lock_document(tx, input.workspace_id, input.document_id).await?;
+    let draft_row = sqlx::query("SELECT id,content_json,revision FROM drafts WHERE workspace_id=$1 AND document_id=$2 FOR UPDATE")
+        .bind(input.workspace_id).bind(input.document_id).fetch_optional(&mut **tx).await.map_err(map_store)?.ok_or(GovernanceError::DraftNotFound)?;
+    let lease = sqlx::query("SELECT holder_user_id,client_instance_id,token_hash,expires_at,released_at,revision FROM edit_leases WHERE workspace_id=$1 AND document_id=$2 FOR UPDATE")
+        .bind(input.workspace_id).bind(input.document_id).fetch_optional(&mut **tx).await.map_err(map_store)?.ok_or(GovernanceError::EditLeaseInvalid)?;
+    validate_lease_row_without_revision(
+        &lease,
+        input.token_hash,
+        input.actor_id,
+        input.client_instance_id,
+        tx,
+    )
+    .await?;
+    let current_revision: i64 = draft_row.get("revision");
+    check_revision(current_revision, input.expected_draft_revision)?;
+    let references = load_references(tx, input.workspace_id, input.document_id).await?;
+    let reduced = apply_operations(ReducerInput {
+        content: draft_row.get("content_json"),
+        base_revision: current_revision,
+        operations: input.operations,
+        references,
+    })
+    .map_err(map_reducer)?;
+    apply_reference_effects(
+        tx,
+        input.actor_id,
+        input.workspace_id,
+        input.document_id,
+        &reduced.reference_effects,
+        input.now,
+    )
+    .await?;
+    let result = MutationResult {
+        revision: current_revision + 1,
+        content_fingerprint: reduced.content_fingerprint,
+        applied_operation_ids: reduced.applied_operation_ids,
+        inverse_operations: reduced.inverse_operations,
+    };
+    sync_file_references(
+        tx,
+        input.workspace_id,
+        "DRAFT",
+        draft_row.get("id"),
+        &reduced.content,
+    )
+    .await?;
+    sqlx::query("UPDATE drafts SET content_json=$3,schema_version=1,revision=$4,updated_by=$5,updated_at=$6 WHERE workspace_id=$1 AND document_id=$2")
+        .bind(input.workspace_id).bind(input.document_id).bind(reduced.content).bind(result.revision).bind(input.actor_id).bind(input.now).execute(&mut **tx).await.map_err(map_store)?;
+    invalidate_reviews(tx, input.workspace_id, &[input.document_id], input.now).await?;
+    append_event(tx, OutboxEvent { workspace_id:input.workspace_id, aggregate_kind:"Draft", aggregate_id:draft_row.get("id"), sequence:result.revision+1, event_type:"DraftChanged.v1", payload:json!({"documentId":input.document_id,"draftId":draft_row.get::<Uuid,_>("id"),"revision":result.revision,"operationIds":result.applied_operation_ids}), audience:EventAudience::document(input.document_id,StreamAccess::Contributor), occurred_at:input.now }).await?;
+    Ok(result)
+}
+
+pub(super) async fn dry_run_draft_operations_tx(
+    tx: &mut Transaction<'_, Postgres>,
+    workspace_id: Uuid,
+    document_id: Uuid,
+    expected_revision: i64,
+    operations: Vec<adoc_application::document::DocumentOperation>,
+) -> Result<Value, GovernanceError> {
+    let row = sqlx::query(
+        "SELECT content_json,revision FROM drafts WHERE workspace_id=$1 AND document_id=$2",
+    )
+    .bind(workspace_id)
+    .bind(document_id)
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(map_store)?
+    .ok_or(GovernanceError::DraftNotFound)?;
+    check_revision(row.get("revision"), expected_revision)?;
+    let references = load_references(tx, workspace_id, document_id).await?;
+    apply_operations(ReducerInput {
+        content: row.get("content_json"),
+        base_revision: expected_revision,
+        operations,
+        references,
+    })
+    .map(|result| result.content)
+    .map_err(map_reducer)
 }
 
 #[derive(Clone)]
@@ -935,7 +998,7 @@ async fn close_subtree_leases_and_reviews(
     Ok(())
 }
 
-async fn load_references(
+pub(super) async fn load_references(
     tx: &mut Transaction<'_, Postgres>,
     workspace: Uuid,
     document: Uuid,
