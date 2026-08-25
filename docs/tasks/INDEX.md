@@ -37,7 +37,8 @@
 | TASK-031 | TanStack Shell·Atlaskit 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-031](TASK-031-tanstack-atlaskit-shell.md) |
 | TASK-032 | Document Editor UX 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-032](TASK-032-document-editor-ux.md) |
 | TASK-033 | Collaboration·Knowledge UX 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-033](TASK-033-collaboration-knowledge-ux.md) |
+| TASK-034 | AI UX 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-034](TASK-034-ai-ux.md) |
 
 ## 다음 태스크 번호
 
-**TASK-034**
+**TASK-035**

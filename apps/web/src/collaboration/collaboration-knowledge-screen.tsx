@@ -53,6 +53,9 @@ export function DocumentCollaborationPanel({
             {panelLabel(name)}
           </LinkButton>
         ))}
+        <LinkButton href={`${base}?mode=draft&panel=ai`} appearance="subtle">
+          AI
+        </LinkButton>
       </Inline>
       <Box paddingBlockStart="space.200">
         {panel === "discussion" && (

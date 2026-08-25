@@ -7,6 +7,8 @@ export const workspaceRealtimeEvents = [
   "REFERENCE_CHANGED",
   "VOCABULARY_CHANGED",
   "INBOX_CHANGED",
+  "AI_JOB_CHANGED",
+  "PROPOSAL_APPLIED",
 ] as const;
 
 export type WorkspaceRealtimeEvent = (typeof workspaceRealtimeEvents)[number];
@@ -28,5 +30,9 @@ export function invalidationRoots(event: WorkspaceRealtimeEvent): readonly strin
       return ["vocabulary", "search"];
     case "INBOX_CHANGED":
       return ["inbox"];
+    case "AI_JOB_CHANGED":
+      return ["ai-jobs", "ai-job", "inbox"];
+    case "PROPOSAL_APPLIED":
+      return ["proposal", "draft", "document", "discussion"];
   }
 }

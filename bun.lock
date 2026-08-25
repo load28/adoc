@@ -24,6 +24,7 @@
         "@adoc/ui-domain": "workspace:*",
         "@atlaskit/app-provider": "5.4.0",
         "@atlaskit/button": "25.2.0",
+        "@atlaskit/checkbox": "19.1.0",
         "@atlaskit/css-reset": "8.3.1",
         "@atlaskit/drawer": "14.2.0",
         "@atlaskit/dropdown-menu": "18.2.1",
@@ -155,6 +156,8 @@
     "@atlaskit/browser-apis": ["@atlaskit/browser-apis@1.2.0", "", { "dependencies": { "@babel/runtime": "^7.0.0" }, "peerDependencies": { "react": "^18.2.0" } }, "sha512-SNwf6LGu1BjECz62iC/kIOwmtiJlz4cuf04OnVLlN8amEly+6NHIzZG+IU2Bbpa2vG7oVSj3nSy0gMm/7kqiuQ=="],
 
     "@atlaskit/button": ["@atlaskit/button@25.2.0", "", { "dependencies": { "@atlaskit/analytics-next": "^12.3.0", "@atlaskit/css": "^1.0.0", "@atlaskit/ds-lib": "^8.0.0", "@atlaskit/focus-ring": "^5.1.0", "@atlaskit/icon": "^37.5.0", "@atlaskit/interaction-context": "^4.0.0", "@atlaskit/platform-feature-flags": "^2.1.0", "@atlaskit/primitives": "^22.4.0", "@atlaskit/react-compiler-gating": "^0.2.0", "@atlaskit/spinner": "^20.3.0", "@atlaskit/theme": "^28.1.0", "@atlaskit/tokens": "^16.8.0", "@atlaskit/tooltip": "^24.2.0", "@atlaskit/visually-hidden": "^4.3.0", "@babel/runtime": "^7.0.0", "@compiled/react": "^1.0.2", "@emotion/react": "^11.7.1" }, "peerDependencies": { "react": "^18.2.0" } }, "sha512-ZuEWFEhWCFP+uWTS18MNw6g9e7oIxoV3MiJtNXnOXNvE2dQ2C9pmIgg89Lo9VakotCUKiEb9PGh6jf7UrKp9HA=="],
+
+    "@atlaskit/checkbox": ["@atlaskit/checkbox@19.1.0", "", { "dependencies": { "@atlaskit/analytics-next": "^12.3.0", "@atlaskit/css": "^1.0.0", "@atlaskit/ds-lib": "^8.0.0", "@atlaskit/react-compiler-gating": "^0.2.0", "@atlaskit/tokens": "^16.8.0", "@babel/runtime": "^7.0.0", "@compiled/react": "^1.0.2" }, "peerDependencies": { "react": "^18.2.0" } }, "sha512-1+MVapLQNJIX+ihSu9lVLmZFxug+26SOcIAfVMM970Q5+Pm1uTtUQ+uyhOOCjvAZ0GpIaPOEXU8SFeq1gG43HQ=="],
 
     "@atlaskit/css": ["@atlaskit/css@1.0.2", "", { "dependencies": { "@atlaskit/tokens": "^16.0.0", "@babel/runtime": "^7.0.0", "@compiled/react": "^0.20.0" }, "peerDependencies": { "react": "^18.2.0" } }, "sha512-D2S/baGT0d3YYRDbhKXJD2ngMo2a+GOJM27123TpOzy6ngrsFk6/tJ8iFb14pEJz8ulXZpJvqgPGQEIKAEY8bQ=="],
 

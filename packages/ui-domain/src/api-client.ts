@@ -30,6 +30,12 @@ export type ReferencePage = components["schemas"]["ReferencePage"];
 export type VocabularyPage = components["schemas"]["VocabularyPage"];
 export type VocabularyConcept = components["schemas"]["VocabularyConcept"];
 export type VocabularyTerm = components["schemas"]["VocabularyTerm"];
+export type AIContextRequest = components["schemas"]["AIContextRequest"];
+export type AIContextPreview = components["schemas"]["AIContextPreview"];
+export type CreateAIJob = components["schemas"]["CreateAIJob"];
+export type AIJob = components["schemas"]["AIJob"];
+export type AIJobPage = components["schemas"]["AIJobPage"];
+export type Proposal = components["schemas"]["Proposal"];
 
 export type ApiProblem = {
   code: string;
@@ -427,6 +433,89 @@ export class ApiClient {
         body: JSON.stringify({ replacementConceptId, reason }),
       },
     );
+  }
+
+  previewAIContext(
+    workspaceId: string,
+    input: AIContextRequest,
+    signal?: AbortSignal,
+  ): Promise<AIContextPreview> {
+    return this.#json(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/ai/context-preview`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input),
+      signal,
+    });
+  }
+
+  aiJobs(workspaceId: string, cursor?: string, signal?: AbortSignal): Promise<AIJobPage> {
+    return this.#json(
+      withQuery(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/ai/jobs`, { cursor }),
+      { signal },
+    );
+  }
+
+  createAIJob(
+    workspaceId: string,
+    input: CreateAIJob,
+    revision: number,
+    command: CommandHeaders,
+  ): Promise<AIJob> {
+    return this.#json(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/ai/jobs`, {
+      method: "POST",
+      headers: commandHeaders(command, revision),
+      body: JSON.stringify(input),
+    });
+  }
+
+  aiJob(workspaceId: string, jobId: string, signal?: AbortSignal): Promise<AIJob> {
+    return this.#json(resourcePath(workspaceId, "ai/jobs", jobId), { signal });
+  }
+
+  cancelAIJob(
+    workspaceId: string,
+    jobId: string,
+    revision: number,
+    command: CommandHeaders,
+  ): Promise<void> {
+    return this.#empty(resourcePath(workspaceId, "ai/jobs", jobId), {
+      method: "DELETE",
+      headers: commandHeaders(command, revision),
+    });
+  }
+
+  proposal(workspaceId: string, proposalId: string, signal?: AbortSignal): Promise<Proposal> {
+    return this.#json(resourcePath(workspaceId, "proposals", proposalId), { signal });
+  }
+
+  applyProposal(
+    workspaceId: string,
+    proposalId: string,
+    draftRevision: number,
+    leaseToken: string,
+    clientInstanceId: string,
+    operationIds: string[],
+    command: CommandHeaders,
+  ): Promise<MutationResult> {
+    return this.#json(`${resourcePath(workspaceId, "proposals", proposalId)}/apply`, {
+      method: "POST",
+      headers: leaseHeaders(command, draftRevision, leaseToken, clientInstanceId),
+      body: JSON.stringify({ operationIds }),
+    });
+  }
+
+  rejectProposal(
+    workspaceId: string,
+    proposalId: string,
+    proposalRevision: number,
+    reason: string,
+    command: CommandHeaders,
+  ): Promise<Proposal> {
+    return this.#json(`${resourcePath(workspaceId, "proposals", proposalId)}/reject`, {
+      method: "POST",
+      headers: commandHeaders(command, proposalRevision),
+      body: JSON.stringify({ reason }),
+    });
   }
 
   async #json<T>(path: string, init: RequestInit): Promise<T> {

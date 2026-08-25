@@ -5,6 +5,7 @@ import { getRouteApi } from "@tanstack/react-router";
 
 import { DocumentEditorScreen } from "../editor/document-editor-screen";
 import { DocumentCollaborationPanel } from "../collaboration/collaboration-knowledge-screen";
+import { AIInspector } from "../ai/ai-inspector";
 import { useTranslation } from "../shell/product-app-provider";
 
 export const Route = createFileRoute("/w/$workspaceSlug/docs/$documentId")({
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/w/$workspaceSlug/docs/$documentId")({
 
 function DocumentScreen() {
   const t = useTranslation();
-  const { mode, panel, discussion, review } = Route.useSearch();
+  const { mode, panel, discussion, review, job, proposal } = Route.useSearch();
   const { documentId, workspaceSlug } = Route.useParams();
   const workspace = getRouteApi("/w/$workspaceSlug").useLoaderData();
   const selectedPanel = panel ?? "discussion";
@@ -27,14 +28,24 @@ function DocumentScreen() {
           <h1>{t("route.document")}</h1>
         </main>
       )}
-      <DocumentCollaborationPanel
-        workspaceId={workspace.id}
-        workspaceSlug={workspaceSlug}
-        documentId={documentId}
-        panel={selectedPanel === "ai" ? "discussion" : selectedPanel}
-        discussionId={discussion}
-        reviewId={review}
-      />
+      {selectedPanel === "ai" ? (
+        <AIInspector
+          workspaceId={workspace.id}
+          workspaceSlug={workspaceSlug}
+          documentId={documentId}
+          jobId={job}
+          proposalId={proposal}
+        />
+      ) : (
+        <DocumentCollaborationPanel
+          workspaceId={workspace.id}
+          workspaceSlug={workspaceSlug}
+          documentId={documentId}
+          panel={selectedPanel}
+          discussionId={discussion}
+          reviewId={review}
+        />
+      )}
     </>
   );
 }
