@@ -1,6 +1,6 @@
 use adoc_application::{
     governance::GovernanceError,
-    jobs::{JobExecution, JobExecutionError, JobRepository},
+    jobs::{JobExecution, JobExecutionError, JobExecutor, JobRepository},
     operations::{
         EventAudience, EventAudienceKind, Job, JobKind, JobSignal, JobStatus, StreamAccess,
         StreamWake,
@@ -28,8 +28,8 @@ impl PostgresJobRepository {
     }
 }
 
-impl JobRepository for PostgresJobRepository {
-    fn reconcile<'a>(
+impl PostgresJobRepository {
+    fn reconcile_core<'a>(
         &'a self,
         now: DateTime<Utc>,
         limit: i64,
@@ -78,7 +78,7 @@ impl JobRepository for PostgresJobRepository {
         })
     }
 
-    fn claim<'a>(
+    fn claim_core<'a>(
         &'a self,
         id: Uuid,
         worker: &'a str,
@@ -104,14 +104,19 @@ impl JobRepository for PostgresJobRepository {
             row.as_ref().map(job).transpose()
         })
     }
+}
 
-    fn execute_outbox_to_stream<'a>(
+impl JobExecutor for PostgresJobRepository {
+    fn execute<'a>(
         &'a self,
         job: &'a Job,
         worker: &'a str,
         now: DateTime<Utc>,
     ) -> BoxFuture<'a, Result<JobExecution, JobExecutionError>> {
         Box::pin(async move {
+            if job.kind != JobKind::OutboxToStream {
+                return Err(JobExecutionError::Permanent("JOB_KIND_UNSUPPORTED"));
+            }
             let mut tx = self.pool.begin().await.map_err(transient)?;
             let status = sqlx::query_scalar::<_, String>(
                 "SELECT status::text FROM jobs WHERE id=$1 AND sequence=$2 AND lease_owner=$3 FOR UPDATE",
@@ -204,6 +209,26 @@ impl JobRepository for PostgresJobRepository {
                 sequence,
             })))
         })
+    }
+}
+
+impl JobRepository for PostgresJobRepository {
+    fn reconcile<'a>(
+        &'a self,
+        now: DateTime<Utc>,
+        limit: i64,
+    ) -> BoxFuture<'a, Result<Vec<JobSignal>, GovernanceError>> {
+        self.reconcile_core(now, limit)
+    }
+
+    fn claim<'a>(
+        &'a self,
+        id: Uuid,
+        worker: &'a str,
+        now: DateTime<Utc>,
+        lease_until: DateTime<Utc>,
+    ) -> BoxFuture<'a, Result<Option<Job>, GovernanceError>> {
+        self.claim_core(id, worker, now, lease_until)
     }
 
     fn transition_failure<'a>(
@@ -349,6 +374,7 @@ fn job(row: &PgRow) -> Result<Job, GovernanceError> {
         workspace_id: row.get("workspace_id"),
         kind: match row.get::<String, _>("kind").as_str() {
             "OUTBOX_TO_STREAM" => JobKind::OutboxToStream,
+            "OUTBOX_TO_SEARCH" => JobKind::OutboxToSearch,
             _ => return Err(GovernanceError::Internal),
         },
         payload: row.get("payload_json"),

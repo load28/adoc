@@ -27,6 +27,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tokio-util",
+ "unicode-normalization",
  "uuid",
 ]
 
@@ -180,8 +181,10 @@ version = "0.1.0"
 dependencies = [
  "adoc-kernel",
  "chrono",
+ "hex",
  "serde",
  "serde_json",
+ "sha2",
  "unicode-normalization",
  "uuid",
 ]

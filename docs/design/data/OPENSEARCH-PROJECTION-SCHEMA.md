@@ -7,8 +7,11 @@
 ## Index와 alias
 
 물리 index는 `adoc-published-v{schema}-{generation}`과 `adoc-draft-v{schema}-{generation}`을
-사용한다. 읽기 alias는 `adoc-published-read`, `adoc-draft-read`이고 reindex 완료 시 원자적으로
-교체한다. Workspace별 index를 만들지 않고 모든 query에 `workspace_id` filter를 먼저 적용한다.
+사용한다. 읽기 alias는 `adoc-published-read`, `adoc-draft-read`이고 쓰기 alias는
+`adoc-published-write`, `adoc-draft-write`다. rebuild catch-up 중에는 기존·신규 generation을
+모두 갱신하고, 검증 후 두 alias 쌍을 하나의 `_aliases` 요청으로 교체한다.
+Workspace별 index를 만들지 않고 routing에 `workspace_id`를 사용하며 모든 query에
+`workspace_id` filter를 먼저 적용한다.
 
 ## Mapping
 
@@ -37,6 +40,7 @@
       "version_number": { "type": "long" },
       "region_id": { "type": "keyword" },
       "region_kind": { "type": "keyword" },
+      "ancestor_ids": { "type": "keyword" },
       "title": { "type": "text", "analyzer": "adoc_ko_en", "fields": { "raw": { "type": "keyword", "ignore_above": 500 } } },
       "body": { "type": "text", "analyzer": "adoc_ko_en" },
       "terms": { "type": "keyword" },
@@ -65,9 +69,11 @@ tombstone도 같은 ordering을 사용하므로 늦게 도착한 upsert가 삭�
 
 ## Permission scope
 
-`permission_scope`에는 resolver가 만든 opaque scope ID만 저장한다. 검색 요청은 현재
-Membership과 Group 집합에서 유효 scope ID를 계산해 `workspace_id`와 함께 bool filter로 먼저
-적용한다. `permission_fingerprint`가 현재 ancestry fingerprint와 다른 결과는 반환하지 않고
+`permission_scope`에는 `workspace_id`와 `document_id`로 만든 안정적 opaque scope token을
+저장한다. `permission_fingerprint`는 root에서 대상까지의
+`{document_id, parent_id, permission_revision}` 열을 hash한 값이다. Search scope compiler는 현재
+Membership·Group으로 접근 가능한 문서의 `{scope token, ancestry fingerprint}` 쌍을 만들고,
+`workspace_id`와 함께 bool filter에 먼저 적용한다. 쌍이 다른 결과는 반환하지 않고
 재색인을 예약한다. 검색 후 권한 필터링은 금지한다.
 
 ## Query pipeline
@@ -83,7 +89,9 @@ weight와 top-k는 configuration version에 묶고 Search response에 그 versio
 
 ## Rebuild와 장애
 
-전체 rebuild는 PostgreSQL snapshot watermark를 고정하고 새 generation에 적재한 뒤 watermark
-이후 outbox를 따라잡는다. count, hash sample, permission canary가 통과해야 alias를 교체한다.
+전체 rebuild는 PostgreSQL repeatable-read snapshot에서 Workspace별 `projection_sequence`
+watermark를 고정하고 새 generation에 적재한 뒤 watermark 이후 outbox를 따라잡는다.
+catch-up 중 regular consumer는 활성 generation과 rebuilding generation을 모두 갱신한다. count,
+deterministic hash sample, denied·allowed permission canary가 통과해야 alias를 교체한다.
 OpenSearch 장애 중 write는 outbox에 유지된다. title·tree 탐색 외 검색과 AI retrieval은
 `SEARCH_UNAVAILABLE`로 실패하며 낮은 품질의 PostgreSQL 본문 검색으로 대체하지 않는다.

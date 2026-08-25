@@ -714,7 +714,8 @@ CREATE INDEX file_references_owner_idx ON file_references (workspace_id, owner_k
 CREATE TABLE workspace_sequences (
   workspace_id uuid PRIMARY KEY REFERENCES workspaces(id) ON DELETE CASCADE,
   next_audit_sequence bigint NOT NULL DEFAULT 1 CHECK (next_audit_sequence > 0),
-  next_stream_sequence bigint NOT NULL DEFAULT 1 CHECK (next_stream_sequence > 0)
+  next_stream_sequence bigint NOT NULL DEFAULT 1 CHECK (next_stream_sequence > 0),
+  next_projection_sequence bigint NOT NULL DEFAULT 1 CHECK (next_projection_sequence > 0)
 );
 
 CREATE TABLE audit_events (
@@ -737,7 +738,7 @@ CREATE INDEX audit_events_target_idx ON audit_events (workspace_id, (target_json
 CREATE TABLE jobs (
   id uuid PRIMARY KEY,
   workspace_id uuid REFERENCES workspaces(id) ON DELETE CASCADE,
-  kind text NOT NULL CHECK (kind IN ('OUTBOX_TO_STREAM')),
+  kind text NOT NULL CHECK (kind IN ('OUTBOX_TO_STREAM', 'OUTBOX_TO_SEARCH')),
   payload_json jsonb NOT NULL CHECK (octet_length(payload_json::text) <= 65536),
   dedupe_key text NOT NULL CHECK (char_length(dedupe_key) BETWEEN 1 AND 200),
   status job_status NOT NULL DEFAULT 'QUEUED',
@@ -773,6 +774,7 @@ CREATE TABLE outbox_events (
   sequence bigint NOT NULL CHECK (sequence > 0),
   event_type text NOT NULL,
   event_version integer NOT NULL CHECK (event_version > 0),
+  projection_sequence bigint NOT NULL CHECK (projection_sequence > 0),
   payload_json jsonb NOT NULL CHECK (octet_length(payload_json::text) <= 65536),
   audience_kind event_audience_kind NOT NULL,
   audience_id uuid,
@@ -781,6 +783,7 @@ CREATE TABLE outbox_events (
   occurred_at timestamptz NOT NULL DEFAULT now(),
   published_at timestamptz,
   UNIQUE (aggregate_kind, aggregate_id, sequence),
+  UNIQUE (workspace_id, projection_sequence),
   CHECK (
     (audience_kind IN ('INTERNAL', 'WORKSPACE', 'ADMIN') AND audience_id IS NULL AND minimum_access IS NULL)
     OR (audience_kind = 'USER' AND audience_id IS NOT NULL AND minimum_access IS NULL)
@@ -795,6 +798,23 @@ CREATE TABLE consumer_receipts (
   processed_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (consumer, event_id)
 );
+
+CREATE TABLE search_projection_rebuilds (
+  id uuid PRIMARY KEY,
+  schema_version integer NOT NULL CHECK (schema_version > 0),
+  generation bigint NOT NULL CHECK (generation > 0),
+  status text NOT NULL CHECK (status IN ('BUILDING', 'CATCHING_UP', 'VALIDATING', 'ACTIVE', 'FAILED')),
+  snapshot_watermark_json jsonb NOT NULL DEFAULT '{}'::jsonb,
+  replayed_through_json jsonb NOT NULL DEFAULT '{}'::jsonb,
+  error_code text,
+  started_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  completed_at timestamptz,
+  UNIQUE (schema_version, generation),
+  CHECK ((status IN ('ACTIVE', 'FAILED')) = (completed_at IS NOT NULL))
+);
+CREATE UNIQUE INDEX search_projection_rebuild_active_idx ON search_projection_rebuilds ((true))
+  WHERE status IN ('BUILDING', 'CATCHING_UP', 'VALIDATING');
 
 CREATE TABLE workspace_stream_events (
   id uuid PRIMARY KEY,

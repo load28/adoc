@@ -285,6 +285,7 @@ impl EventAudience {
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum JobKind {
     OutboxToStream,
+    OutboxToSearch,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]

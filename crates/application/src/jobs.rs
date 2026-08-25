@@ -32,12 +32,6 @@ pub trait JobRepository: Send + Sync {
         now: DateTime<Utc>,
         lease_until: DateTime<Utc>,
     ) -> BoxFuture<'a, Result<Option<Job>, GovernanceError>>;
-    fn execute_outbox_to_stream<'a>(
-        &'a self,
-        job: &'a Job,
-        worker: &'a str,
-        now: DateTime<Utc>,
-    ) -> BoxFuture<'a, Result<JobExecution, JobExecutionError>>;
     fn transition_failure<'a>(
         &'a self,
         job: &'a Job,
@@ -60,6 +54,15 @@ pub trait JobRepository: Send + Sync {
     ) -> BoxFuture<'a, Result<u64, GovernanceError>>;
 }
 
+pub trait JobExecutor: Send + Sync {
+    fn execute<'a>(
+        &'a self,
+        job: &'a Job,
+        worker: &'a str,
+        now: DateTime<Utc>,
+    ) -> BoxFuture<'a, Result<JobExecution, JobExecutionError>>;
+}
+
 pub trait JobSignalQueue: Send + Sync {
     fn signal<'a>(&'a self, jobs: &'a [JobSignal]) -> BoxFuture<'a, Result<(), GovernanceError>>;
     fn drain<'a>(&'a self, limit: usize) -> BoxFuture<'a, Result<Vec<Uuid>, GovernanceError>>;
@@ -71,6 +74,7 @@ pub trait JobSignalQueue: Send + Sync {
 
 pub struct JobRuntime {
     repository: Arc<dyn JobRepository>,
+    executor: Arc<dyn JobExecutor>,
     queue: Arc<dyn JobSignalQueue>,
     clock: Arc<dyn Clock>,
     worker_id: Arc<str>,
@@ -80,6 +84,7 @@ pub struct JobRuntime {
 impl JobRuntime {
     pub fn new(
         repository: Arc<dyn JobRepository>,
+        executor: Arc<dyn JobExecutor>,
         queue: Arc<dyn JobSignalQueue>,
         clock: Arc<dyn Clock>,
         worker_id: Arc<str>,
@@ -87,6 +92,7 @@ impl JobRuntime {
     ) -> Self {
         Self {
             repository,
+            executor,
             queue,
             clock,
             worker_id,
@@ -122,13 +128,7 @@ impl JobRuntime {
             else {
                 continue;
             };
-            let result = match job.kind {
-                JobKind::OutboxToStream => {
-                    self.repository
-                        .execute_outbox_to_stream(&job, &self.worker_id, now)
-                        .await
-                }
-            };
+            let result = self.executor.execute(&job, &self.worker_id, now).await;
             match result {
                 Ok(JobExecution::Delivered(wake)) => {
                     completed += 1;

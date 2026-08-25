@@ -68,6 +68,10 @@
     {
       "file": "0017_job_runtime_sse.sql",
       "sha256": "2d9920eb48def580ba7303098643d78eb4fca0af3c04f4d8b6055910d7007bc3"
+    },
+    {
+      "file": "0018_search_projection.sql",
+      "sha256": "10d248e4c89c84a1eadbb43a9f7c188a3c5353b8e769e66ede960fd259de37e0"
     }
   ]
 }

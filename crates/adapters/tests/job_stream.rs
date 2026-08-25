@@ -109,6 +109,7 @@ async fn job_runtime_and_resumable_stream_contract() {
     let repository = Arc::new(PostgresJobRepository::new(&store));
     let runtime = JobRuntime::new(
         repository.clone(),
+        repository.clone(),
         queue.clone(),
         Arc::new(SystemClock),
         Arc::from("job-stream-test"),

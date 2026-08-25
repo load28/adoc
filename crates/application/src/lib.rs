@@ -11,4 +11,5 @@ pub mod knowledge;
 pub mod operations;
 pub mod permission;
 pub mod publishing;
+pub mod search;
 pub mod stream;

@@ -51,11 +51,23 @@ pub async fn append_outbox_event(
         return Err(OutboxAppendError::InvalidInput);
     }
     let connection = connection(transaction)?;
+    sqlx::query("INSERT INTO workspace_sequences(workspace_id) VALUES($1) ON CONFLICT(workspace_id) DO NOTHING")
+        .bind(event.workspace_id)
+        .execute(&mut *connection)
+        .await
+        .map_err(|error| OutboxAppendError::Persistence(map_sqlx(error)))?;
+    let projection_sequence: i64 = sqlx::query_scalar(
+        "UPDATE workspace_sequences SET next_projection_sequence=next_projection_sequence+1 WHERE workspace_id=$1 RETURNING next_projection_sequence-1",
+    )
+    .bind(event.workspace_id)
+    .fetch_one(&mut *connection)
+    .await
+    .map_err(|error| OutboxAppendError::Persistence(map_sqlx(error)))?;
     let result = sqlx::query(
         "INSERT INTO outbox_events \
-         (id, workspace_id, aggregate_kind, aggregate_id, sequence, event_type, \
+         (id, workspace_id, aggregate_kind, aggregate_id, sequence, event_type, projection_sequence, \
           event_version, payload_json, audience_kind, audience_id, minimum_access, correlation_id, occurred_at) \
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::event_audience_kind, $10, $11::document_access, $12, $13)",
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::event_audience_kind, $11, $12::document_access, $13, $14)",
     )
     .bind(event.id)
     .bind(event.workspace_id)
@@ -63,6 +75,7 @@ pub async fn append_outbox_event(
     .bind(event.aggregate_id)
     .bind(event.sequence)
     .bind(event.event_type)
+    .bind(projection_sequence)
     .bind(event.event_version)
     .bind(event.payload)
     .bind(audience_kind(event.audience.kind))
@@ -88,11 +101,39 @@ pub async fn append_outbox_event(
             .execute(&mut *connection)
             .await
             .map_err(|error| OutboxAppendError::Persistence(map_sqlx(error)))?;
+            if is_search_projection_event(event.event_type) {
+                sqlx::query(
+                    "INSERT INTO jobs(id,workspace_id,kind,payload_json,dedupe_key,status,priority,sequence,attempt,max_attempts,run_after,correlation_id,created_at,updated_at) \
+                     VALUES($1,$2,'OUTBOX_TO_SEARCH',$3,$4,'QUEUED',25,1,0,5,$5,$6,$5,$5) ON CONFLICT(kind,dedupe_key) DO NOTHING",
+                )
+                .bind(Uuid::now_v7())
+                .bind(event.workspace_id)
+                .bind(serde_json::json!({"outboxEventId": event.id}))
+                .bind(format!("search-projection:{}", event.id))
+                .bind(event.occurred_at)
+                .bind(event.correlation_id)
+                .execute(&mut *connection)
+                .await
+                .map_err(|error| OutboxAppendError::Persistence(map_sqlx(error)))?;
+            }
             Ok(())
         }
         Err(error) if is_sequence_conflict(&error) => Err(OutboxAppendError::SequenceConflict),
         Err(error) => Err(OutboxAppendError::Persistence(map_sqlx(error))),
     }
+}
+
+pub(super) fn is_search_projection_event(value: &str) -> bool {
+    matches!(
+        value,
+        "DocumentChanged.v1"
+            | "DocumentMoved.v1"
+            | "DraftChanged.v1"
+            | "VersionPublished.v1"
+            | "PermissionChanged.v1"
+            | "VocabularyChanged.v1"
+            | "PurgeChanged.v1"
+    )
 }
 
 pub(super) fn audience_kind(value: EventAudienceKind) -> &'static str {

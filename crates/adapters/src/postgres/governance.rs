@@ -975,16 +975,26 @@ pub(super) async fn append_event(
     }
     let event_id = Uuid::now_v7();
     let correlation_id = event_id.to_string();
-    sqlx::query("INSERT INTO outbox_events(id,workspace_id,aggregate_kind,aggregate_id,sequence,event_type,event_version,payload_json,audience_kind,audience_id,minimum_access,correlation_id,occurred_at) VALUES($1,$2,$3,$4,$5,$6,1,$7,$8::event_audience_kind,$9,$10::document_access,$11,$12)")
+    sqlx::query("INSERT INTO workspace_sequences(workspace_id) VALUES($1) ON CONFLICT(workspace_id) DO NOTHING")
+        .bind(event.workspace_id).execute(&mut **tx).await.map_err(map_store)?;
+    let projection_sequence:i64=sqlx::query_scalar("UPDATE workspace_sequences SET next_projection_sequence=next_projection_sequence+1 WHERE workspace_id=$1 RETURNING next_projection_sequence-1")
+        .bind(event.workspace_id).fetch_one(&mut **tx).await.map_err(map_store)?;
+    sqlx::query("INSERT INTO outbox_events(id,workspace_id,aggregate_kind,aggregate_id,sequence,event_type,event_version,projection_sequence,payload_json,audience_kind,audience_id,minimum_access,correlation_id,occurred_at) VALUES($1,$2,$3,$4,$5,$6,1,$7,$8,$9::event_audience_kind,$10,$11::document_access,$12,$13)")
         .bind(event_id).bind(event.workspace_id).bind(event.aggregate_kind).bind(event.aggregate_id)
-        .bind(event.sequence).bind(event.event_type).bind(event.payload)
+        .bind(event.sequence).bind(event.event_type).bind(projection_sequence).bind(event.payload)
         .bind(super::outbox::audience_kind(event.audience.kind)).bind(event.audience.id)
         .bind(event.audience.minimum_access.map(super::outbox::access_text)).bind(&correlation_id)
         .bind(event.occurred_at).execute(&mut **tx).await.map_err(map_store)?;
     sqlx::query("INSERT INTO jobs(id,workspace_id,kind,payload_json,dedupe_key,status,priority,sequence,attempt,max_attempts,run_after,correlation_id,created_at,updated_at) VALUES($1,$2,'OUTBOX_TO_STREAM',$3,$4,'QUEUED',50,1,0,5,$5,$6,$5,$5) ON CONFLICT(kind,dedupe_key) DO NOTHING")
         .bind(Uuid::now_v7()).bind(event.workspace_id).bind(json!({"outboxEventId":event_id}))
-        .bind(format!("workspace-stream:{event_id}")).bind(event.occurred_at).bind(correlation_id)
+        .bind(format!("workspace-stream:{event_id}")).bind(event.occurred_at).bind(&correlation_id)
         .execute(&mut **tx).await.map_err(map_store)?;
+    if super::outbox::is_search_projection_event(event.event_type) {
+        sqlx::query("INSERT INTO jobs(id,workspace_id,kind,payload_json,dedupe_key,status,priority,sequence,attempt,max_attempts,run_after,correlation_id,created_at,updated_at) VALUES($1,$2,'OUTBOX_TO_SEARCH',$3,$4,'QUEUED',25,1,0,5,$5,$6,$5,$5) ON CONFLICT(kind,dedupe_key) DO NOTHING")
+            .bind(Uuid::now_v7()).bind(event.workspace_id).bind(json!({"outboxEventId":event_id}))
+            .bind(format!("search-projection:{event_id}")).bind(event.occurred_at).bind(&correlation_id)
+            .execute(&mut **tx).await.map_err(map_store)?;
+    }
     Ok(())
 }
 

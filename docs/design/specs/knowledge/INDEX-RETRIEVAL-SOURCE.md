@@ -11,8 +11,11 @@ Draft index를 분리한다.
 
 ## Indexing
 
-outbox consumer가 latest aggregate sequence만 적용한다. delete·permission change tombstone이
-upsert보다 낮은 sequence면 무시한다. alias swap으로 zero-downtime reindex한다.
+outbox consumer가 Workspace별 단조 증가 `projectionSequence`를 external version으로
+적용한다. consumer는 event snapshot을 바로 인덱싱하지 않고 PostgreSQL의 현재 상태를
+다시 materialize한다. 따라서 늦게 도착한 upsert event도 최신 삭제·권한 상태를
+되살리지 못한다. 권한·tree 변경은 하위 트리 전체를 재materialize하고 alias
+swap으로 zero-downtime reindex한다.
 
 ## Retrieval
 

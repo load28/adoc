@@ -4,16 +4,19 @@ use std::{process::ExitCode, sync::Arc, time::Duration};
 
 use adoc_adapters::{
     identity::SystemClock,
+    job_executor::WorkerJobExecutor,
     job_queue::RedisJobSignalQueue,
     object_storage::LocalObjectStorage,
     postgres::{
         DatabaseSettings, PostgresFileRepository, PostgresJobRepository,
-        PostgresRetentionRepository, PostgresStore,
+        PostgresRetentionRepository, PostgresSearchProjectionRepository, PostgresStore,
     },
+    search_index::OpenSearchIndex,
 };
 use adoc_application::{
     jobs::JobRuntime,
     operations::{FileGarbageCollector, RetentionService},
+    search::SearchProjectionService,
 };
 use adoc_configuration::{
     AppConfig, ConfigError, ConfigSource, Environment, ObjectStorageDriver, ServiceKind,
@@ -121,8 +124,27 @@ async fn run(health_only: bool) -> Result<(), Box<dyn std::error::Error>> {
         Arc::new(SystemClock),
         Arc::from(format!("retention-{}", config.common.release_sha)),
     );
+    let job_repository = Arc::new(PostgresJobRepository::new(&store));
+    let search_index = Arc::new(OpenSearchIndex::new(
+        config.dependencies.opensearch_url.clone(),
+        config.dependencies.search_index_prefix.clone(),
+        config.dependencies.embedding_dimension,
+        config
+            .dependencies
+            .opensearch_credential
+            .as_ref()
+            .map(|secret| secret.value.expose()),
+    )?);
+    let job_executor = Arc::new(WorkerJobExecutor::new(
+        job_repository.clone(),
+        SearchProjectionService::new(
+            Arc::new(PostgresSearchProjectionRepository::new(&store)),
+            search_index,
+        ),
+    ));
     let job_runtime = JobRuntime::new(
-        Arc::new(PostgresJobRepository::new(&store)),
+        job_repository.clone(),
+        job_executor,
         Arc::new(
             RedisJobSignalQueue::connect(
                 config.dependencies.redis_url.value.expose(),

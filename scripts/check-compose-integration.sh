@@ -77,6 +77,8 @@ docker compose -p "$project" exec -T postgres psql --username postgres --dbname 
 docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
   <infra/migrations/0017_job_runtime_sse.sql >/dev/null
 docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
+  <infra/migrations/0018_search_projection.sql >/dev/null
+docker compose -p "$project" exec -T postgres psql --username postgres --dbname adoc_upgrade \
   --tuples-only --no-align --command \
   "SELECT count(*) FROM information_schema.columns WHERE table_name='sessions' AND column_name IN ('hash_key_id','idle_expires_at','absolute_expires_at')" \
   | grep -qx 3
@@ -102,9 +104,11 @@ docker compose -p "$project" exec -T postgres psql --username postgres --dbname 
   | grep -qx 3
 # Contract tests own their worker clocks and leases; stop the background worker to avoid cross-run claims.
 docker compose -p "$project" stop worker >/dev/null
+docker compose -p "$project" --profile search up --wait opensearch
 docker compose -p "$project" --profile test build test-runner
 docker compose -p "$project" --profile test run --rm test-runner \
   cargo test --locked -p adoc-adapters \
+  --jobs 1 \
   --test identity_session \
   --test workspace_governance \
   --test permission_policy \
@@ -116,11 +120,11 @@ docker compose -p "$project" --profile test run --rm test-runner \
   --test file_object_storage \
   --test audit_retention \
   --test job_stream \
+  --test search_projection \
   -- --ignored --nocapture
 docker compose -p "$project" --profile backup run --rm backup >/dev/null
 docker compose -p "$project" --profile backup run --rm --entrypoint sh backup -c \
   'test -s /backup/latest/manifest.json && cd /backup/latest && sha256sum -c checksums.sha256'
-docker compose -p "$project" --profile search up --wait opensearch
 docker compose -p "$project" --profile search stop opensearch >/dev/null
 curl --fail --silent http://127.0.0.1:18081/health/ready >/dev/null
 cleanup
