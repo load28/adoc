@@ -8,6 +8,7 @@
       "!**/.output",
       "!**/dist",
       "!**/coverage",
+      "!**/artifacts",
       "!**/docs",
       "!**/src/routeTree.gen.ts",
       "!**/src/generated"

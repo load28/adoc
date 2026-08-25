@@ -185,6 +185,10 @@ policy와 bounded canonical request JSON을 직접 전달한다. shell interpola
 읽기 tool은 사용하지 않는다. network는 Codex sandbox에만 의존하지 않고 배포 container network
 policy로 차단한다.
 
+CLI contract test double도 실제 provider와 같은 process I/O 수명주기를 따른다. stdin을 EOF까지
+소비한 뒤 result file과 stdout JSONL을 생성하고 종료해야 한다. stdin을 읽지 않는 즉시 종료 fixture나
+시간 지연으로 write 순서를 맞추는 fixture는 부모의 `write_all`과 경쟁하므로 사용하지 않는다.
+
 stdout JSONL과 stderr는 각각 최대 64KiB까지만 진단용으로 소비하고 저장·로그하지 않는다.
 애플리케이션 lifecycle event는 provider 출력이 아니라 adapter의 시작·최종화 경계에서 만든다.
 final output은 `--output-last-message`의 2MiB 제한 file에서 읽는다. timeout 또는 cancellation은
@@ -260,6 +264,7 @@ instruction, query, model output, Source content·ID, provider error body는 log
 - Context: point/scope equivalence, denied/cross-workspace 0 Source, expected revision·fingerprint stale
 - same-port suite: 두 runtime의 structured output, usage, refusal, malformed, oversized, timeout·cancel
 - CLI security: empty root, read-only input, bounded stdout/stderr, TERM→KILL, temp cleanup
+- CLI portability: fixture의 stdin EOF 이후 결과 생성, macOS·Linux 동일 RuntimeResult
 - OpenAI wire: store false, tools none, strict schema, response array parser, embedding dimensions
 - Job: admission atomicity, generic payload 비노출, duplicate attempt, cancel/late result terminal guard
 - real PostgreSQL·OpenSearch: direct·Reference·Vocabulary·retrieved Source coverage와 non-leak

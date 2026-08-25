@@ -669,7 +669,7 @@ mod tests {
         let executable = fake.path().join("fake-codex");
         tokio::fs::write(
             &executable,
-            b"#!/bin/sh\nout=''\nwhile [ \"$#\" -gt 0 ]; do\n  if [ \"$1\" = '--output-last-message' ]; then out=$2; shift 2; else shift; fi\ndone\nprintf '{\"status\":\"READY\"}' > \"$out\"\nprintf '{\"type\":\"thread.started\"}\\n'\n",
+            b"#!/bin/sh\nout=''\nwhile [ \"$#\" -gt 0 ]; do\n  if [ \"$1\" = '--output-last-message' ]; then out=$2; shift 2; else shift; fi\ndone\ncat >/dev/null\nprintf '{\"status\":\"READY\"}' > \"$out\"\nprintf '{\"type\":\"thread.started\"}\\n'\n",
         )
         .await
         .unwrap();
