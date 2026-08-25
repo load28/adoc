@@ -207,6 +207,7 @@
 | PLAN-34 | `design/implementation/FULL-ACCEPTANCE-RELEASE.md` | TEST-09 evidence·versioned release bundle·promotion 계약 | 구현 기준 |
 | PLAN-35 | `design/implementation/IMPLEMENTATION-COMPLETION-AUDIT.md` | 요구사항·화면·품질 gate의 직접 구현 증거와 후속 DAG | 동결 |
 | PLAN-36 | `design/implementation/WORKSPACE-DOCUMENT-TREE-JOURNEYS.md` | Invitation·Workspace·permission-scoped Tree의 Web 구현 계약 | 구현 기준 |
+| PLAN-37 | `design/implementation/EDITOR-PUBLISH-VERSION-JOURNEYS.md` | Editor command·import/export·Publish·Version·conflict Web 구현 계약 | 구현 기준 |
 | PLAN-15 | `design/implementation/CONTENT-OPERATION-REDUCER.md` | Content·Region·Operation reducer 구현 계약 | 구현 기준 |
 | PLAN-16 | `design/implementation/DOCUMENT-TREE-DRAFT-LEASE.md` | Document Tree·Draft·Lease 구현 계약 | 구현 기준 |
 

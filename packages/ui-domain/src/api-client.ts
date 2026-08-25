@@ -27,6 +27,7 @@ export type RichMessage = components["schemas"]["RichMessage"];
 export type ReviewView = components["schemas"]["Review"];
 export type ReviewDecision = components["schemas"]["ReviewDecisionInput"];
 export type VersionPage = components["schemas"]["VersionPage"];
+export type PublishedVersion = components["schemas"]["PublishedVersion"];
 export type DocumentDiff = components["schemas"]["DocumentDiff"];
 export type InboxPage = components["schemas"]["InboxPage"];
 export type InboxItem = components["schemas"]["InboxItem"];
@@ -46,6 +47,7 @@ export type Invitation = components["schemas"]["Invitation"];
 export type InvitationPage = components["schemas"]["InvitationPage"];
 export type Group = components["schemas"]["Group"];
 export type PermissionView = components["schemas"]["PermissionView"];
+export type PublishPolicy = components["schemas"]["PublishPolicy"];
 export type PermissionGrant = components["schemas"]["PermissionGrant"];
 export type WritingConfiguration = components["schemas"]["WritingConfiguration"];
 export type AIConfiguration = components["schemas"]["AIConfiguration"];
@@ -458,6 +460,52 @@ export class ApiClient {
     );
   }
 
+  version(
+    workspaceId: string,
+    documentId: string,
+    versionId: string,
+    signal?: AbortSignal,
+  ): Promise<PublishedVersion> {
+    return this.#json<PublishedVersion>(
+      `${resourcePath(workspaceId, "documents", documentId)}/versions/${encodeURIComponent(versionId)}`,
+      { signal },
+    );
+  }
+
+  publishDocument(
+    workspaceId: string,
+    documentId: string,
+    draftRevision: number,
+    input: {
+      summary: string;
+      clientInstanceId?: string | null;
+      leaseToken?: string | null;
+    },
+    command: CommandHeaders,
+  ): Promise<PublishedVersion> {
+    return this.#json<PublishedVersion>(
+      `${resourcePath(workspaceId, "documents", documentId)}/publish`,
+      {
+        method: "POST",
+        headers: commandHeaders(command, draftRevision),
+        body: JSON.stringify(input),
+      },
+    );
+  }
+
+  restoreVersion(
+    workspaceId: string,
+    documentId: string,
+    versionId: string,
+    documentRevision: number,
+    command: CommandHeaders,
+  ): Promise<DraftView> {
+    return this.#json<DraftView>(
+      `${resourcePath(workspaceId, "documents", documentId)}/versions/${encodeURIComponent(versionId)}/restore`,
+      { method: "POST", headers: commandHeaders(command, documentRevision) },
+    );
+  }
+
   versionDiff(
     workspaceId: string,
     documentId: string,
@@ -750,6 +798,16 @@ export class ApiClient {
     });
   }
 
+  publishPolicy(
+    workspaceId: string,
+    documentId: string,
+    signal?: AbortSignal,
+  ): Promise<PublishPolicy> {
+    return this.#json(`${resourcePath(workspaceId, "documents", documentId)}/publish-policy`, {
+      signal,
+    });
+  }
+
   setDocumentPermission(
     workspaceId: string,
     documentId: string,
@@ -897,10 +955,12 @@ export class ApiClient {
 
   async #json<T>(path: string, init: RequestInit): Promise<T> {
     if (!path.startsWith("/api/v1/") || path.startsWith("//")) throw new Error("unsafe API path");
+    const headers = new Headers(init.headers);
+    if (!headers.has("accept")) headers.set("accept", "application/json");
     const response = await this.#fetch(path, {
       ...init,
       credentials: "same-origin",
-      headers: { accept: "application/json", ...init.headers },
+      headers,
       redirect: "manual",
     });
     const contentType = response.headers.get("content-type") ?? "";
@@ -917,10 +977,12 @@ export class ApiClient {
 
   async #empty(path: string, init: RequestInit): Promise<void> {
     if (!path.startsWith("/api/v1/") || path.startsWith("//")) throw new Error("unsafe API path");
+    const headers = new Headers(init.headers);
+    if (!headers.has("accept")) headers.set("accept", "application/json");
     const response = await this.#fetch(path, {
       ...init,
       credentials: "same-origin",
-      headers: { accept: "application/json", ...init.headers },
+      headers,
       redirect: "manual",
     });
     if (response.ok) return;

@@ -28,6 +28,19 @@
   border-radius: var(--ds-border-radius-200, 8px);
 }
 
+@media print {
+  .adoc-editor-toolbar,
+  .adoc-editor-layout > section:not(.adoc-editor-canvas),
+  .adoc-editor-layout > [role="status"] {
+    display: none;
+  }
+
+  .adoc-editor-canvas {
+    border: 0;
+    box-shadow: none;
+  }
+}
+
 .adoc-editor-canvas:focus-within {
   border-color: var(--ds-border-focused, #0c66e4);
   box-shadow: 0 0 0 1px var(--ds-border-focused, #0c66e4);

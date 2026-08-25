@@ -2,6 +2,7 @@ import { parseLocale } from "@adoc/i18n";
 import {
   ApiClient,
   ApiProblemError,
+  type DocumentDetail,
   type InvitationPreview,
   type SessionView,
 } from "@adoc/ui-domain";
@@ -58,6 +59,26 @@ export const loadInvitationPreview = createServerFn({ method: "GET" })
       return fetch(new URL(String(input), request.url), { ...init, headers });
     });
     return client.invitationPreview(data.token);
+  });
+
+export const loadDocumentRoute = createServerFn({ method: "GET" })
+  .validator((input: { workspaceSlug: string; documentId: string }) => input)
+  .handler(async ({ data }): Promise<{ workspaceId: string; document: DocumentDetail }> => {
+    const request = getRequest();
+    const cookie = getRequestHeader("cookie") ?? "";
+    const client = new ApiClient((input, init) => {
+      const headers = new Headers(init?.headers);
+      headers.set("cookie", cookie);
+      return fetch(new URL(String(input), request.url), { ...init, headers });
+    });
+    const session = await client.session();
+    const workspace = session.workspaces.find((candidate) => candidate.slug === data.workspaceSlug);
+    if (!workspace)
+      throw new ApiProblemError({ code: "WORKSPACE_NOT_FOUND", message: "Not found" });
+    return {
+      workspaceId: workspace.id,
+      document: await client.document(workspace.id, data.documentId),
+    };
   });
 
 function anonymousBootstrap(): ShellBootstrap {

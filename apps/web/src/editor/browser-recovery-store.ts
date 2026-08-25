@@ -81,6 +81,17 @@ export class BrowserRecoveryStore implements RecoveryStore {
     );
     return payloads.map(toOperationGroup).sort((left, right) => left.sequence - right.sequence);
   }
+
+  async clear(): Promise<void> {
+    const prefix = recoveryRecordPrefix(
+      this.workspaceId,
+      this.documentId,
+      this.draftId,
+      this.recoverySessionId,
+    );
+    const records = await readRecords(prefix);
+    await Promise.all(records.map((record) => deleteRecord(record.key)));
+  }
 }
 
 function readRecoverySession(): RecoverySession | undefined {

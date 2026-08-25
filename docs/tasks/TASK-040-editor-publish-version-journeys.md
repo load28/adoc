@@ -1,9 +1,9 @@
 # TASK-040: Editor·Publish·Version 사용자 여정 완성
 
-- **상태**: 대기
+- **상태**: 완료
 - **유형**: 구현
-- **시작일**: —
-- **완료일**: —
+- **시작일**: 2026-08-25
+- **완료일**: 2026-08-25
 - **커밋**: —
 
 ## 목적
@@ -26,10 +26,10 @@ Web에서 끊김 없이 제공해 SCR-05·06·09·15와 RQ-05~08·15를 완성�
 
 ## 문서 준비 게이트
 
-- [ ] command·selection·operation·inverse·import/export 타입 계약 확정
-- [ ] lease loss·upload failure·stale publish·restore conflict·recovery 정의
-- [ ] Published immutable read와 Draft mutation 경계 정의
-- [ ] 구현 단위와 browser 검증 조건 추적
+- [x] command·selection·operation·inverse·import/export 타입 계약 확정
+- [x] lease loss·upload failure·stale publish·restore conflict·recovery 정의
+- [x] Published immutable read와 Draft mutation 경계 정의
+- [x] 구현 단위와 browser 검증 조건 추적
 
 ## 사용자 결정
 
@@ -37,23 +37,41 @@ Web에서 끊김 없이 제공해 SCR-05·06·09·15와 RQ-05~08·15를 완성�
 
 ## 의사결정
 
-구현 시작 시 대안·선택·검증 근거를 기록한다.
+- 별도 export service와 브라우저 snapshot export를 검토했다. Content 정본을 복제하지 않고 즉시 사용자에게
+  제공할 수 있도록 Markdown·plain은 순수 browser serializer, PDF는 semantic print 경로를 선택했다.
+- toolbar·slash·keymap별 command 구현과 단일 registry를 검토했다. availability와 Operation 의미의 분기를
+  막기 위해 단일 registry를 선택했다.
+- stale 상태에서 자동 덮어쓰기와 명시적 block conflict를 검토했다. immutable base와 local recovery를
+  보존하도록 stable block ID 기반 명시적 conflict를 선택했다.
 
 ## 작업 내역
 
-대기.
+- 2026-08-25: TASK-039 완료 뒤 후속 DAG의 두 번째 구현 태스크로 시작했다.
+- 2026-08-25: PLAN-37에 route·command·operation·import/export·File·Publish·Version·conflict 계약과
+  구현·검증 단위를 고정해 문서 준비 게이트를 통과했다.
+- 2026-08-25: 단일 editor command registry와 schema 기반 Markdown·plain interchange를 구현하고
+  toolbar·selection·table·code·media·drag handle이 같은 command 조건을 사용하도록 연결했다.
+- 2026-08-25: SSR Published snapshot, 정책 기반 Publish, immutable version 비교·복원과 revision·lease
+  conflict recovery를 구현했다. File upload·download·preview와 암호화된 local recovery도 같은 화면 경계에 연결했다.
+- 2026-08-25: 순수 command/schema/client test와 실제 PostgreSQL·Redis·OpenSearch·ObjectStorage Compose
+  통합 검증, 전체 저장소 게이트를 실행했다.
 
 ## 이슈 및 해결
 
-없음.
+- `Headers` instance를 object spread로 합쳐 command의 CSRF·idempotency·revision header가 소실되는 공통
+  API client 결함을 발견했다. 모든 JSON·empty request가 `Headers` 정규화 뒤 accept만 보강하도록 경계를
+  교체하고 Publish·restore exact header test로 고정했다.
 
 ## 검증
 
-- [ ] editor command·schema·operation property test
-- [ ] publish/version/diff/restore/conflict integration test
-- [ ] import/export round-trip·file lifecycle test
-- [ ] root gate와 Compose integration
+- [x] editor command·schema·operation property test
+- [x] publish/version/diff/restore/conflict integration test
+- [x] import/export round-trip·file lifecycle test
+- [x] root gate와 Compose integration
 
 ## 결과
 
-대기.
+PLAN-37의 command·interchange·Published immutable snapshot·Publish·Version·File·conflict 계약을 Web에
+구현했다. `bun run check`가 계약 109개, 전체 테스트·빌드·보안·라이선스 검사를 통과했다. Compose
+integration은 전체 저장소 통합 테스트와 backup/restore를 통과했으며 API ready p95 2.262ms, Web live
+p95 1.159ms, SSR login p95 7.624ms를 기록했다.

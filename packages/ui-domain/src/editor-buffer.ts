@@ -1,5 +1,7 @@
 import type { DocumentOperation } from "@adoc/contracts";
 
+import { resolveEditorShortcut } from "./editor-commands";
+
 export type OperationGroup = {
   groupId: string;
   sequence: number;
@@ -26,10 +28,9 @@ export type OperationSender = (group: OperationGroup, idempotencyKey: string) =>
 export function editorShortcut(
   event: Pick<KeyboardEvent, "isComposing" | "keyCode" | "key" | "metaKey" | "ctrlKey">,
 ): "SAVE" | "UNDO" | null {
-  if (event.isComposing || event.keyCode === 229 || (!event.metaKey && !event.ctrlKey)) return null;
-  const key = event.key.toLowerCase();
-  if (key === "s") return "SAVE";
-  if (key === "z") return "UNDO";
+  const command = resolveEditorShortcut({ ...event, shiftKey: false, altKey: false });
+  if (command === "editor.save") return "SAVE";
+  if (command === "editor.undo") return "UNDO";
   return null;
 }
 
@@ -168,7 +169,9 @@ function isConflict(error: unknown): boolean {
     typeof code === "string" &&
     [
       "REVISION_CONFLICT",
+      "DRAFT_REVISION_STALE",
       "EDIT_LEASE_INVALID",
+      "EDIT_LEASE_HELD",
       "EDIT_LEASE_EXPIRED",
       "PRECONDITION_FAILED",
     ].includes(code)
