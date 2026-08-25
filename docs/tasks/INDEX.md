@@ -32,7 +32,7 @@
 | TASK-026 | Hybrid Retrieval·Source 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-026](TASK-026-hybrid-retrieval-source.md) |
 | TASK-027 | AI Context·Runtime Adapter 구현 | 구현 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-027](TASK-027-ai-context-runtime-adapters.md) |
 | TASK-028 | Docker 개발 리소스 정리 | 운영 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-028](TASK-028-docker-resource-cleanup.md) |
-| TASK-029 | Search Projection 통합 검증 회귀 조사 | 조사 | 대기 | — | — | [TASK-029](TASK-029-search-projection-integration-regression.md) |
+| TASK-029 | Search Projection 통합 검증 회귀 조사 | 조사 | 완료 | 2026-08-25 | 2026-08-25 | [TASK-029](TASK-029-search-projection-integration-regression.md) |
 
 ## 다음 태스크 번호
 
